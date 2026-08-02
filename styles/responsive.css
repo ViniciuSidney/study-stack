@@ -1,0 +1,140 @@
+@media (max-width: 900px) {
+  :root {
+    --header-height: 64px;
+    --context-height: auto;
+    --content-padding: 18px;
+  }
+
+  body {
+    overflow-y: auto;
+  }
+
+  .app-shell {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .global-header {
+    position: sticky;
+    top: 0;
+    min-height: var(--header-height);
+    padding: 0 14px;
+  }
+
+  .brand-copy .eyebrow,
+  .save-state {
+    display: none;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
+
+  #newRecordButton {
+    display: none;
+  }
+
+  .subject-context {
+    display: grid;
+    gap: 14px;
+    padding: 14px 18px 16px;
+  }
+
+  .subject-title-row {
+    align-items: flex-start;
+    margin-top: 8px;
+  }
+
+  .subject-status-group {
+    display: none;
+  }
+
+  .button-return {
+    width: 100%;
+  }
+
+  .workspace,
+  .app-shell.sidebar-collapsed .workspace {
+    display: block;
+    overflow: visible;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .content-panel {
+    overflow: visible;
+    padding-bottom: 40px;
+  }
+
+  .foundation-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    display: grid;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --content-padding: 14px;
+  }
+
+  .global-header {
+    gap: 8px;
+  }
+
+  .brand-group {
+    gap: 8px;
+  }
+
+  .brand-title {
+    font-size: 0.98rem;
+  }
+
+  .subject-title-row h2 {
+    white-space: normal;
+  }
+
+  .breadcrumb {
+    font-size: 0.75rem;
+  }
+
+  .foundation-panel,
+  .settings-panel,
+  .missing-context-panel {
+    padding: 18px;
+  }
+
+  .toast-region {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+  }
+}
+
+@media (max-height: 660px) and (min-width: 901px) {
+  :root {
+    --header-height: 62px;
+    --context-height: 98px;
+  }
+
+  .subject-context {
+    padding-block: 10px;
+  }
+
+  .subject-title-row {
+    margin-top: 6px;
+  }
+}

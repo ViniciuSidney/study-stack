@@ -1,0 +1,17 @@
+{
+  "name": "study-stack",
+  "version": "0.1.0-development",
+  "private": true,
+  "description": "Caderno conectado do ecossistema de estudos.",
+  "type": "module",
+  "scripts": {
+    "dev": "node tools/dev-server.js",
+    "check:syntax": "node tools/check-js.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch",
+    "check": "npm run check:syntax && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

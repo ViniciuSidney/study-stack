@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Study Stack, caderno conectado do ecossistema de estudos."
+    />
+    <meta name="theme-color" content="#315f7a" />
+    <title>Study Stack</title>
+
+    <link rel="icon" href="assets/icons/app-icon.svg" type="image/svg+xml" />
+
+    <link rel="stylesheet" href="styles/reset.css" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/typography.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/themes.css" />
+    <link rel="stylesheet" href="styles/responsive.css" />
+  </head>
+
+  <body>
+    <div class="app-shell" id="appShell">
+      <header class="global-header">
+        <div class="brand-group">
+          <button
+            class="icon-button navigation-toggle"
+            id="navigationToggle"
+            type="button"
+            aria-label="Fechar navegação lateral"
+            aria-controls="desktopSidebar mobileDrawer"
+            aria-expanded="true"
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+
+          <div class="brand-mark" aria-hidden="true">SS</div>
+
+          <div class="brand-copy">
+            <p class="eyebrow">Caderno conectado</p>
+            <h1 class="brand-title">Study Stack</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <span class="save-state" id="saveState" aria-live="polite">
+            Fundação técnica
+          </span>
+
+          <button
+            class="button button-primary"
+            id="newRecordButton"
+            type="button"
+            disabled
+            title="Os registros serão implementados na v0.1-A."
+          >
+            + Novo registro
+          </button>
+
+          <div class="utilities">
+            <button
+              class="icon-button"
+              id="utilitiesButton"
+              type="button"
+              aria-label="Abrir utilidades"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              ⋯
+            </button>
+
+            <div class="utilities-menu" id="utilitiesMenu" role="menu" hidden>
+              <button type="button" role="menuitem" data-utility="settings">
+                Configurações
+              </button>
+              <button type="button" role="menuitem" disabled>
+                Backup <span>v0.1-C</span>
+              </button>
+              <button type="button" role="menuitem" disabled>
+                Diagnóstico <span>v0.1-C</span>
+              </button>
+              <div class="menu-separator" role="separator"></div>
+              <p>Study Stack · Fundação 01</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="subject-context" id="subjectContext">
+        <div class="subject-copy">
+          <nav class="breadcrumb" aria-label="Caminho do assunto">
+            <span id="subjectArea">Área</span>
+            <span aria-hidden="true">›</span>
+            <span id="subjectTheme">Tema</span>
+            <span aria-hidden="true">›</span>
+            <strong id="subjectBreadcrumbName">Assunto</strong>
+          </nav>
+
+          <div class="subject-title-row">
+            <div class="subject-title-copy">
+              <p class="eyebrow">Assunto atual</p>
+              <h2 id="subjectTitle">Carregando contexto...</h2>
+            </div>
+
+            <div class="subject-status-group">
+              <span class="status-badge status-base" id="subjectStatus">
+                Base inicial
+              </span>
+
+              <button
+                class="progress-compact"
+                id="progressButton"
+                type="button"
+                disabled
+                title="O progresso real será implementado na v0.1-B."
+              >
+                <strong>0/10</strong>
+                <span>Estrutura preparada</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button class="button button-return" id="returnButton" type="button">
+          ← Voltar ao Concept Compass
+        </button>
+      </section>
+
+      <div class="workspace">
+        <aside
+          class="sidebar"
+          id="desktopSidebar"
+          aria-label="Navegação do assunto"
+        >
+          <nav class="subject-nav" aria-label="Seções do assunto">
+            <button class="nav-item active" type="button" data-section="overview">
+              <span aria-hidden="true">⌂</span>
+              <span>Visão Geral</span>
+            </button>
+
+            <button class="nav-item" type="button" data-section="summaries">
+              <span aria-hidden="true">▤</span>
+              <span>Resumos</span>
+              <span class="nav-count">0</span>
+            </button>
+
+            <button class="nav-item" type="button" data-section="notes">
+              <span aria-hidden="true">✎</span>
+              <span>Anotações</span>
+              <span class="nav-count">0</span>
+            </button>
+
+            <button class="nav-item" type="button" data-section="exercises">
+              <span aria-hidden="true">✓</span>
+              <span>Exercícios</span>
+              <span class="nav-count">0</span>
+            </button>
+
+            <button class="nav-item" type="button" data-section="errors">
+              <span aria-hidden="true">!</span>
+              <span>Erros</span>
+              <span class="nav-count">0</span>
+            </button>
+
+            <button class="nav-item" type="button" data-section="history">
+              <span aria-hidden="true">◴</span>
+              <span>Histórico</span>
+            </button>
+
+            <button class="nav-item" type="button" data-section="archived">
+              <span aria-hidden="true">□</span>
+              <span>Arquivados</span>
+            </button>
+
+            <span class="nav-group-label">Aplicação</span>
+
+            <button class="nav-item" type="button" data-section="settings">
+              <span aria-hidden="true">⚙</span>
+              <span>Configurações</span>
+            </button>
+          </nav>
+
+          <div class="sidebar-footer">
+            <p><strong>Entrega atual</strong></p>
+            <p>Fundação 01</p>
+            <p class="muted">AppShell, rotas e contexto</p>
+          </div>
+        </aside>
+
+        <main class="content-panel" id="mainContent" tabindex="-1"></main>
+      </div>
+    </div>
+
+    <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+
+    <aside
+      class="mobile-drawer"
+      id="mobileDrawer"
+      aria-label="Navegação mobile"
+      aria-hidden="true"
+    >
+      <div class="drawer-header">
+        <div>
+          <p class="eyebrow">Study Stack</p>
+          <strong>Navegação</strong>
+        </div>
+
+        <button
+          class="icon-button"
+          id="closeDrawerButton"
+          type="button"
+          aria-label="Fechar navegação"
+        >
+          ×
+        </button>
+      </div>
+
+      <nav class="subject-nav" aria-label="Seções do assunto no mobile">
+        <button class="nav-item active" type="button" data-section="overview">
+          <span aria-hidden="true">⌂</span>
+          <span>Visão Geral</span>
+        </button>
+        <button class="nav-item" type="button" data-section="summaries">
+          <span aria-hidden="true">▤</span>
+          <span>Resumos</span>
+          <span class="nav-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-section="notes">
+          <span aria-hidden="true">✎</span>
+          <span>Anotações</span>
+          <span class="nav-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-section="exercises">
+          <span aria-hidden="true">✓</span>
+          <span>Exercícios</span>
+          <span class="nav-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-section="errors">
+          <span aria-hidden="true">!</span>
+          <span>Erros</span>
+          <span class="nav-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-section="history">
+          <span aria-hidden="true">◴</span>
+          <span>Histórico</span>
+        </button>
+        <button class="nav-item" type="button" data-section="archived">
+          <span aria-hidden="true">□</span>
+          <span>Arquivados</span>
+        </button>
+        <span class="nav-group-label">Aplicação</span>
+        <button class="nav-item" type="button" data-section="settings">
+          <span aria-hidden="true">⚙</span>
+          <span>Configurações</span>
+        </button>
+      </nav>
+    </aside>
+
+    <div
+      class="toast-region"
+      id="toastRegion"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+
+    <noscript>
+      <p class="noscript-message">
+        O Study Stack precisa de JavaScript habilitado para funcionar.
+      </p>
+    </noscript>
+
+    <script type="module" src="scripts/main.js"></script>
+  </body>
+</html>

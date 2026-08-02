@@ -1,0 +1,37 @@
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+strong {
+  color: var(--text);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.18;
+}
+
+.eyebrow {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--text-soft);
+}
+
+code {
+  padding: 0.12rem 0.32rem;
+  border-radius: 0.35rem;
+  background: var(--surface-strong);
+  font-size: 0.9em;
+}
