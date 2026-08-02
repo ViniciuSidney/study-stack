@@ -21,6 +21,7 @@ Arquivos principais:
 Documentos locais de implementação:
 
 - `foundation-02.md`: recorte técnico do schema, persistência e Subject.
+- `foundation-03.md`: Record, operações persistentes e primeiras listas reais.
 
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.

@@ -20,30 +20,32 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 02
+## Estado atual: Fundação 03
 
 Já funciona:
 
 - AppShell responsivo;
-- sidebar recolhível no desktop;
-- drawer sobreposto no mobile;
+- sidebar recolhível no desktop e drawer mobile;
 - rotas internas por hash;
 - tema claro, escuro ou do sistema;
 - schema de armazenamento `1.0.0`;
 - estado raiz validado antes de cada gravação;
-- coleções normalizadas e indexadas por ID;
 - entidade `Subject` persistente;
 - contrato Concept Compass `1.0.0`;
-- contexto por parâmetros ou envelope JSON;
-- sincronização de nomes sem apagar dados internos;
-- registro da primeira conexão no histórico;
-- preferências dentro da coleção global `settings`;
-- migração da antiga chave isolada de preferências;
-- estrutura inicial para futuras migrações;
+- entidade base `Record`;
+- criação real de Resumos e Anotações;
+- entidades específicas vazias vinculadas 1:1;
+- edição de título, data, tags, importância e observações;
+- transição entre Rascunho e Em andamento;
+- busca e filtro por status;
+- bloco de Importantes e grupos cronológicos;
+- arquivamento confirmado e restauração;
+- histórico funcional;
+- contadores reais na navegação;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementados registros reais, progresso, importações do Test
-Quest, backup ou restauração.
+Ainda não foram implementados os editores completos de conteúdo, progresso,
+importações do Test Quest, backup ou restauração de arquivo.
 
 ## Requisitos
 
@@ -116,5 +118,5 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 
 ## Documentação técnica
 
-Consulte [`docs/foundation-02.md`](docs/foundation-02.md) para o recorte técnico
-desta entrega.
+- [`docs/foundation-02.md`](docs/foundation-02.md)
+- [`docs/foundation-03.md`](docs/foundation-03.md)

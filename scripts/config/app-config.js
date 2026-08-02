@@ -2,7 +2,7 @@ import { STORAGE_CONFIG } from "./storage-config.js";
 
 export const APP_CONFIG = Object.freeze({
   appName: "Study Stack",
-  appVersion: "0.1.0-dev.2",
+  appVersion: "0.1.0-dev.3",
   storageNamespace: "study-stack",
   storage: STORAGE_CONFIG,
   defaultSection: "overview",

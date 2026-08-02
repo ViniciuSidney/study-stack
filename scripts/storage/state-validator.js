@@ -1,3 +1,4 @@
+import { validateRecord } from "../domain/record.js";
 import { COLLECTION_NAMES } from "../config/storage-config.js";
 
 function isPlainObject(value) {
@@ -83,6 +84,23 @@ export function validateState(state, expectedSchemaVersion) {
             `${collectionName}.${id} possui identificador divergente.`,
           );
         }
+      }
+    }
+  }
+
+  if (isPlainObject(state.collections)) {
+    const subjects = state.collections.subjects ?? {};
+    const records = state.collections.records ?? {};
+
+    for (const [id, record] of Object.entries(records)) {
+      const validation = validateRecord(record);
+
+      for (const error of validation.errors) {
+        errors.push(`records.${id}: ${error}`);
+      }
+
+      if (!Object.hasOwn(subjects, record.subjectId)) {
+        errors.push(`records.${id} referencia Subject inexistente.`);
       }
     }
   }
