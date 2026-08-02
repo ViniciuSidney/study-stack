@@ -46,7 +46,7 @@ export function renderMissingContextState({
       text: "!",
       attributes: { "aria-hidden": "true" },
     }),
-    createElement(document, "h3", { text: "Contexto obrigatório" }),
+    createElement(document, "h3", { text: "Contrato obrigatório" }),
     createElement(document, "p", {
       text: context.errors.join(" "),
     }),
@@ -55,8 +55,9 @@ export function renderMissingContextState({
   const code = createElement(document, "div", {
     className: "code-block",
     text:
-      "?subjectId=...&subjectName=...&themeName=...&subjectArea=..." +
-      "#/overview",
+      "?contractVersion=1.0.0&sentAt=...&sourceApp=concept_compass" +
+      "&matterId=...&matterName=...&themeId=...&themeName=..." +
+      "&subjectId=...&subjectName=...#/overview",
   });
 
   const actions = createElement(document, "div", {

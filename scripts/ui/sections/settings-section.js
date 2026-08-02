@@ -62,6 +62,7 @@ export function renderSettingsSection({
   document,
   container,
   preferences,
+  storageInfo,
   onUpdate,
   onReset,
 }) {
@@ -84,8 +85,8 @@ export function renderSettingsSection({
     createElement(document, "p", {
       className: "section-description",
       text:
-        "Preferências globais ficam separadas dos registros do assunto e " +
-        "já são persistidas localmente.",
+        "Preferências globais ficam na coleção settings do estado v1, " +
+        "separadas dos registros de cada assunto.",
     }),
   );
   header.append(headerCopy);
@@ -183,8 +184,8 @@ export function renderSettingsSection({
     createElement(document, "h3", { text: "Restaurar preferências" }),
     createElement(document, "p", {
       text:
-        "Remove somente as preferências desta fundação. Nenhum dado de " +
-        "estudo existe nesta etapa.",
+        "Restaura somente as preferências visuais e de navegação. O Subject " +
+        "persistido e as demais coleções permanecem intactos.",
     }),
   );
   const resetButton = createElement(document, "button", {
@@ -198,6 +199,25 @@ export function renderSettingsSection({
   });
   resetActions.append(resetButton);
   resetPanel.append(resetActions);
+
+
+  const storagePanel = createElement(document, "article", {
+    className: "panel settings-panel",
+  });
+  storagePanel.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Persistência",
+    }),
+    createElement(document, "h3", { text: "Estado versionado" }),
+    createElement(document, "p", {
+      text: `Schema ${storageInfo.schemaVersion} · ${storageInfo.subjectCount} assunto(s) persistido(s).`,
+    }),
+    createElement(document, "div", {
+      className: "code-block",
+      text: storageInfo.storageKey,
+    }),
+  );
 
   themeField.select.addEventListener("change", (event) => {
     onUpdate({ theme: event.target.value });
@@ -215,7 +235,7 @@ export function renderSettingsSection({
     onUpdate({ showCounters: event.target.checked });
   });
 
-  grid.append(appearancePanel, navigationPanel, resetPanel);
+  grid.append(appearancePanel, navigationPanel, storagePanel, resetPanel);
   inner.append(header, grid);
   container.append(inner);
 }

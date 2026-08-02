@@ -18,5 +18,9 @@ Arquivos principais:
 - 10: Plano de Testes e Critérios de Aceite
 - 11: Validação do Protótipo e Decisões Aprovadas
 
+Documentos locais de implementação:
+
+- `foundation-02.md`: recorte técnico do schema, persistência e Subject.
+
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.

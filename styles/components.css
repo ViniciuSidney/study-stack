@@ -390,3 +390,7 @@
   gap: 10px;
   margin-top: 18px;
 }
+
+.save-state.save-error {
+  color: var(--danger);
+}

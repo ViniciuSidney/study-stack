@@ -31,6 +31,7 @@ export class AppShell {
       ),
       subjectTitle: getRequiredElement(document, "#subjectTitle"),
       subjectStatus: getRequiredElement(document, "#subjectStatus"),
+      saveState: getRequiredElement(document, "#saveState"),
       toastRegion: getRequiredElement(document, "#toastRegion"),
     };
 
@@ -68,7 +69,7 @@ export class AppShell {
   }
 
   setSubjectContext(context) {
-    if (!context.valid) {
+    if (context.valid === false || (!context.valid && !context.id)) {
       this.elements.subjectArea.textContent = "Concept Compass";
       this.elements.subjectTheme.textContent = "Vínculo";
       this.elements.subjectBreadcrumbName.textContent = "Ausente";
@@ -79,13 +80,29 @@ export class AppShell {
       return;
     }
 
-    this.elements.subjectArea.textContent = context.subjectArea;
+    this.elements.subjectArea.textContent =
+      context.matterName || context.subjectArea;
     this.elements.subjectTheme.textContent = context.themeName;
     this.elements.subjectBreadcrumbName.textContent =
       context.subjectName;
     this.elements.subjectTitle.textContent = context.subjectName;
-    this.elements.subjectStatus.textContent = "Base inicial";
+    const statusLabels = {
+      initial_base: "Base inicial",
+      in_practice: "Em prática",
+      in_review: "Em revisão",
+      consolidated: "Consolidado",
+      custom: "Personalizado",
+    };
+    this.elements.subjectStatus.textContent =
+      statusLabels[context.studyState] || "Base inicial";
     this.elements.subjectStatus.className = "status-badge status-base";
+  }
+
+  setStorageStatus({ schemaVersion, saved }) {
+    this.elements.saveState.textContent = saved
+      ? `Schema ${schemaVersion} · salvo localmente`
+      : `Schema ${schemaVersion} · falha ao salvar`;
+    this.elements.saveState.classList.toggle("save-error", !saved);
   }
 
   setActiveSection(sectionId) {

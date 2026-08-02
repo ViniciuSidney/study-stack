@@ -11,26 +11,51 @@ const VALID_START_SECTIONS = new Set([
 ]);
 
 export class PreferencesService {
-  constructor(storage, defaults) {
-    this.storage = storage;
+  constructor({ repository, legacyStorage, defaults, clock }) {
+    this.repository = repository;
+    this.legacyStorage = legacyStorage;
     this.defaults = Object.freeze({ ...defaults });
-    this.storageKey = "preferences";
+    this.clock = clock;
   }
 
   load() {
-    const stored = this.storage.get(this.storageKey, {});
-    return this.#normalize({ ...this.defaults, ...stored });
+    const settings = this.repository.getEntity("settings", "global");
+    const current = this.#normalize(settings?.ui ?? this.defaults);
+    const legacy = this.legacyStorage?.get("preferences", null);
+
+    if (legacy && !settings.legacyPreferencesMigratedAt) {
+      const migrated = this.#normalize({ ...current, ...legacy });
+      this.#save(migrated, {
+        legacyPreferencesMigratedAt: this.clock(),
+      });
+      this.legacyStorage.remove("preferences");
+      return migrated;
+    }
+
+    return current;
   }
 
   update(current, partial) {
     const next = this.#normalize({ ...current, ...partial });
-    this.storage.set(this.storageKey, next);
+    this.#save(next);
     return next;
   }
 
   reset() {
-    this.storage.remove(this.storageKey);
-    return { ...this.defaults };
+    const next = this.#normalize(this.defaults);
+    this.#save(next);
+    return next;
+  }
+
+  #save(preferences, extra = {}) {
+    const now = this.clock();
+
+    this.repository.transaction((draft) => {
+      const settings = draft.collections.settings.global;
+      settings.ui = { ...preferences };
+      settings.updatedAt = now;
+      Object.assign(settings, extra);
+    });
   }
 
   #normalize(candidate) {

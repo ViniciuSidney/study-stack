@@ -5,33 +5,18 @@ import {
   LocalStorageAdapter,
   StorageError,
 } from "../../scripts/storage/local-storage-adapter.js";
-
-class MemoryStorage {
-  constructor() {
-    this.values = new Map();
-  }
-
-  getItem(key) {
-    return this.values.has(key) ? this.values.get(key) : null;
-  }
-
-  setItem(key, value) {
-    this.values.set(key, String(value));
-  }
-
-  removeItem(key) {
-    this.values.delete(key);
-  }
-}
+import { MemoryStorage } from "../fixtures/memory-storage.js";
 
 test("salva e lê valores dentro do namespace", () => {
   const storage = new MemoryStorage();
   const adapter = new LocalStorageAdapter(storage, "study-stack");
 
-  adapter.set("preferences", { theme: "dark" });
+  adapter.set("v1:state", { schemaVersion: "1.0.0" });
 
-  assert.deepEqual(adapter.get("preferences"), { theme: "dark" });
-  assert.equal(storage.values.has("study-stack:preferences"), true);
+  assert.deepEqual(adapter.get("v1:state"), {
+    schemaVersion: "1.0.0",
+  });
+  assert.equal(storage.values.has("study-stack:v1:state"), true);
 });
 
 test("retorna fallback quando a chave não existe", () => {
@@ -58,5 +43,5 @@ test("encapsula falhas de leitura como StorageError", () => {
     "study-stack",
   );
 
-  assert.throws(() => adapter.get("preferences"), StorageError);
+  assert.throws(() => adapter.get("v1:state"), StorageError);
 });

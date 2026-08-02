@@ -1,11 +1,12 @@
 # Study Stack
 
-Fundação técnica inicial da aplicação definitiva.
+Aplicação web para organizar conteúdos estudados, registrar resumos e
+anotações, importar resultados do Test Quest e acompanhar erros, progresso e
+consolidação por assunto.
 
-## Não substitua o protótipo
+## Organização recomendada
 
-Mantenha o `study-stack-wireframe-07` arquivado como referência visual e crie
-uma pasta nova para este projeto:
+Mantenha o protótipo arquivado e use esta pasta como projeto definitivo:
 
 ```text
 Study Stack/
@@ -16,29 +17,39 @@ Study Stack/
     └── study-stack/
 ```
 
-O protótipo contém simulações e dados fictícios. Esta pasta começa limpa e
-implementa somente a fundação necessária para a v0.1-A.
+O protótipo contém simulações e dados fictícios. Esta pasta implementa a
+aplicação real de forma incremental.
 
-## O que já funciona
+## Estado atual: Fundação 02
+
+Já funciona:
 
 - AppShell responsivo;
 - sidebar recolhível no desktop;
 - drawer sobreposto no mobile;
 - rotas internas por hash;
-- leitura inicial do contexto do Concept Compass;
-- contexto fictício apenas em ambiente local;
-- estado de vínculo ausente;
 - tema claro, escuro ou do sistema;
-- preferências locais de navegação;
-- Configurações básicas;
-- páginas provisórias das seções;
+- schema de armazenamento `1.0.0`;
+- estado raiz validado antes de cada gravação;
+- coleções normalizadas e indexadas por ID;
+- entidade `Subject` persistente;
+- contrato Concept Compass `1.0.0`;
+- contexto por parâmetros ou envelope JSON;
+- sincronização de nomes sem apagar dados internos;
+- registro da primeira conexão no histórico;
+- preferências dentro da coleção global `settings`;
+- migração da antiga chave isolada de preferências;
+- estrutura inicial para futuras migrações;
 - testes unitários com o test runner nativo do Node.js.
+
+Ainda não foram implementados registros reais, progresso, importações do Test
+Quest, backup ou restauração.
 
 ## Requisitos
 
 - Node.js 20 ou superior.
 
-Nenhuma dependência externa é necessária nesta fundação.
+Nenhuma dependência externa é necessária.
 
 ## Executar
 
@@ -52,8 +63,8 @@ Abra:
 http://127.0.0.1:4173/
 ```
 
-Em `localhost` ou `127.0.0.1`, a aplicação usa um assunto controlado de
-desenvolvimento quando nenhum contexto é informado.
+Em `localhost` ou `127.0.0.1`, a aplicação usa um contexto controlado de
+desenvolvimento quando nenhum contrato é informado.
 
 ### Testar vínculo ausente
 
@@ -61,11 +72,28 @@ desenvolvimento quando nenhum contexto é informado.
 http://127.0.0.1:4173/?noContext=1
 ```
 
+### Exigir contrato mesmo no ambiente local
+
+```text
+http://127.0.0.1:4173/?strictContext=1
+```
+
 ### Testar contexto explícito
 
 ```text
-http://127.0.0.1:4173/?subjectId=subject-ecology-food-webs&subjectName=Cadeias%20e%20Teias%20Alimentares&themeName=Ecologia&subjectArea=Biologia#/overview
+http://127.0.0.1:4173/?contractVersion=1.0.0&sentAt=2026-08-02T21%3A00%3A00.000Z&sourceApp=concept_compass&matterId=matter-biology&matterName=Biologia&themeId=theme-ecology&themeName=Ecologia&subjectId=subject-ecology-food-webs&subjectName=Cadeias%20e%20Teias%20Alimentares&sourceArchived=false#/overview
 ```
+
+## Armazenamento
+
+Chave principal:
+
+```text
+study-stack:v1:state
+```
+
+Acesso ao navegador ocorre somente por adaptadores e repositórios. Regras de
+domínio não dependem diretamente do `localStorage`.
 
 ## Verificações
 
@@ -78,29 +106,15 @@ O comando executa:
 1. verificação sintática dos arquivos JavaScript;
 2. testes unitários.
 
-## Git recomendado
-
-Execute dentro da pasta `study-stack`:
-
-```bash
-git init
-git branch -M main
-git add .
-git commit -m "feat: create initial Study Stack application foundation"
-git checkout -b dev
-```
-
-A partir daí:
+## Git
 
 - `main`: estados aprovados ou publicados;
 - `dev`: desenvolvimento da v0.1;
-- branches curtas opcionais para funcionalidades e correções isoladas.
+- branches curtas opcionais para funcionalidades isoladas.
 
-## Estado da implementação
+Esta entrega deve ser adicionada e testada na branch `dev`.
 
-Esta entrega corresponde a:
+## Documentação técnica
 
-> Fundação 01: estrutura inicial, AppShell, rotas, preferências e contexto.
-
-Resumos, Anotações, progresso, armazenamento de domínio e integrações reais
-ainda não foram implementados.
+Consulte [`docs/foundation-02.md`](docs/foundation-02.md) para o recorte técnico
+desta entrega.

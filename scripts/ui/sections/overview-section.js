@@ -3,10 +3,32 @@ import {
   createElement,
 } from "../../utils/dom.js";
 
+function formatDateTime(value) {
+  if (!value) {
+    return "Ainda não registrado";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function appendStatusRow(document, list, label, value) {
+  const row = createElement(document, "li");
+  row.append(
+    createElement(document, "span", { text: label }),
+    createElement(document, "strong", { text: String(value) }),
+  );
+  list.append(row);
+}
+
 export function renderOverviewSection({
   document,
   container,
   context,
+  subject,
+  storageInfo,
   navigate,
 }) {
   clearElement(container);
@@ -22,14 +44,14 @@ export function renderOverviewSection({
   headerCopy.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Fundação técnica",
+      text: "Fundação 02",
     }),
     createElement(document, "h2", { text: "Visão Geral" }),
     createElement(document, "p", {
       className: "section-description",
       text:
-        "O AppShell, as rotas e o vínculo do assunto já estão funcionando. " +
-        "Os dados de estudo serão conectados nas próximas etapas da v0.1-A.",
+        "O contexto do Concept Compass agora é validado, convertido em " +
+        "Subject e persistido em um estado central versionado.",
     }),
   );
   header.append(headerCopy);
@@ -38,53 +60,71 @@ export function renderOverviewSection({
     className: "foundation-grid",
   });
 
-  const mainPanel = createElement(document, "article", {
+  const subjectPanel = createElement(document, "article", {
     className: "panel foundation-panel",
   });
-  mainPanel.append(
+  subjectPanel.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Contexto recebido",
+      text: "Subject persistido",
     }),
-    createElement(document, "h3", { text: context.subjectName }),
+    createElement(document, "h3", { text: subject.subjectName }),
     createElement(document, "p", {
-      text: `${context.subjectArea} › ${context.themeName}`,
+      text: `${subject.matterName} › ${subject.themeName}`,
     }),
   );
 
-  const list = createElement(document, "ul", {
-    className: "foundation-list",
+  const subjectStatus = createElement(document, "ul", {
+    className: "status-list",
   });
+  appendStatusRow(document, subjectStatus, "ID do assunto", subject.id);
+  appendStatusRow(document, subjectStatus, "ID do tema", subject.themeId);
+  appendStatusRow(document, subjectStatus, "Contrato", subject.sourceContractVersion);
+  appendStatusRow(document, subjectStatus, "Origem", subject.sourceApp);
+  appendStatusRow(
+    document,
+    subjectStatus,
+    "Primeira abertura",
+    formatDateTime(subject.createdAt),
+  );
+  subjectPanel.append(subjectStatus);
 
-  [
-    "Contexto normalizado por subjectId.",
-    "Navegação por hash sem trocar o assunto atual.",
-    "Sidebar recolhível no desktop e drawer sobreposto no mobile.",
-    "Tema e preferências armazenados separadamente do domínio.",
-    "Estado de vínculo ausente disponível para teste.",
-  ].forEach((text) => {
-    list.append(createElement(document, "li", { text }));
-  });
-
-  mainPanel.append(list);
-
-  const statusPanel = createElement(document, "aside", {
+  const storagePanel = createElement(document, "aside", {
     className: "panel foundation-panel",
   });
-  statusPanel.append(
+  storagePanel.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Próximo marco",
+      text: "Armazenamento",
     }),
-    createElement(document, "h3", {
-      text: "Domínio e armazenamento inicial",
-    }),
+    createElement(document, "h3", { text: "Estado v1 inicializado" }),
     createElement(document, "p", {
       text:
-        "A próxima evolução criará o schema v1, os repositórios e a entidade " +
-        "Subject antes dos formulários reais.",
+        "As coleções estão vazias e prontas para receber registros reais " +
+        "sem misturar domínio, interface e localStorage.",
     }),
   );
+
+  const storageStatus = createElement(document, "ul", {
+    className: "status-list",
+  });
+  appendStatusRow(document, storageStatus, "Schema", storageInfo.schemaVersion);
+  appendStatusRow(document, storageStatus, "Integridade", storageInfo.integrityStatus);
+  appendStatusRow(document, storageStatus, "Assuntos", storageInfo.subjectCount);
+  appendStatusRow(document, storageStatus, "Eventos", storageInfo.historyCount);
+  appendStatusRow(
+    document,
+    storageStatus,
+    "Última gravação",
+    formatDateTime(storageInfo.updatedAt),
+  );
+  storagePanel.append(storageStatus);
+
+  const key = createElement(document, "div", {
+    className: "code-block",
+    text: storageInfo.storageKey,
+  });
+  storagePanel.append(key);
 
   const actionRow = createElement(document, "div", {
     className: "action-row",
@@ -96,9 +136,50 @@ export function renderOverviewSection({
   });
   settingsButton.addEventListener("click", () => navigate("settings"));
   actionRow.append(settingsButton);
-  statusPanel.append(actionRow);
+  storagePanel.append(actionRow);
 
-  grid.append(mainPanel, statusPanel);
+  const checklistPanel = createElement(document, "article", {
+    className: "panel foundation-panel foundation-wide",
+  });
+  checklistPanel.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Marco concluído",
+    }),
+    createElement(document, "h3", {
+      text: "Schema, repositório e contexto real",
+    }),
+  );
+  const list = createElement(document, "ul", {
+    className: "foundation-list",
+  });
+  [
+    "Estado raiz versionado e validado antes de cada gravação.",
+    "Coleções normalizadas e indexadas por identificadores permanentes.",
+    "Subject criado uma única vez e sincronizado sem apagar dados internos.",
+    "Preferências incorporadas à coleção global de configurações.",
+    "Contrato Concept Compass 1.0.0 validado antes da persistência.",
+    "Estrutura de migração preparada para versões futuras.",
+  ].forEach((text) => {
+    list.append(createElement(document, "li", { text }));
+  });
+  checklistPanel.append(list);
+
+  const sourcePanel = createElement(document, "article", {
+    className: "panel foundation-panel foundation-wide",
+  });
+  sourcePanel.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Contexto desta abertura",
+    }),
+    createElement(document, "h3", { text: context.source }),
+    createElement(document, "p", {
+      text: `Recebido em ${formatDateTime(context.sentAt)} e vinculado pelo ID ${context.subjectId}.`,
+    }),
+  );
+
+  grid.append(subjectPanel, storagePanel, checklistPanel, sourcePanel);
   inner.append(header, grid);
   container.append(inner);
 }

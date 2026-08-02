@@ -252,3 +252,7 @@ body.drawer-open {
   gap: 10px;
   pointer-events: none;
 }
+
+.foundation-wide {
+  grid-column: 1 / -1;
+}
