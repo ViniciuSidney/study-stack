@@ -45,9 +45,12 @@ export function createDefaultIntegrationState({ now }) {
       lastIssue: null,
     },
     testQuest: {
-      status: "not_configured",
-      supportedContractVersions: [],
+      status: "idle",
+      supportedContractVersions: ["1.0.0"],
+      lastContractVersion: null,
+      lastSessionId: null,
       lastReceivedAt: null,
+      lastIssue: null,
     },
     flashcore: {
       status: "future",

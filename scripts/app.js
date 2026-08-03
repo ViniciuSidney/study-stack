@@ -1,6 +1,8 @@
 import { APP_CONFIG } from "./config/app-config.js";
 import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js";
+import { TestQuestAdapter } from "./integrations/testquest-adapter.js";
 import { DraftService } from "./services/draft-service.js";
+import { ExerciseService } from "./services/exercise-service.js";
 import { NoteService } from "./services/note-service.js";
 import { OverviewService } from "./services/overview-service.js";
 import { ProgressService } from "./services/progress-service.js";
@@ -14,14 +16,17 @@ import { StateRepository } from "./storage/state-repository.js";
 import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
+import { openExerciseSessionModal } from "./ui/modals/exercise-session-modal.js";
 import { openNoteEditorModal } from "./ui/modals/note-editor-modal.js";
 import { openOverviewEditorModal } from "./ui/modals/overview-editor-modal.js";
 import { openQuickDetailModal } from "./ui/modals/quick-detail-modal.js";
 import { openRecordModal } from "./ui/modals/record-modal.js";
 import { openSummaryEditorModal } from "./ui/modals/summary-editor-modal.js";
+import { openTestQuestImportModal } from "./ui/modals/testquest-import-modal.js";
 import { Router } from "./ui/router.js";
 import { renderArchivedSection } from "./ui/sections/archived-section.js";
 import { renderHistorySection } from "./ui/sections/history-section.js";
+import { renderExercisesSection } from "./ui/sections/exercises-section.js";
 import { renderOverviewSection } from "./ui/sections/overview-section.js";
 import { renderPlaceholderSection } from "./ui/sections/placeholder-section.js";
 import { renderRecordsSection } from "./ui/sections/records-section.js";
@@ -46,6 +51,8 @@ export class StudyStackApp {
     this.recordService = null;
     this.summaryService = null;
     this.draftService = null;
+    this.exerciseService = null;
+    this.initialTestQuestNotice = null;
     this.clock = () => new Date().toISOString();
   }
 
@@ -108,6 +115,11 @@ export class StudyStackApp {
       repository: this.repository,
       clock: this.clock,
     });
+    this.exerciseService = new ExerciseService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
     this.overviewService = new OverviewService({
       repository: this.repository,
       clock: this.clock,
@@ -120,6 +132,7 @@ export class StudyStackApp {
     });
 
     if (this.subject) {
+      this.consumeInitialTestQuestPayload();
       this.progressService.ensureCurrent(this.subject.id);
       this.subject = this.repository.getEntity("subjects", this.subject.id);
     }
@@ -145,6 +158,13 @@ export class StudyStackApp {
     );
     this.router.onChange((sectionId) => this.renderSection(sectionId));
     this.router.start();
+
+    if (this.initialTestQuestNotice) {
+      this.shell.showToast(
+        this.initialTestQuestNotice.message,
+        this.initialTestQuestNotice.type,
+      );
+    }
   }
 
   updatePreferences(partial) {
@@ -237,6 +257,17 @@ export class StudyStackApp {
     } else if (sectionId === "summaries" || sectionId === "notes") {
       const type = sectionId === "summaries" ? "summary" : "note";
       this.renderRecordTypeSection(container, type);
+    } else if (sectionId === "exercises") {
+      renderExercisesSection({
+        document: this.document,
+        container,
+        views: this.exerciseService.listViewsBySubject(this.subject.id),
+        aggregate: this.exerciseService.getAggregate(this.subject.id),
+        pendingImports: this.exerciseService.listPending(),
+        onImport: () => this.openTestQuestImport(),
+        onOpen: (view) => this.openExerciseSession(view),
+        onArchive: (record) => this.confirmArchiveRecord(record),
+      });
     } else if (sectionId === "archived") {
       renderArchivedSection({
         document: this.document,
@@ -290,6 +321,99 @@ export class StudyStackApp {
       onToggleStudied: (record) => this.toggleSummaryStudied(record),
       onArchive: (record) => this.confirmArchiveRecord(record),
     });
+  }
+
+  consumeInitialTestQuestPayload() {
+    const available = TestQuestAdapter.consumeAvailable({
+      location: this.window.location,
+      storage: this.window.localStorage,
+    });
+
+    if (!available.found) {
+      return;
+    }
+
+    if (!available.valid) {
+      this.initialTestQuestNotice = {
+        message: "O resultado recebido do Test Quest contém JSON inválido.",
+        type: "warning",
+      };
+      return;
+    }
+
+    try {
+      const result = this.exerciseService.importPayload(available.payload, {
+        expectedSubjectId: this.subject.id,
+      });
+      const successful = ["imported", "duplicate"].includes(result.status);
+
+      if (successful && available.source === "localStorage-handoff") {
+        TestQuestAdapter.clearHandoff(this.window.localStorage);
+      }
+
+      if (successful && available.source?.startsWith("query:")) {
+        const url = new URL(this.window.location.href);
+        url.searchParams.delete("testQuestResult");
+        url.searchParams.delete("testQuestPayload");
+        this.window.history.replaceState({}, "", url);
+      }
+
+      this.initialTestQuestNotice = {
+        message: result.message,
+        type: successful ? "success" : "warning",
+      };
+    } catch (error) {
+      this.initialTestQuestNotice = {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível importar o resultado do Test Quest.",
+        type: "warning",
+      };
+    }
+  }
+
+  openTestQuestImport() {
+    openTestQuestImportModal({
+      document: this.document,
+      subject: this.subject,
+      allowDevelopmentExample: ["localhost", "127.0.0.1"].includes(
+        this.window.location.hostname,
+      ),
+      onSubmit: (payload) => {
+        const result = this.exerciseService.importPayload(payload, {
+          expectedSubjectId: this.subject.id,
+        });
+
+        if (result.status === "imported") {
+          this.afterRecordMutation(result.message);
+        } else {
+          this.updateShellState();
+          this.shell.showToast(result.message, "warning");
+          this.renderSection("exercises");
+        }
+
+        return result;
+      },
+      onClose: () => this.shell.syncToastLayer(),
+    });
+  }
+
+  openExerciseSession(view) {
+    try {
+      const current = this.exerciseService.getView(view.session.id);
+      openExerciseSessionModal({
+        document: this.document,
+        view: current,
+        onSaveNotes: (value) => {
+          this.exerciseService.saveSessionNotes(current.session.id, value);
+          this.afterRecordMutation("Observação da lista atualizada.");
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível abrir a lista importada.");
+    }
   }
 
   openOverviewEditor() {

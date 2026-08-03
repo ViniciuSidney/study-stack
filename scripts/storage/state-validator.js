@@ -1,4 +1,8 @@
 import { validateNote } from "../domain/note.js";
+import {
+  validateImportedQuestion,
+  validateImportedSession,
+} from "../domain/imported-session.js";
 import { validateProgressSnapshot } from "../domain/progress.js";
 import { validateRecord } from "../domain/record.js";
 import { validateSummary } from "../domain/summary.js";
@@ -96,6 +100,8 @@ export function validateState(state, expectedSchemaVersion) {
     const records = state.collections.records ?? {};
     const summaries = state.collections.summaries ?? {};
     const notes = state.collections.notes ?? {};
+    const importedSessions = state.collections.importedSessions ?? {};
+    const importedQuestions = state.collections.importedQuestions ?? {};
     const progressSnapshots = state.collections.progressSnapshots ?? {};
 
     for (const [id, record] of Object.entries(records)) {
@@ -115,6 +121,13 @@ export function validateState(state, expectedSchemaVersion) {
 
       if (record.type === "note" && !Object.hasOwn(notes, id)) {
         errors.push(`records.${id} não possui Note correspondente.`);
+      }
+
+      if (
+        record.type === "imported_session" &&
+        !Object.values(importedSessions).some((session) => session.recordId === id)
+      ) {
+        errors.push(`records.${id} não possui ImportedSession correspondente.`);
       }
     }
 
@@ -160,6 +173,73 @@ export function validateState(state, expectedSchemaVersion) {
           errors.push(
             `notes.${id} vincula Record de outro assunto: ${linkedRecordId}.`,
           );
+        }
+      }
+    }
+
+    const sourceSessionKeys = new Set();
+    for (const [id, session] of Object.entries(importedSessions)) {
+      const validation = validateImportedSession(session);
+
+      for (const error of validation.errors) {
+        errors.push(`importedSessions.${id}: ${error}`);
+      }
+
+      const record = records[session.recordId];
+      if (!record) {
+        errors.push(`importedSessions.${id} referencia Record inexistente.`);
+      } else if (record.type !== "imported_session") {
+        errors.push(
+          `importedSessions.${id} referencia Record de tipo incompatível.`,
+        );
+      } else if (record.subjectId !== session.subjectId) {
+        errors.push(`importedSessions.${id} diverge do assunto do Record.`);
+      }
+
+      if (!Object.hasOwn(subjects, session.subjectId)) {
+        errors.push(`importedSessions.${id} referencia Subject inexistente.`);
+      }
+
+      const sourceKey = `${session.subjectId}:${session.sourceSessionId}`;
+      if (sourceSessionKeys.has(sourceKey)) {
+        errors.push(
+          `Existe mais de uma ImportedSession para a origem ${sourceKey}.`,
+        );
+      }
+      sourceSessionKeys.add(sourceKey);
+
+      for (const questionId of session.questionIds ?? []) {
+        const question = importedQuestions[questionId];
+        if (!question) {
+          errors.push(
+            `importedSessions.${id} referencia questão inexistente: ${questionId}.`,
+          );
+        } else if (question.sessionId !== id) {
+          errors.push(
+            `importedSessions.${id} referencia questão de outra sessão: ${questionId}.`,
+          );
+        }
+      }
+    }
+
+    for (const [id, question] of Object.entries(importedQuestions)) {
+      const validation = validateImportedQuestion(question);
+
+      for (const error of validation.errors) {
+        errors.push(`importedQuestions.${id}: ${error}`);
+      }
+
+      const session = importedSessions[question.sessionId];
+      if (!session) {
+        errors.push(`importedQuestions.${id} referencia sessão inexistente.`);
+      } else {
+        if (!session.questionIds.includes(id)) {
+          errors.push(
+            `importedQuestions.${id} não consta na ordem da sessão correspondente.`,
+          );
+        }
+        if (session.subjectId !== question.subjectId) {
+          errors.push(`importedQuestions.${id} diverge do assunto da sessão.`);
         }
       }
     }

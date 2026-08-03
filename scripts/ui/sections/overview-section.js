@@ -240,7 +240,7 @@ export function renderOverviewSection({
   const header = createElement(document, "header", { className: "section-header" });
   const headerCopy = createElement(document, "div");
   headerCopy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Fundação 06" }),
+    createElement(document, "p", { className: "eyebrow", text: "Fundação 07" }),
     createElement(document, "h2", { text: "Visão Geral" }),
     createElement(document, "p", {
       className: "section-description",

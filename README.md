@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 06
+## Estado atual: Fundação 07
 
 Já funciona:
 
@@ -48,10 +48,20 @@ Já funciona:
 - `ProgressSnapshot` persistido com fingerprint;
 - categorias Base, Prática, Análise de erros, Revisão e Consolidação;
 - botão compacto de progresso funcional no cabeçalho;
+- contrato Test Quest `1.0.0`;
+- importação manual por arquivo ou JSON colado;
+- recebimento por parâmetros de URL ou handoff em `localStorage`;
+- entidades `ImportedSession` e `ImportedQuestion`;
+- snapshot original imutável separado das observações pessoais;
+- idempotência e preservação de reimportações divergentes;
+- seção Exercícios com métricas, busca, filtros e cards;
+- modal de sessão com respostas, correções e filtros por resultado;
+- listas com ao menos 15 respostas alimentam a categoria Prática;
+- questões incorretas preparadas para os Registros de Erro;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementadas as telas e integrações reais de Exercícios,
-Registros de Erro, backup ou restauração de arquivo.
+Ainda não foram implementados o ciclo completo dos Registros de Erro, backup
+ou restauração de arquivo.
 
 ## Requisitos
 
@@ -132,3 +142,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 - [`docs/foundation-04.md`](docs/foundation-04.md)
 - [`docs/foundation-05.md`](docs/foundation-05.md)
 - [`docs/foundation-06.md`](docs/foundation-06.md)
+- [`docs/foundation-07.md`](docs/foundation-07.md)

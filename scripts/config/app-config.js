@@ -2,7 +2,7 @@ import { STORAGE_CONFIG } from "./storage-config.js";
 
 export const APP_CONFIG = Object.freeze({
   appName: "Study Stack",
-  appVersion: "0.1.0-dev.6",
+  appVersion: "0.1.0-dev.7",
   storageNamespace: "study-stack",
   storage: STORAGE_CONFIG,
   defaultSection: "overview",
@@ -12,6 +12,8 @@ export const APP_CONFIG = Object.freeze({
     conceptCompassFallbackUrl:
       "https://viniciusidney.github.io/concept-compass/#/",
     conceptCompassContractVersions: Object.freeze(["1.0.0"]),
+    testQuestContractVersions: Object.freeze(["1.0.0"]),
+    testQuestHandoffKey: "study-stack:handoff:test-quest:v1",
     allowedReturnOrigins: Object.freeze([
       "https://viniciusidney.github.io",
       "http://127.0.0.1:4173",
