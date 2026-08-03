@@ -1,8 +1,10 @@
 import { APP_CONFIG } from "./config/app-config.js";
 import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js";
+import { DraftService } from "./services/draft-service.js";
 import { PreferencesService } from "./services/preferences-service.js";
 import { RecordService } from "./services/record-service.js";
 import { SubjectService } from "./services/subject-service.js";
+import { SummaryService } from "./services/summary-service.js";
 import { LocalStorageAdapter } from "./storage/local-storage-adapter.js";
 import { MigrationRunner } from "./storage/migrations/migration-runner.js";
 import { StateRepository } from "./storage/state-repository.js";
@@ -10,6 +12,7 @@ import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
 import { openRecordModal } from "./ui/modals/record-modal.js";
+import { openSummaryEditorModal } from "./ui/modals/summary-editor-modal.js";
 import { Router } from "./ui/router.js";
 import { renderArchivedSection } from "./ui/sections/archived-section.js";
 import { renderHistorySection } from "./ui/sections/history-section.js";
@@ -32,6 +35,8 @@ export class StudyStackApp {
     this.preferencesService = null;
     this.subjectService = null;
     this.recordService = null;
+    this.summaryService = null;
+    this.draftService = null;
     this.clock = () => new Date().toISOString();
   }
 
@@ -79,6 +84,15 @@ export class StudyStackApp {
       repository: this.repository,
       clock: this.clock,
       appVersion: APP_CONFIG.appVersion,
+    });
+    this.summaryService = new SummaryService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
+    this.draftService = new DraftService({
+      repository: this.repository,
+      clock: this.clock,
     });
 
     this.shell = new AppShell({
@@ -212,15 +226,28 @@ export class StudyStackApp {
   }
 
   renderRecordTypeSection(container, type) {
+    const records = this.recordService.listBySubject(this.subject.id, { type });
+    const detailsById =
+      type === "summary"
+        ? new Map(
+            this.summaryService
+              .listViewsBySubject(this.subject.id, records)
+              .map((view) => [view.record.id, view]),
+          )
+        : new Map();
+
     renderRecordsSection({
       document: this.document,
       container,
       type,
-      records: this.recordService.listBySubject(this.subject.id, { type }),
+      records,
+      detailsById,
       onCreate: () => this.openCreateRecord(type),
+      onOpen: (record) => this.openSummaryEditor(record),
       onEdit: (record) => this.openEditRecord(record),
       onChangeStatus: (record, status) => this.changeRecordStatus(record, status),
       onToggleImportant: (record) => this.toggleRecordImportant(record),
+      onToggleStudied: (record) => this.toggleSummaryStudied(record),
       onArchive: (record) => this.confirmArchiveRecord(record),
     });
   }
@@ -240,17 +267,26 @@ export class StudyStackApp {
       defaultType,
       defaultStudyDate: this.clock().slice(0, 10),
       onSubmit: (values) => {
-        this.recordService.create({
+        const created = this.recordService.create({
           ...values,
           subjectId: this.subject.id,
         });
         this.afterRecordMutation("Registro criado e salvo localmente.");
+
+        if (created.type === "summary") {
+          this.window.setTimeout(() => this.openSummaryEditor(created), 0);
+        }
       },
       onClose: () => this.shell.syncToastLayer(),
     });
   }
 
   openEditRecord(record) {
+    if (record.type === "summary") {
+      this.openSummaryEditor(record);
+      return;
+    }
+
     openRecordModal({
       document: this.document,
       record,
@@ -272,6 +308,67 @@ export class StudyStackApp {
       },
       onClose: () => this.shell.syncToastLayer(),
     });
+  }
+
+
+  openSummaryEditor(record) {
+    try {
+      const view = this.summaryService.getView(record.id);
+      const storedDraft = this.draftService.get("summary", record.id);
+      const recoveredDraft =
+        storedDraft &&
+        Date.parse(storedDraft.updatedAt) >= Date.parse(view.record.updatedAt)
+          ? storedDraft
+          : null;
+      const settings = this.repository.getEntity("settings", "global");
+
+      openSummaryEditorModal({
+        document: this.document,
+        view,
+        recoveredDraft,
+        autosaveDelayMs: settings?.autosaveDelayMs ?? 900,
+        onAutosave: ({ modalInstanceId, originalState, workingState }) =>
+          this.draftService.save({
+            subjectId: view.record.subjectId,
+            recordId: view.record.id,
+            recordType: "summary",
+            modalInstanceId,
+            originalState,
+            workingState,
+          }),
+        onDiscardDraft: () => this.draftService.remove("summary", view.record.id),
+        onSubmit: (workingState) => {
+          this.summaryService.save(view.record.id, workingState);
+          this.afterRecordMutation("Resumo salvo com sucesso.");
+        },
+        onClose: ({ draftPreserved, discarded, finalSaved }) => {
+          this.shell.syncToastLayer();
+
+          if (draftPreserved) {
+            this.shell.showToast(
+              "Alterações preservadas para continuar depois.",
+            );
+          } else if (discarded && !finalSaved) {
+            this.shell.showToast("Alterações do editor descartadas.");
+          }
+        },
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível abrir o editor de Resumo.");
+    }
+  }
+
+  toggleSummaryStudied(record) {
+    try {
+      const view = this.summaryService.toggleStudied(record.id);
+      this.afterRecordMutation(
+        view.summary.isStudied
+          ? "Resumo marcado como estudado."
+          : "Marcação de estudo removida.",
+      );
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível atualizar a marca de estudo.");
+    }
   }
 
   changeRecordStatus(record, status) {
@@ -311,6 +408,9 @@ export class StudyStackApp {
       onConfirm: () => {
         try {
           this.recordService.archive(record.id, "Arquivamento manual");
+          if (record.type === "summary") {
+            this.draftService.remove("summary", record.id);
+          }
           this.afterRecordMutation("Registro arquivado.");
         } catch (error) {
           this.handleFailure(error, "Não foi possível arquivar o registro.");

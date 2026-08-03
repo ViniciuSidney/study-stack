@@ -49,12 +49,12 @@ export function renderOverviewSection({
   const header = createElement(document, "header", { className: "section-header" });
   const headerCopy = createElement(document, "div");
   headerCopy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Fundação 03" }),
+    createElement(document, "p", { className: "eyebrow", text: "Fundação 04" }),
     createElement(document, "h2", { text: "Visão Geral" }),
     createElement(document, "p", {
       className: "section-description",
       text:
-        "O Subject agora possui registros reais, persistentes e rastreáveis por histórico. Resumos e Anotações já podem começar pelo núcleo comum.",
+        "Resumos agora possuem editor real, conteúdo formatado, conclusão validada, marca de estudo e recuperação de rascunhos.",
     }),
   );
   const createButton = createElement(document, "button", {
@@ -147,16 +147,16 @@ export function renderOverviewSection({
   });
   milestonePanel.append(
     createElement(document, "p", { className: "eyebrow", text: "Marco atual" }),
-    createElement(document, "h3", { text: "Record e ciclo básico de vida" }),
+    createElement(document, "h3", { text: "Editor real de Resumos" }),
   );
   const list = createElement(document, "ul", { className: "foundation-list" });
   [
-    "Criação manual limitada a Resumos e Anotações.",
-    "Tipo e assunto imutáveis após a criação.",
-    "Edição de título, data, tags, importância e observações.",
-    "Transição real entre Rascunho e Em andamento.",
-    "Arquivamento confirmado e restauração sem confirmação.",
-    "Histórico funcional gerado em todas as operações.",
+    "Conteúdo principal formatado e sanitizado antes da persistência.",
+    "Objetivo, conceitos, exemplos, dúvidas e síntese opcionais.",
+    "Fonte e referências preservadas separadamente.",
+    "Conclusão exige título e conteúdo principal válidos.",
+    "Marcação Estudado independente do status do registro.",
+    "Autosave temporário e recuperação de alterações não confirmadas.",
   ].forEach((text) => list.append(createElement(document, "li", { text })));
   milestonePanel.append(list);
   grid.append(milestonePanel);

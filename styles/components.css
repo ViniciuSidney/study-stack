@@ -827,3 +827,309 @@
 .confirmation-card {
   max-height: none;
 }
+
+/* Foundation 04: Summary editor */
+.studied-badge {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--line));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.record-preview-empty {
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
+.summary-readiness {
+  margin-top: 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.summary-readiness.ready {
+  border-color: color-mix(in srgb, var(--success) 34%, var(--line));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.summary-readiness.pending {
+  border-color: color-mix(in srgb, var(--warning) 34%, var(--line));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.summary-editor-modal {
+  width: min(1180px, calc(100vw - 32px));
+  max-height: min(94vh, 980px);
+}
+
+.summary-editor-card {
+  max-height: min(94vh, 980px);
+}
+
+.summary-editor-header {
+  position: relative;
+  z-index: 2;
+  background: var(--surface);
+}
+
+.summary-editor-body {
+  display: grid;
+  gap: 18px;
+  background: var(--surface-soft);
+}
+
+.summary-editor-section {
+  padding: 20px;
+}
+
+.summary-editor-section-heading {
+  margin-bottom: 14px;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.summary-section-help {
+  margin: -6px 0 15px;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.summary-metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.summary-metadata-grid .field small {
+  color: var(--text-subtle);
+  font-size: 0.74rem;
+}
+
+.summary-editor-flags {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.summary-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.summary-switch-row input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+
+.rich-editor-field {
+  display: grid;
+  gap: 8px;
+}
+
+.rich-editor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.rich-editor-heading span {
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.rich-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--surface-soft);
+}
+
+.rich-editor-toolbar button,
+.rich-editor-toolbar select {
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.rich-editor-toolbar button:hover,
+.rich-editor-toolbar select:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--text);
+}
+
+.rich-editor-toolbar button:focus-visible,
+.rich-editor-toolbar select:focus-visible,
+.rich-editor-surface:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.rich-editor-surface {
+  min-height: 300px;
+  max-height: 540px;
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  line-height: 1.65;
+  overscroll-behavior: contain;
+}
+
+.rich-editor-surface:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.rich-editor-surface h2,
+.rich-editor-surface h3 {
+  margin: 1.15em 0 0.45em;
+}
+
+.rich-editor-surface p,
+.rich-editor-surface ul,
+.rich-editor-surface ol,
+.rich-editor-surface blockquote,
+.rich-editor-surface table {
+  margin-block: 0.75em;
+}
+
+.rich-editor-surface ul,
+.rich-editor-surface ol {
+  padding-left: 1.6em;
+}
+
+.rich-editor-surface blockquote {
+  padding: 10px 14px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-soft);
+}
+
+.rich-editor-surface table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rich-editor-surface th,
+.rich-editor-surface td {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-editor-surface th {
+  background: var(--surface-soft);
+}
+
+.rich-editor-field.compact .rich-editor-surface {
+  min-height: 170px;
+  max-height: 360px;
+}
+
+.summary-optional-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.summary-optional-group + .summary-optional-group {
+  margin-top: 10px;
+}
+
+.summary-optional-group > summary {
+  padding: 13px 15px;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.summary-optional-group[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.summary-optional-group .rich-editor-field {
+  padding: 15px;
+}
+
+.draft-recovery-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.draft-recovery-banner strong {
+  color: var(--accent);
+}
+
+.summary-editor-error {
+  margin: 0;
+}
+
+.summary-editor-footer {
+  position: relative;
+  z-index: 2;
+  justify-content: space-between;
+}
+
+.summary-autosave-status {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+}
+
+.summary-autosave-status.save-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.summary-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

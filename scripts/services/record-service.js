@@ -8,6 +8,7 @@ import {
   validateRecord,
 } from "../domain/record.js";
 import { createRichContent } from "../domain/rich-content.js";
+import { createEmptySummary } from "../domain/summary.js";
 import { createId } from "../utils/id.js";
 
 const TYPE_LABELS = Object.freeze({
@@ -28,23 +29,7 @@ function createSpecificEntity(record, now) {
   if (record.type === "summary") {
     return {
       collection: "summaries",
-      entity: {
-        id: record.id,
-        recordId: record.id,
-        mainContent: createRichContent("", now),
-        studyObjective: null,
-        keyConcepts: null,
-        examples: null,
-        remainingQuestions: null,
-        synthesis: null,
-        sourceType: null,
-        sourceDescription: null,
-        references: [],
-        isStudied: false,
-        studiedAt: null,
-        studyMarkHistory: [],
-        entityVersion: 1,
-      },
+      entity: createEmptySummary(record.id, now),
     };
   }
 

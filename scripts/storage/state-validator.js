@@ -1,4 +1,5 @@
 import { validateRecord } from "../domain/record.js";
+import { validateSummary } from "../domain/summary.js";
 import { COLLECTION_NAMES } from "../config/storage-config.js";
 
 function isPlainObject(value) {
@@ -91,6 +92,7 @@ export function validateState(state, expectedSchemaVersion) {
   if (isPlainObject(state.collections)) {
     const subjects = state.collections.subjects ?? {};
     const records = state.collections.records ?? {};
+    const summaries = state.collections.summaries ?? {};
 
     for (const [id, record] of Object.entries(records)) {
       const validation = validateRecord(record);
@@ -101,6 +103,26 @@ export function validateState(state, expectedSchemaVersion) {
 
       if (!Object.hasOwn(subjects, record.subjectId)) {
         errors.push(`records.${id} referencia Subject inexistente.`);
+      }
+
+      if (record.type === "summary" && !Object.hasOwn(summaries, id)) {
+        errors.push(`records.${id} não possui Summary correspondente.`);
+      }
+    }
+
+    for (const [id, summary] of Object.entries(summaries)) {
+      const validation = validateSummary(summary);
+
+      for (const error of validation.errors) {
+        errors.push(`summaries.${id}: ${error}`);
+      }
+
+      const record = records[id];
+
+      if (!record) {
+        errors.push(`summaries.${id} referencia Record inexistente.`);
+      } else if (record.type !== "summary") {
+        errors.push(`summaries.${id} referencia Record de tipo incompatível.`);
       }
     }
   }

@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 03
+## Estado atual: Fundação 04
 
 Já funciona:
 
@@ -32,19 +32,22 @@ Já funciona:
 - estado raiz validado antes de cada gravação;
 - entidade `Subject` persistente;
 - contrato Concept Compass `1.0.0`;
-- entidade base `Record`;
+- entidade base `Record` e ciclo de vida persistente;
 - criação real de Resumos e Anotações;
-- entidades específicas vazias vinculadas 1:1;
-- edição de título, data, tags, importância e observações;
-- transição entre Rascunho e Em andamento;
-- busca e filtro por status;
-- bloco de Importantes e grupos cronológicos;
-- arquivamento confirmado e restauração;
-- histórico funcional;
-- contadores reais na navegação;
+- busca, filtros, Importantes e agrupamentos cronológicos;
+- arquivamento, restauração, histórico e contadores reais;
+- editor completo de Resumos;
+- conteúdo rico sanitizado e pesquisável;
+- objetivo, conceitos, exemplos, dúvidas e síntese opcionais;
+- fonte, descrição e referências;
+- conclusão validada por título e conteúdo principal;
+- marca `Estudado` independente da conclusão;
+- reabertura de Resumos concluídos;
+- autosave temporário e recuperação de rascunho de edição;
+- descarte explícito de alterações temporárias;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementados os editores completos de conteúdo, progresso,
+Ainda não foram implementados o editor completo de Anotações, progresso,
 importações do Test Quest, backup ou restauração de arquivo.
 
 ## Requisitos
@@ -97,6 +100,9 @@ study-stack:v1:state
 Acesso ao navegador ocorre somente por adaptadores e repositórios. Regras de
 domínio não dependem diretamente do `localStorage`.
 
+Os rascunhos temporários do editor são armazenados na coleção
+`draftBuffers`, dentro do mesmo estado versionado.
+
 ## Verificações
 
 ```bash
@@ -120,3 +126,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 
 - [`docs/foundation-02.md`](docs/foundation-02.md)
 - [`docs/foundation-03.md`](docs/foundation-03.md)
+- [`docs/foundation-04.md`](docs/foundation-04.md)

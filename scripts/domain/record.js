@@ -58,11 +58,14 @@ function assertValidDate(value, fieldName) {
   }
 }
 
-function buildSearchPlainText(record) {
+export function buildRecordSearchPlainText(record, extraText = "") {
+  const extra = Array.isArray(extraText) ? extraText : [extraText];
+
   return [
     record.title,
     ...record.tags,
     getRichContentPlainText(record.personalNotes),
+    ...extra,
   ]
     .join(" ")
     .normalize("NFD")
@@ -127,7 +130,7 @@ export function createRecord(input, now) {
     searchPlainText: "",
   };
 
-  record.searchPlainText = buildSearchPlainText(record);
+  record.searchPlainText = buildRecordSearchPlainText(record);
   const validation = validateRecord(record);
 
   if (!validation.valid) {
@@ -175,7 +178,28 @@ export function updateRecord(record, changes, now) {
   }
 
   next.updatedAt = now;
-  next.searchPlainText = buildSearchPlainText(next);
+  next.searchPlainText = buildRecordSearchPlainText(next);
+
+  const validation = validateRecord(next);
+
+  if (!validation.valid) {
+    throw new TypeError(validation.errors.join(" "));
+  }
+
+  return next;
+}
+
+export function refreshRecordSearchIndex(record, extraText, now = null) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    throw new TypeError("Record existente é obrigatório.");
+  }
+
+  const next = structuredClone(record);
+  next.searchPlainText = buildRecordSearchPlainText(next, extraText);
+
+  if (now !== null) {
+    next.updatedAt = now;
+  }
 
   const validation = validateRecord(next);
 

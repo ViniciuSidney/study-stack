@@ -2,20 +2,22 @@ import { clearElement, createElement } from "../../utils/dom.js";
 
 const TYPE_CONFIG = Object.freeze({
   summary: {
-    sectionId: "summaries",
     eyebrow: "Conteúdo teórico",
     title: "Resumos",
     singular: "Resumo",
     icon: "▤",
+    description:
+      "Construa a base teórica com conteúdo formatado, campos opcionais, fontes e referências. A marca Estudado permanece separada da conclusão.",
     empty:
-      "Nenhum Resumo foi criado para este assunto. Comece pelo registro-base e desenvolva o conteúdo na próxima etapa.",
+      "Nenhum Resumo foi criado para este assunto. Crie o primeiro e desenvolva a teoria conforme o estudo avançar.",
   },
   note: {
-    sectionId: "notes",
     eyebrow: "Registro livre",
     title: "Anotações",
     singular: "Anotação",
     icon: "✎",
+    description:
+      "Os registros de Anotação já são persistentes. O editor específico será implementado na Fundação 05.",
     empty:
       "Nenhuma Anotação foi criada para este assunto. Registre uma ideia, observação ou detalhe de estudo.",
   },
@@ -56,12 +58,23 @@ function nextStatusAction(record) {
   return { status: "draft", label: "Voltar a rascunho" };
 }
 
+function createBadge(document, text, className = "") {
+  return createElement(document, "span", {
+    className: `record-badge${className ? ` ${className}` : ""}`,
+    text,
+  });
+}
+
 function createRecordCard({
   document,
+  type,
   record,
+  detail = null,
+  onOpen,
   onEdit,
   onChangeStatus,
   onToggleImportant,
+  onToggleStudied,
   onArchive,
 }) {
   const card = createElement(document, "article", {
@@ -96,32 +109,41 @@ function createRecordCard({
     className: "record-badges",
   });
   if (record.isImportant) {
-    badges.append(
-      createElement(document, "span", {
-        className: "record-badge important-badge",
-        text: "★ Importante",
-      }),
-    );
+    badges.append(createBadge(document, "★ Importante", "important-badge"));
+  }
+  if (type === "summary" && detail?.summary?.isStudied) {
+    badges.append(createBadge(document, "✓ Estudado", "studied-badge"));
   }
   badges.append(
-    createElement(document, "span", {
-      className: `record-badge status-${record.status}`,
-      text: STATUS_LABELS[record.status],
-    }),
+    createBadge(document, STATUS_LABELS[record.status], `status-${record.status}`),
   );
   header.append(titleGroup, badges);
+  card.append(header);
 
-  const notes = record.personalNotes?.plainText?.trim();
-  if (notes) {
+  const preview =
+    type === "summary"
+      ? detail?.summary?.mainContent?.plainText?.trim()
+      : record.personalNotes?.plainText?.trim();
+  card.append(
+    createElement(document, "p", {
+      className: `record-preview${preview ? "" : " record-preview-empty"}`,
+      text:
+        preview ||
+        (type === "summary"
+          ? "Conteúdo principal ainda não iniciado."
+          : "Nenhuma observação registrada."),
+    }),
+  );
+
+  if (type === "summary") {
     card.append(
-      header,
       createElement(document, "p", {
-        className: "record-preview",
-        text: notes,
+        className: `summary-readiness ${detail?.completionReady ? "ready" : "pending"}`,
+        text: detail?.completionReady
+          ? "Título e conteúdo válidos para conclusão."
+          : "Preencha título e conteúdo principal para concluir.",
       }),
     );
-  } else {
-    card.append(header);
   }
 
   if (record.tags.length) {
@@ -131,17 +153,40 @@ function createRecordCard({
   const actions = createElement(document, "div", {
     className: "record-actions",
   });
-  const editButton = createElement(document, "button", {
-    className: "button button-secondary button-small",
-    text: "Editar",
-    attributes: { type: "button" },
-  });
-  const statusAction = nextStatusAction(record);
-  const statusButton = createElement(document, "button", {
-    className: "button button-secondary button-small",
-    text: statusAction.label,
-    attributes: { type: "button" },
-  });
+
+  if (type === "summary") {
+    const openButton = createElement(document, "button", {
+      className: "button button-primary button-small",
+      text: "Abrir Resumo",
+      attributes: { type: "button" },
+    });
+    const studiedButton = createElement(document, "button", {
+      className: "button button-secondary button-small",
+      text: detail?.summary?.isStudied ? "Desmarcar estudo" : "Marcar estudado",
+      attributes: { type: "button" },
+    });
+    openButton.addEventListener("click", () => onOpen(record));
+    studiedButton.addEventListener("click", () => onToggleStudied(record));
+    actions.append(openButton, studiedButton);
+  } else {
+    const editButton = createElement(document, "button", {
+      className: "button button-secondary button-small",
+      text: "Editar",
+      attributes: { type: "button" },
+    });
+    const statusAction = nextStatusAction(record);
+    const statusButton = createElement(document, "button", {
+      className: "button button-secondary button-small",
+      text: statusAction.label,
+      attributes: { type: "button" },
+    });
+    editButton.addEventListener("click", () => onEdit(record));
+    statusButton.addEventListener("click", () =>
+      onChangeStatus(record, statusAction.status),
+    );
+    actions.append(editButton, statusButton);
+  }
+
   const importantButton = createElement(document, "button", {
     className: "button button-secondary button-small",
     text: record.isImportant ? "Desmarcar importante" : "Marcar importante",
@@ -153,14 +198,9 @@ function createRecordCard({
     attributes: { type: "button" },
   });
 
-  editButton.addEventListener("click", () => onEdit(record));
-  statusButton.addEventListener("click", () =>
-    onChangeStatus(record, statusAction.status),
-  );
   importantButton.addEventListener("click", () => onToggleImportant(record));
   archiveButton.addEventListener("click", () => onArchive(record));
-
-  actions.append(editButton, statusButton, importantButton, archiveButton);
+  actions.append(importantButton, archiveButton);
   card.append(actions);
   return card;
 }
@@ -188,8 +228,7 @@ function setupFilters({ searchInput, statusSelect, scope }) {
     const status = statusSelect.value;
 
     scope.querySelectorAll(".record-card").forEach((card) => {
-      const matchesSearch =
-        !search || card.dataset.recordSearch.includes(search);
+      const matchesSearch = !search || card.dataset.recordSearch.includes(search);
       const matchesStatus =
         status === "all" || card.dataset.recordStatus === status;
       card.hidden = !(matchesSearch && matchesStatus);
@@ -217,10 +256,13 @@ export function renderRecordsSection({
   container,
   type,
   records,
+  detailsById = new Map(),
   onCreate,
+  onOpen = () => {},
   onEdit,
   onChangeStatus,
   onToggleImportant,
+  onToggleStudied = () => {},
   onArchive,
 }) {
   clearElement(container);
@@ -233,8 +275,7 @@ export function renderRecordsSection({
     createElement(document, "h2", { text: config.title }),
     createElement(document, "p", {
       className: "section-description",
-      text:
-        "Os registros-base já são persistentes. O editor de conteúdo específico será conectado na próxima fundação.",
+      text: config.description,
     }),
   );
   const createButton = createElement(document, "button", {
@@ -255,7 +296,9 @@ export function renderRecordsSection({
         className: "placeholder-icon",
         text: config.icon,
       }),
-      createElement(document, "h3", { text: `Nenhum ${config.singular.toLocaleLowerCase("pt-BR")} ainda` }),
+      createElement(document, "h3", {
+        text: `Nenhum ${config.singular.toLocaleLowerCase("pt-BR")} ainda`,
+      }),
       createElement(document, "p", { text: config.empty }),
     );
     const actions = createElement(document, "div", { className: "action-row" });
@@ -303,6 +346,18 @@ export function renderRecordsSection({
 
   const scope = createElement(document, "div", { className: "records-scope" });
   const important = records.filter((record) => record.isImportant);
+  const cardOptions = (record) => ({
+    document,
+    type,
+    record,
+    detail: detailsById.get(record.id) ?? null,
+    onOpen,
+    onEdit,
+    onChangeStatus,
+    onToggleImportant,
+    onToggleStudied,
+    onArchive,
+  });
 
   if (important.length) {
     const importantBlock = createElement(document, "section", {
@@ -319,18 +374,7 @@ export function renderRecordsSection({
     importantHeading.append(importantCopy);
     importantBlock.append(importantHeading);
     const grid = createElement(document, "div", { className: "record-grid" });
-    important.forEach((record) => {
-      grid.append(
-        createRecordCard({
-          document,
-          record,
-          onEdit,
-          onChangeStatus,
-          onToggleImportant,
-          onArchive,
-        }),
-      );
-    });
+    important.forEach((record) => grid.append(createRecordCard(cardOptions(record))));
     importantBlock.append(grid);
     scope.append(importantBlock);
   }
@@ -352,18 +396,7 @@ export function renderRecordsSection({
     const grid = createElement(document, "div", {
       className: "record-grid date-record-grid",
     });
-    dateRecords.forEach((record) => {
-      grid.append(
-        createRecordCard({
-          document,
-          record,
-          onEdit,
-          onChangeStatus,
-          onToggleImportant,
-          onArchive,
-        }),
-      );
-    });
+    dateRecords.forEach((record) => grid.append(createRecordCard(cardOptions(record))));
     group.append(summary, grid);
     scope.append(group);
   });
