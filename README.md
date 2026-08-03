@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 07
+## Estado atual: Fundação 08
 
 Já funciona:
 
@@ -57,11 +57,20 @@ Já funciona:
 - seção Exercícios com métricas, busca, filtros e cards;
 - modal de sessão com respostas, correções e filtros por resultado;
 - listas com ao menos 15 respostas alimentam a categoria Prática;
-- questões incorretas preparadas para os Registros de Erro;
+- criação seletiva de Registros de Erro a partir das questões incorretas;
+- entidades `ErrorRecord`, `ErrorOccurrence` e `ErrorEvidence`;
+- análise por causa, regra correta e estratégia de prevenção;
+- autosave e recuperação de rascunhos das análises de erro;
+- categorias e vínculos com Resumos ou Anotações do mesmo assunto;
+- revisão reversível com contagem histórica;
+- reincidências que reiniciam a sequência sem apagar evidências antigas;
+- superação após duas respostas corretas distintas e consecutivas;
+- seção Erros com grupos Pendentes, Reincidentes, Revisados e Superados;
+- categorias Análise de erros e Revisão alimentadas por evidências reais;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementados o ciclo completo dos Registros de Erro, backup
-ou restauração de arquivo.
+Ainda não foram implementados backup e restauração de arquivo, diagnóstico
+completo ou a integração funcional com o Flashcore.
 
 ## Requisitos
 
@@ -143,3 +152,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 - [`docs/foundation-05.md`](docs/foundation-05.md)
 - [`docs/foundation-06.md`](docs/foundation-06.md)
 - [`docs/foundation-07.md`](docs/foundation-07.md)
+- [`docs/foundation-08.md`](docs/foundation-08.md)

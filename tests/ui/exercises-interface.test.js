@@ -32,13 +32,15 @@ test("seção oferece importação, métricas, busca e filtros", async () => {
   assert.match(section, /Com erros/);
 });
 
-test("modal detalhado separa respostas e prepara erros sem criá-los", async () => {
+test("modal detalhado separa respostas e cria erros somente após seleção", async () => {
   const modal = await readFile(fileURLToPath(modalUrl), "utf8");
 
   assert.match(modal, /Sua resposta/);
   assert.match(modal, /Resposta correta/);
   assert.match(modal, /Correção e explicação/);
-  assert.match(modal, /Fundação 08/);
+  assert.match(modal, /Selecionar para criar Registro de Erro/);
+  assert.match(modal, /Criar Registros de Erro/);
+  assert.match(modal, /onCreateErrors\(questionIds\)/);
   assert.doesNotMatch(modal, /createErrorRecord/);
 });
 

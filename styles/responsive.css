@@ -461,3 +461,78 @@
     min-height: 220px;
   }
 }
+
+/* Foundation 08: Error Records */
+@media (max-width: 1100px) {
+  .error-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .error-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .error-source-grid,
+  .error-metadata-grid,
+  .error-link-list {
+    grid-template-columns: 1fr;
+  }
+
+  .error-source-block:nth-child(3),
+  .error-important-toggle {
+    grid-column: auto;
+  }
+
+  .error-editor-state,
+  .error-evidence-context,
+  .error-editor-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .error-mini-event {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 560px) {
+  .error-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .error-card {
+    padding: 15px;
+  }
+
+  .error-group-heading {
+    align-items: flex-start;
+  }
+
+  .error-creation-panel > div:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  .error-creation-panel > div:last-child > strong,
+  .error-creation-panel > div:last-child > p {
+    grid-column: auto;
+  }
+
+  .error-editor-modal,
+  .error-editor-card,
+  .error-evidence-card {
+    max-height: calc(100dvh - 18px);
+  }
+
+  .error-editor-section {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .error-editor-footer-status {
+    width: 100%;
+  }
+}

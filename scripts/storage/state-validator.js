@@ -1,5 +1,10 @@
 import { validateNote } from "../domain/note.js";
 import {
+  validateErrorEvidence,
+  validateErrorOccurrence,
+  validateErrorRecord,
+} from "../domain/error-record.js";
+import {
   validateImportedQuestion,
   validateImportedSession,
 } from "../domain/imported-session.js";
@@ -102,6 +107,9 @@ export function validateState(state, expectedSchemaVersion) {
     const notes = state.collections.notes ?? {};
     const importedSessions = state.collections.importedSessions ?? {};
     const importedQuestions = state.collections.importedQuestions ?? {};
+    const errorRecords = state.collections.errorRecords ?? {};
+    const errorOccurrences = state.collections.errorOccurrences ?? {};
+    const errorEvidences = state.collections.errorEvidences ?? {};
     const progressSnapshots = state.collections.progressSnapshots ?? {};
 
     for (const [id, record] of Object.entries(records)) {
@@ -128,6 +136,13 @@ export function validateState(state, expectedSchemaVersion) {
         !Object.values(importedSessions).some((session) => session.recordId === id)
       ) {
         errors.push(`records.${id} não possui ImportedSession correspondente.`);
+      }
+
+      if (
+        record.type === "error_record" &&
+        !Object.values(errorRecords).some((errorRecord) => errorRecord.recordId === id)
+      ) {
+        errors.push(`records.${id} não possui ErrorRecord correspondente.`);
       }
     }
 
@@ -240,6 +255,135 @@ export function validateState(state, expectedSchemaVersion) {
         }
         if (session.subjectId !== question.subjectId) {
           errors.push(`importedQuestions.${id} diverge do assunto da sessão.`);
+        }
+      }
+    }
+
+    for (const [id, errorRecord] of Object.entries(errorRecords)) {
+      const validation = validateErrorRecord(errorRecord);
+
+      for (const error of validation.errors) {
+        errors.push(`errorRecords.${id}: ${error}`);
+      }
+
+      const record = records[errorRecord.recordId];
+      if (!record) {
+        errors.push(`errorRecords.${id} referencia Record inexistente.`);
+      } else if (record.type !== "error_record") {
+        errors.push(`errorRecords.${id} referencia Record de tipo incompatível.`);
+      } else if (record.subjectId !== errorRecord.subjectId) {
+        errors.push(`errorRecords.${id} diverge do assunto do Record.`);
+      }
+
+      if (!Object.hasOwn(subjects, errorRecord.subjectId)) {
+        errors.push(`errorRecords.${id} referencia Subject inexistente.`);
+      }
+
+      const primaryQuestion = importedQuestions[errorRecord.primaryQuestionId];
+      if (!primaryQuestion) {
+        errors.push(`errorRecords.${id} referencia questão principal inexistente.`);
+      } else if (primaryQuestion.subjectId !== errorRecord.subjectId) {
+        errors.push(`errorRecords.${id} diverge do assunto da questão principal.`);
+      }
+
+      for (const questionId of errorRecord.linkedQuestionIds ?? []) {
+        const question = importedQuestions[questionId];
+        if (!question) {
+          errors.push(`errorRecords.${id} referencia questão inexistente: ${questionId}.`);
+        } else {
+          if (question.subjectId !== errorRecord.subjectId) {
+            errors.push(`errorRecords.${id} vincula questão de outro assunto: ${questionId}.`);
+          }
+          if (!question.errorRecordIds?.includes(id)) {
+            errors.push(`errorRecords.${id} não consta na questão vinculada ${questionId}.`);
+          }
+        }
+      }
+
+      for (const linkedRecordId of errorRecord.linkedRecordIds ?? []) {
+        const linkedRecord = records[linkedRecordId];
+        if (!linkedRecord) {
+          errors.push(`errorRecords.${id} referencia registro inexistente: ${linkedRecordId}.`);
+        } else if (linkedRecord.subjectId !== errorRecord.subjectId) {
+          errors.push(`errorRecords.${id} vincula registro de outro assunto: ${linkedRecordId}.`);
+        } else if (!["summary", "note"].includes(linkedRecord.type)) {
+          errors.push(`errorRecords.${id} vincula tipo de registro incompatível: ${linkedRecordId}.`);
+        }
+      }
+
+      for (const occurrenceId of errorRecord.occurrenceIds ?? []) {
+        const occurrence = errorOccurrences[occurrenceId];
+        if (!occurrence) {
+          errors.push(`errorRecords.${id} referencia ocorrência inexistente: ${occurrenceId}.`);
+        } else if (occurrence.errorRecordId !== id) {
+          errors.push(`errorRecords.${id} referencia ocorrência de outro erro: ${occurrenceId}.`);
+        }
+      }
+
+      for (const evidenceId of errorRecord.evidenceIds ?? []) {
+        const evidence = errorEvidences[evidenceId];
+        if (!evidence) {
+          errors.push(`errorRecords.${id} referencia evidência inexistente: ${evidenceId}.`);
+        } else if (evidence.errorRecordId !== id) {
+          errors.push(`errorRecords.${id} referencia evidência de outro erro: ${evidenceId}.`);
+        }
+      }
+    }
+
+    for (const [id, occurrence] of Object.entries(errorOccurrences)) {
+      const validation = validateErrorOccurrence(occurrence);
+      for (const error of validation.errors) {
+        errors.push(`errorOccurrences.${id}: ${error}`);
+      }
+      const parentError = errorRecords[occurrence.errorRecordId];
+      if (!parentError) {
+        errors.push(`errorOccurrences.${id} referencia ErrorRecord inexistente.`);
+      } else if (!parentError.occurrenceIds?.includes(id)) {
+        errors.push(`errorOccurrences.${id} não consta no ErrorRecord correspondente.`);
+      }
+      const occurrenceQuestion = importedQuestions[occurrence.questionId];
+      if (!occurrenceQuestion) {
+        errors.push(`errorOccurrences.${id} referencia questão inexistente.`);
+      } else if (
+        parentError &&
+        occurrenceQuestion.subjectId !== parentError.subjectId
+      ) {
+        errors.push(`errorOccurrences.${id} referencia questão de outro assunto.`);
+      }
+    }
+
+    for (const [id, evidence] of Object.entries(errorEvidences)) {
+      const validation = validateErrorEvidence(evidence);
+      for (const error of validation.errors) {
+        errors.push(`errorEvidences.${id}: ${error}`);
+      }
+      const parentError = errorRecords[evidence.errorRecordId];
+      if (!parentError) {
+        errors.push(`errorEvidences.${id} referencia ErrorRecord inexistente.`);
+      } else if (!parentError.evidenceIds?.includes(id)) {
+        errors.push(`errorEvidences.${id} não consta no ErrorRecord correspondente.`);
+      }
+      const evidenceQuestion = importedQuestions[evidence.questionId];
+      if (!evidenceQuestion) {
+        errors.push(`errorEvidences.${id} referencia questão inexistente.`);
+      } else if (parentError && evidenceQuestion.subjectId !== parentError.subjectId) {
+        errors.push(`errorEvidences.${id} referencia questão de outro assunto.`);
+      }
+      const baseOccurrence = errorOccurrences[evidence.validAfterOccurrenceId];
+      if (!baseOccurrence) {
+        errors.push(`errorEvidences.${id} referencia ocorrência-base inexistente.`);
+      } else if (baseOccurrence.errorRecordId !== evidence.errorRecordId) {
+        errors.push(`errorEvidences.${id} referencia ocorrência-base de outro erro.`);
+      }
+    }
+
+    for (const [id, question] of Object.entries(importedQuestions)) {
+      for (const errorRecordId of question.errorRecordIds ?? []) {
+        const errorRecord = errorRecords[errorRecordId];
+        if (!errorRecord) {
+          errors.push(`importedQuestions.${id} referencia ErrorRecord inexistente: ${errorRecordId}.`);
+        } else if (!errorRecord.linkedQuestionIds.includes(id)) {
+          errors.push(`importedQuestions.${id} não consta no ErrorRecord ${errorRecordId}.`);
         }
       }
     }

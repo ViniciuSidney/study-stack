@@ -20,12 +20,13 @@ Arquivos principais:
 
 Documentos locais de implementação:
 
-- `foundation-02.md`: recorte técnico do schema, persistência e Subject.
-- `foundation-03.md`: Record, operações persistentes e primeiras listas reais.
-- `foundation-04.md`: editor real de Resumos, conclusão e recuperação de rascunhos.
+- [`foundation-02.md`](foundation-02.md) — schema, persistência e Subject.
+- [`foundation-03.md`](foundation-03.md) — Record e ciclo de vida persistente.
+- [`foundation-04.md`](foundation-04.md) — editor de Resumos.
+- [`foundation-05.md`](foundation-05.md) — editor de Anotações e Apenas um detalhe.
+- [`foundation-06.md`](foundation-06.md) — Visão Geral e progresso por evidências.
+- [`foundation-07.md`](foundation-07.md) — Exercícios importados do Test Quest.
+- [`foundation-08.md`](foundation-08.md) — ciclo completo dos Registros de Erro.
 
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.
-
-- `foundation-06.md`: Visão Geral funcional e progresso por evidências.
-- [`foundation-07.md`](foundation-07.md) — Exercícios importados do Test Quest.

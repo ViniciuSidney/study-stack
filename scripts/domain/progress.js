@@ -1,6 +1,6 @@
 import { getRichContentPlainText } from "./rich-content.js";
 
-export const PROGRESS_CALCULATION_VERSION = "1.0.0";
+export const PROGRESS_CALCULATION_VERSION = "1.1.0";
 
 export const PROGRESS_CATEGORY_DEFINITIONS = Object.freeze({
   base: Object.freeze({ label: "Base", cap: 2 }),
@@ -181,6 +181,10 @@ export function buildProgressInputFingerprint({
       reviewStatus: errorRecord.reviewStatus,
       masteryStatus: errorRecord.masteryStatus,
       recurrenceCount: errorRecord.recurrenceCount ?? 0,
+      reviewCount: errorRecord.reviewCount ?? 0,
+      currentCorrectStreak: errorRecord.currentCorrectStreak ?? 0,
+      lastOccurrenceAt: errorRecord.lastOccurrenceAt ?? null,
+      overcomeAt: errorRecord.overcomeAt ?? null,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
 

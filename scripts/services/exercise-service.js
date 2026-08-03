@@ -250,7 +250,14 @@ export class ExerciseService {
       session,
       questions,
       errorCandidateCount: questions.filter(
-        (question) => question.result === "incorrect",
+        (question) =>
+          question.result === "incorrect" &&
+          !(question.errorRecordIds ?? []).length,
+      ).length,
+      existingErrorCount: questions.filter(
+        (question) =>
+          question.result === "incorrect" &&
+          (question.errorRecordIds ?? []).length > 0,
       ).length,
     });
   }

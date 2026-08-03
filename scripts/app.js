@@ -3,6 +3,7 @@ import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js
 import { TestQuestAdapter } from "./integrations/testquest-adapter.js";
 import { DraftService } from "./services/draft-service.js";
 import { ExerciseService } from "./services/exercise-service.js";
+import { ErrorService } from "./services/error-service.js";
 import { NoteService } from "./services/note-service.js";
 import { OverviewService } from "./services/overview-service.js";
 import { ProgressService } from "./services/progress-service.js";
@@ -17,6 +18,8 @@ import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
 import { openExerciseSessionModal } from "./ui/modals/exercise-session-modal.js";
+import { openErrorEditorModal } from "./ui/modals/error-editor-modal.js";
+import { openErrorEvidenceModal } from "./ui/modals/error-evidence-modal.js";
 import { openNoteEditorModal } from "./ui/modals/note-editor-modal.js";
 import { openOverviewEditorModal } from "./ui/modals/overview-editor-modal.js";
 import { openQuickDetailModal } from "./ui/modals/quick-detail-modal.js";
@@ -27,6 +30,7 @@ import { Router } from "./ui/router.js";
 import { renderArchivedSection } from "./ui/sections/archived-section.js";
 import { renderHistorySection } from "./ui/sections/history-section.js";
 import { renderExercisesSection } from "./ui/sections/exercises-section.js";
+import { renderErrorsSection } from "./ui/sections/errors-section.js";
 import { renderOverviewSection } from "./ui/sections/overview-section.js";
 import { renderPlaceholderSection } from "./ui/sections/placeholder-section.js";
 import { renderRecordsSection } from "./ui/sections/records-section.js";
@@ -52,6 +56,7 @@ export class StudyStackApp {
     this.summaryService = null;
     this.draftService = null;
     this.exerciseService = null;
+    this.errorService = null;
     this.initialTestQuestNotice = null;
     this.clock = () => new Date().toISOString();
   }
@@ -116,6 +121,11 @@ export class StudyStackApp {
       clock: this.clock,
     });
     this.exerciseService = new ExerciseService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
+    this.errorService = new ErrorService({
       repository: this.repository,
       clock: this.clock,
       appVersion: APP_CONFIG.appVersion,
@@ -268,6 +278,19 @@ export class StudyStackApp {
         onOpen: (view) => this.openExerciseSession(view),
         onArchive: (record) => this.confirmArchiveRecord(record),
       });
+    } else if (sectionId === "errors") {
+      renderErrorsSection({
+        document: this.document,
+        container,
+        views: this.errorService.listViewsBySubject(this.subject.id),
+        aggregate: this.errorService.getAggregate(this.subject.id),
+        onOpen: (view) => this.openErrorEditor(view),
+        onToggleReviewed: (view) => this.toggleErrorReviewed(view),
+        onRecurrence: (view) => this.openErrorRecurrence(view),
+        onEvidence: (view) => this.openErrorEvidence(view),
+        onArchive: (record) => this.confirmArchiveRecord(record),
+        onOpenExercises: () => this.router.navigate("exercises"),
+      });
     } else if (sectionId === "archived") {
       renderArchivedSection({
         document: this.document,
@@ -409,10 +432,155 @@ export class StudyStackApp {
           this.exerciseService.saveSessionNotes(current.session.id, value);
           this.afterRecordMutation("Observação da lista atualizada.");
         },
+        onCreateErrors: (questionIds) => {
+          this.createErrorsFromQuestions(questionIds);
+        },
         onClose: () => this.shell.syncToastLayer(),
       });
     } catch (error) {
       this.handleFailure(error, "Não foi possível abrir a lista importada.");
+    }
+  }
+
+  createErrorsFromQuestions(questionIds) {
+    try {
+      const result = this.errorService.createFromQuestions(questionIds);
+      const createdCount = result.created.length;
+      const existingCount = result.existing.length;
+      const message =
+        createdCount > 0
+          ? `${createdCount} Registro(s) de Erro criado(s).${
+              existingCount ? ` ${existingCount} já existia(m).` : ""
+            }`
+          : "As questões selecionadas já possuíam Registros de Erro.";
+      this.afterRecordMutation(message);
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível criar os Registros de Erro.");
+    }
+  }
+
+  openErrorEditor(view) {
+    try {
+      const current = this.errorService.getView(view.errorRecord.id);
+      const storedDraft = this.draftService.get(
+        "error_record",
+        current.record.id,
+      );
+      const recoveredDraft =
+        storedDraft &&
+        Date.parse(storedDraft.updatedAt) >= Date.parse(current.record.updatedAt)
+          ? storedDraft
+          : null;
+      const settings = this.repository.getEntity("settings", "global");
+
+      openErrorEditorModal({
+        document: this.document,
+        view: current,
+        linkOptions: this.errorService.getLinkOptions(
+          current.errorRecord.subjectId,
+          current.record.id,
+        ),
+        recoveredDraft,
+        autosaveDelayMs: settings?.autosaveDelayMs ?? 900,
+        onAutosave: ({ modalInstanceId, originalState, workingState }) =>
+          this.draftService.save({
+            subjectId: current.errorRecord.subjectId,
+            recordId: current.record.id,
+            recordType: "error_record",
+            modalInstanceId,
+            originalState,
+            workingState,
+          }),
+        onDiscardDraft: () =>
+          this.draftService.remove("error_record", current.record.id),
+        onSubmit: (values) => {
+          const updated = this.errorService.saveAnalysis(
+            current.errorRecord.id,
+            values,
+          );
+          this.afterRecordMutation(
+            updated.errorRecord.analysis.isComplete
+              ? "Análise do erro concluída."
+              : "Rascunho da análise salvo.",
+          );
+        },
+        onClose: ({ draftPreserved, discarded, finalSaved }) => {
+          this.shell.syncToastLayer();
+          if (draftPreserved) {
+            this.shell.showToast(
+              "Alterações da análise preservadas para continuar depois.",
+            );
+          } else if (discarded && !finalSaved) {
+            this.shell.showToast("Alterações da análise descartadas.");
+          }
+        },
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível abrir o Registro de Erro.");
+    }
+  }
+
+  toggleErrorReviewed(view) {
+    try {
+      const updated = this.errorService.toggleReviewed(view.errorRecord.id);
+      this.afterRecordMutation(
+        updated.errorRecord.reviewStatus === "reviewed"
+          ? "Erro marcado como revisado."
+          : "Erro devolvido para revisão.",
+      );
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível atualizar a revisão do erro.");
+    }
+  }
+
+  openErrorRecurrence(view) {
+    try {
+      const current = this.errorService.getView(view.errorRecord.id);
+      openErrorEvidenceModal({
+        document: this.document,
+        view: current,
+        candidates: this.errorService.getEvidenceCandidates(
+          current.errorRecord.id,
+          "recurrence",
+        ),
+        mode: "recurrence",
+        onSubmit: (questionId) => {
+          this.errorService.registerRecurrence(current.errorRecord.id, questionId);
+          this.afterRecordMutation("Reincidência registrada; a sequência foi reiniciada.");
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível registrar a reincidência.");
+    }
+  }
+
+  openErrorEvidence(view) {
+    try {
+      const current = this.errorService.getView(view.errorRecord.id);
+      openErrorEvidenceModal({
+        document: this.document,
+        view: current,
+        candidates: this.errorService.getEvidenceCandidates(
+          current.errorRecord.id,
+          "evidence",
+        ),
+        mode: "evidence",
+        onSubmit: (questionId) => {
+          const updated = this.errorService.addCorrectEvidence(
+            current.errorRecord.id,
+            questionId,
+          );
+          this.afterRecordMutation(
+            updated.errorRecord.masteryStatus === "overcome"
+              ? "Erro superado após duas respostas corretas consecutivas."
+              : "Primeira evidência correta registrada.",
+          );
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível registrar a evidência.");
     }
   }
 
@@ -678,7 +846,7 @@ export class StudyStackApp {
       onConfirm: () => {
         try {
           this.recordService.archive(record.id, "Arquivamento manual");
-          if (record.type === "summary" || record.type === "note") {
+          if (["summary", "note", "error_record"].includes(record.type)) {
             this.draftService.remove(record.type, record.id);
           }
           this.afterRecordMutation("Registro arquivado.");

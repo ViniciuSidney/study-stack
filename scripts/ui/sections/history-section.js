@@ -8,6 +8,15 @@ const EVENT_ICONS = Object.freeze({
   unmarked_important: "☆",
   archived: "□",
   restored: "↩",
+  imported: "⇩",
+  reimported: "⇄",
+  analysis_completed: "✓",
+  review_completed: "◉",
+  review_reopened: "↺",
+  recurrence: "!",
+  evidence_added: "+",
+  error_overcome: "◆",
+  progress_changed: "↗",
 });
 
 export function renderHistorySection({ document, container, events }) {

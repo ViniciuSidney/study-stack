@@ -47,7 +47,7 @@ function createAnswerBlock(document, label, content, emptyText) {
   return block;
 }
 
-function createQuestionItem(document, question) {
+function createQuestionItem(document, question, selectedInputs) {
   const details = createElement(document, "details", {
     className: `imported-question result-${question.result}`,
     attributes: {
@@ -133,6 +133,38 @@ function createQuestionItem(document, question) {
     );
   }
 
+  if (question.result === "incorrect") {
+    const alreadyRegistered = (question.errorRecordIds ?? []).length > 0;
+    const selection = createElement(document, "label", {
+      className: `error-candidate-selection${alreadyRegistered ? " registered" : ""}`,
+    });
+    const checkbox = createElement(document, "input", {
+      attributes: {
+        type: "checkbox",
+        value: question.id,
+      },
+    });
+    checkbox.disabled = alreadyRegistered;
+    const text = createElement(document, "span");
+    text.append(
+      createElement(document, "strong", {
+        text: alreadyRegistered
+          ? "Registro de Erro já criado"
+          : "Selecionar para criar Registro de Erro",
+      }),
+      createElement(document, "small", {
+        text: alreadyRegistered
+          ? "A questão já está vinculada a uma análise."
+          : "A resposta, a correção e o contexto serão preservados automaticamente.",
+      }),
+    );
+    selection.append(checkbox, text);
+    body.append(selection);
+    if (!alreadyRegistered) {
+      selectedInputs.push(checkbox);
+    }
+  }
+
   details.append(summary, body);
   return details;
 }
@@ -166,6 +198,7 @@ export function openExerciseSessionModal({
   document,
   view,
   onSaveNotes,
+  onCreateErrors = () => {},
   onClose = () => {},
 }) {
   const { session, questions } = view;
@@ -241,11 +274,12 @@ export function openExerciseSessionModal({
   );
   body.append(filterBar);
 
+  const selectedInputs = [];
   const questionList = createElement(document, "section", {
     className: "imported-question-list",
   });
   questions.forEach((question) =>
-    questionList.append(createQuestionItem(document, question)),
+    questionList.append(createQuestionItem(document, question, selectedInputs)),
   );
   const filterEmpty = createElement(document, "p", {
     className: "filter-empty panel",
@@ -254,8 +288,12 @@ export function openExerciseSessionModal({
   filterEmpty.hidden = true;
   body.append(questionList, filterEmpty);
 
+  const availableCount = selectedInputs.length;
+  const registeredCount = questions.filter(
+    (question) => question.result === "incorrect" && question.errorRecordIds?.length,
+  ).length;
   const errorPreparation = createElement(document, "section", {
-    className: "error-preparation-panel",
+    className: "error-preparation-panel error-creation-panel",
   });
   errorPreparation.append(
     createElement(document, "div", {
@@ -267,13 +305,26 @@ export function openExerciseSessionModal({
   const errorCopy = errorPreparation.lastElementChild;
   errorCopy.append(
     createElement(document, "strong", {
-      text: `${view.errorCandidateCount} questão(ões) pronta(s) para análise de erro`,
+      text: `${availableCount} questão(ões) disponível(is) para análise`,
     }),
     createElement(document, "p", {
       text:
-        "As respostas, correções e critérios já estão preservados. A criação e o acompanhamento dos Registros de Erro serão ativados na Fundação 08.",
+        registeredCount > 0
+          ? `${registeredCount} erro(s) desta lista já possui(em) registro. Selecione apenas os restantes.`
+          : "Marque as questões incorretas que merecem uma análise própria. Nenhum erro é criado sem sua seleção.",
     }),
   );
+  const selectedCounter = createElement(document, "span", {
+    className: "error-selection-counter",
+    text: "0 selecionadas",
+  });
+  const createErrorsButton = createElement(document, "button", {
+    className: "button button-primary button-small",
+    text: "Criar Registros de Erro",
+    attributes: { type: "button" },
+  });
+  createErrorsButton.disabled = true;
+  errorCopy.append(selectedCounter, createErrorsButton);
   body.append(errorPreparation);
 
   const noteField = createElement(document, "label", {
@@ -337,6 +388,27 @@ export function openExerciseSessionModal({
     }
   }
 
+  function updateSelectedCount() {
+    const selected = selectedInputs.filter((input) => input.checked).length;
+    selectedCounter.textContent = `${selected} selecionada(s)`;
+    createErrorsButton.disabled = selected === 0;
+  }
+
+  selectedInputs.forEach((input) =>
+    input.addEventListener("change", updateSelectedCount),
+  );
+
+  createErrorsButton.addEventListener("click", () => {
+    const questionIds = selectedInputs
+      .filter((input) => input.checked)
+      .map((input) => input.value);
+    if (!questionIds.length) {
+      return;
+    }
+    onCreateErrors(questionIds);
+    close();
+  });
+
   filterBar.addEventListener("click", (event) => {
     const button = event.target.closest("[data-question-filter]");
     if (!button) {
@@ -345,14 +417,10 @@ export function openExerciseSessionModal({
     const filter = button.dataset.questionFilter;
     let visible = 0;
     filterBar.querySelectorAll("[data-question-filter]").forEach((candidate) => {
-      candidate.setAttribute(
-        "aria-pressed",
-        String(candidate === button),
-      );
+      candidate.setAttribute("aria-pressed", String(candidate === button));
     });
     questionList.querySelectorAll(".imported-question").forEach((item) => {
-      item.hidden =
-        filter !== "all" && item.dataset.questionResult !== filter;
+      item.hidden = filter !== "all" && item.dataset.questionResult !== filter;
       visible += Number(!item.hidden);
     });
     filterEmpty.hidden = visible > 0;

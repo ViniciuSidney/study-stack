@@ -123,9 +123,11 @@ function createSessionCard({ document, view, onOpen, onArchive }) {
     className: "exercise-session-note",
     text: session.sessionNotes?.plainText
       ? session.sessionNotes.plainText
-      : session.stats.incorrect
-        ? `${session.stats.incorrect} questão(ões) poderá(ão) originar Registros de Erro na próxima fundação.`
-        : "Nenhum erro registrado nesta sessão.",
+      : view.errorCandidateCount > 0
+        ? `${view.errorCandidateCount} questão(ões) incorreta(s) disponível(is) para criar Registros de Erro.`
+        : view.existingErrorCount > 0
+          ? `${view.existingErrorCount} questão(ões) incorreta(s) já possui(em) Registro de Erro.`
+          : "Nenhum erro registrado nesta sessão.",
   });
 
   const actions = createElement(document, "div", {
