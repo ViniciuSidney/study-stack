@@ -536,3 +536,57 @@
     width: 100%;
   }
 }
+
+@media (max-width: 760px) {
+  .restore-mode-options,
+  .restore-metrics,
+  .diagnostic-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .restore-modal,
+  .diagnostic-modal,
+  .pending-imports-modal {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  .restore-card,
+  .diagnostic-card,
+  .pending-imports-card {
+    max-height: calc(100dvh - 20px);
+  }
+
+  .restore-footer-actions,
+  .maintenance-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .restore-mode-options,
+  .restore-metrics,
+  .diagnostic-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-actions,
+  .restore-footer-actions,
+  .restore-card .modal-footer,
+  .diagnostic-card .modal-footer {
+    display: grid;
+  }
+
+  .maintenance-actions .button,
+  .restore-footer-actions .button,
+  .restore-card .modal-footer > .button,
+  .diagnostic-card .modal-footer > .button {
+    width: 100%;
+  }
+
+  .diagnostic-status,
+  .pending-import-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

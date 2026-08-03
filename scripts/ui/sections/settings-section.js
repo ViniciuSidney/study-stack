@@ -63,8 +63,13 @@ export function renderSettingsSection({
   container,
   preferences,
   storageInfo,
+  maintenanceInfo,
   onUpdate,
   onReset,
+  onBackup,
+  onRestore,
+  onDiagnostics,
+  onPendingImports,
 }) {
   clearElement(container);
 
@@ -201,6 +206,72 @@ export function renderSettingsSection({
   resetPanel.append(resetActions);
 
 
+  const maintenancePanel = createElement(document, "article", {
+    className: "panel settings-panel settings-maintenance-panel",
+  });
+  maintenancePanel.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Segurança e manutenção",
+    }),
+    createElement(document, "h3", { text: "Dados locais" }),
+    createElement(document, "p", {
+      text:
+        "Exporte uma cópia completa, restaure arquivos validados e confira a saúde do armazenamento.",
+    }),
+  );
+  const maintenanceSummary = createElement(document, "div", {
+    className: "maintenance-summary",
+  });
+  maintenanceSummary.append(
+    createElement(document, "span", {
+      text: maintenanceInfo.lastBackupAt
+        ? `Último backup: ${new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          }).format(new Date(maintenanceInfo.lastBackupAt))}`
+        : "Nenhum backup manual registrado",
+    }),
+    createElement(document, "span", {
+      text: `${maintenanceInfo.pendingImportCount} pendência(s) de importação`,
+    }),
+  );
+  const maintenanceActions = createElement(document, "div", {
+    className: "maintenance-actions",
+  });
+  const backupButton = createElement(document, "button", {
+    className: "button button-primary",
+    text: "Criar backup",
+    attributes: { type: "button" },
+  });
+  const restoreButton = createElement(document, "button", {
+    className: "button button-secondary",
+    text: "Restaurar backup",
+    attributes: { type: "button" },
+  });
+  const diagnosticButton = createElement(document, "button", {
+    className: "button button-secondary",
+    text: "Executar diagnóstico",
+    attributes: { type: "button" },
+  });
+  const pendingButton = createElement(document, "button", {
+    className: "button button-secondary",
+    text: "Ver importações pendentes",
+    attributes: { type: "button" },
+  });
+  pendingButton.disabled = maintenanceInfo.pendingImportCount === 0;
+  backupButton.addEventListener("click", onBackup);
+  restoreButton.addEventListener("click", onRestore);
+  diagnosticButton.addEventListener("click", onDiagnostics);
+  pendingButton.addEventListener("click", onPendingImports);
+  maintenanceActions.append(
+    backupButton,
+    restoreButton,
+    diagnosticButton,
+    pendingButton,
+  );
+  maintenancePanel.append(maintenanceSummary, maintenanceActions);
+
   const storagePanel = createElement(document, "article", {
     className: "panel settings-panel",
   });
@@ -235,7 +306,13 @@ export function renderSettingsSection({
     onUpdate({ showCounters: event.target.checked });
   });
 
-  grid.append(appearancePanel, navigationPanel, storagePanel, resetPanel);
+  grid.append(
+    appearancePanel,
+    navigationPanel,
+    maintenancePanel,
+    storagePanel,
+    resetPanel,
+  );
   inner.append(header, grid);
   container.append(inner);
 }

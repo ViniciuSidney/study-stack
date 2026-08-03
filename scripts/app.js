@@ -1,6 +1,8 @@
 import { APP_CONFIG } from "./config/app-config.js";
 import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js";
 import { TestQuestAdapter } from "./integrations/testquest-adapter.js";
+import { BackupService } from "./services/backup-service.js";
+import { DiagnosticService } from "./services/diagnostic-service.js";
 import { DraftService } from "./services/draft-service.js";
 import { ExerciseService } from "./services/exercise-service.js";
 import { ErrorService } from "./services/error-service.js";
@@ -17,13 +19,16 @@ import { StateRepository } from "./storage/state-repository.js";
 import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
+import { openDiagnosticModal } from "./ui/modals/diagnostic-modal.js";
 import { openExerciseSessionModal } from "./ui/modals/exercise-session-modal.js";
 import { openErrorEditorModal } from "./ui/modals/error-editor-modal.js";
 import { openErrorEvidenceModal } from "./ui/modals/error-evidence-modal.js";
 import { openNoteEditorModal } from "./ui/modals/note-editor-modal.js";
 import { openOverviewEditorModal } from "./ui/modals/overview-editor-modal.js";
+import { openPendingImportsModal } from "./ui/modals/pending-imports-modal.js";
 import { openQuickDetailModal } from "./ui/modals/quick-detail-modal.js";
 import { openRecordModal } from "./ui/modals/record-modal.js";
+import { openRestoreModal } from "./ui/modals/restore-modal.js";
 import { openSummaryEditorModal } from "./ui/modals/summary-editor-modal.js";
 import { openTestQuestImportModal } from "./ui/modals/testquest-import-modal.js";
 import { Router } from "./ui/router.js";
@@ -47,6 +52,8 @@ export class StudyStackApp {
     this.shell = null;
     this.router = null;
     this.repository = null;
+    this.backupService = null;
+    this.diagnosticService = null;
     this.noteService = null;
     this.preferencesService = null;
     this.overviewService = null;
@@ -130,6 +137,17 @@ export class StudyStackApp {
       clock: this.clock,
       appVersion: APP_CONFIG.appVersion,
     });
+    this.backupService = new BackupService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+      schemaVersion: APP_CONFIG.storage.schemaVersion,
+    });
+    this.diagnosticService = new DiagnosticService({
+      repository: this.repository,
+      clock: this.clock,
+      schemaVersion: APP_CONFIG.storage.schemaVersion,
+    });
     this.overviewService = new OverviewService({
       repository: this.repository,
       clock: this.clock,
@@ -161,6 +179,9 @@ export class StudyStackApp {
     this.shell.onNavigate((sectionId) => this.router.navigate(sectionId));
     this.shell.onReturn(() => this.returnToConceptCompass());
     this.shell.onNewRecord(() => this.openCreateRecord());
+    this.shell.onBackup(() => this.createBackup());
+    this.shell.onRestore(() => this.openRestore());
+    this.shell.onDiagnostics(() => this.openDiagnostics());
 
     this.router = new Router(
       this.window,
@@ -216,8 +237,13 @@ export class StudyStackApp {
         container,
         preferences: this.preferences,
         storageInfo: this.getStorageInfo(),
+        maintenanceInfo: this.getMaintenanceInfo(),
         onUpdate: (partial) => this.updatePreferences(partial),
         onReset: () => this.resetPreferences(),
+        onBackup: () => this.createBackup(),
+        onRestore: () => this.openRestore(),
+        onDiagnostics: () => this.openDiagnostics(),
+        onPendingImports: () => this.openPendingImports(),
       });
       this.shell.focusContent();
       return;
@@ -899,6 +925,15 @@ export class StudyStackApp {
 
   handleFailure(error, message) {
     console.error(error);
+    try {
+      this.diagnosticService?.record({
+        operation: message,
+        message: error instanceof Error ? error.message : String(error),
+        recoverable: true,
+      });
+    } catch (logError) {
+      console.error("Não foi possível registrar o evento técnico.", logError);
+    }
     this.shell.setStorageStatus({
       schemaVersion: APP_CONFIG.storage.schemaVersion,
       saved: false,
@@ -919,6 +954,124 @@ export class StudyStackApp {
       recordCount: state.integrity.collectionCounts.records,
       historyCount: state.integrity.collectionCounts.historyEvents,
       integrityStatus: state.integrity.status,
+    });
+  }
+
+  getMaintenanceInfo() {
+    const settings = this.repository.getEntity("settings", "global");
+    return Object.freeze({
+      lastBackupAt: settings?.lastBackupAt ?? null,
+      pendingImportCount: this.exerciseService.listPending().length,
+      recoveryPointAvailable: Boolean(this.backupService.getRecoveryPoint()),
+    });
+  }
+
+  createBackup() {
+    try {
+      const backup = this.backupService.createBackup();
+      const blob = new Blob([backup.json], { type: "application/json" });
+      const url = this.window.URL.createObjectURL(blob);
+      const anchor = this.document.createElement("a");
+      anchor.href = url;
+      anchor.download = backup.fileName;
+      anchor.hidden = true;
+      this.document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      this.window.setTimeout(() => this.window.URL.revokeObjectURL(url), 0);
+      this.updateShellState();
+      this.shell.showToast("Backup JSON criado com sucesso.");
+      if (this.router?.getCurrentSection() === "settings") {
+        this.renderSection("settings");
+      }
+      return backup;
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível criar o backup.");
+      return null;
+    }
+  }
+
+  openRestore() {
+    openRestoreModal({
+      document: this.document,
+      onParse: (text) => this.backupService.parse(text),
+      onPreview: (envelope, mode) => this.backupService.preview(envelope, mode),
+      onRestore: (envelope, mode) => {
+        try {
+          const result = this.backupService.restore(envelope, mode);
+          const conflictNotice = result.conflicts.length
+            ? ` ${result.conflicts.length} conflito(s) foram preservados.`
+            : "";
+          this.shell.showToast(`Restauração concluída.${conflictNotice}`);
+          this.window.setTimeout(() => this.window.location.reload(), 450);
+          return true;
+        } catch (error) {
+          this.handleFailure(error, "Não foi possível aplicar a restauração.");
+          return false;
+        }
+      },
+      onClose: () => this.shell.syncToastLayer(),
+    });
+  }
+
+  openDiagnostics() {
+    try {
+      const report = this.diagnosticService.run();
+      openDiagnosticModal({
+        document: this.document,
+        report,
+        onBackup: () => this.createBackup(),
+        onRestoreRecovery: () => this.confirmRestoreRecoveryPoint(),
+        onClearRecovery: () => {
+          this.backupService.clearRecoveryPoint();
+          this.shell.showToast("Ponto de recuperação removido.");
+          if (this.router.getCurrentSection() === "settings") {
+            this.renderSection("settings");
+          }
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível executar o diagnóstico.");
+    }
+  }
+
+  confirmRestoreRecoveryPoint() {
+    openConfirmationModal({
+      document: this.document,
+      title: "Recuperar estado anterior?",
+      message:
+        "O Study Stack voltará ao estado salvo imediatamente antes da última restauração.",
+      confirmLabel: "Recuperar",
+      onConfirm: () => {
+        try {
+          this.backupService.restoreRecoveryPoint();
+          this.shell.showToast("Estado anterior recuperado.");
+          this.window.setTimeout(() => this.window.location.reload(), 450);
+        } catch (error) {
+          this.handleFailure(error, "Não foi possível recuperar o estado anterior.");
+        }
+      },
+      onClose: () => this.shell.syncToastLayer(),
+    });
+  }
+
+  openPendingImports() {
+    openPendingImportsModal({
+      document: this.document,
+      entries: this.exerciseService.listPending(),
+      onDismiss: (id) => {
+        try {
+          this.exerciseService.dismissPending(id);
+          this.shell.showToast("Pendência descartada sem importar o conteúdo.");
+          if (this.router.getCurrentSection() === "settings") {
+            this.renderSection("settings");
+          }
+        } catch (error) {
+          this.handleFailure(error, "Não foi possível descartar a pendência.");
+        }
+      },
+      onClose: () => this.shell.syncToastLayer(),
     });
   }
 

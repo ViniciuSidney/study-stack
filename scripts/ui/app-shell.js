@@ -10,6 +10,9 @@ export class AppShell {
     this.navigateListener = null;
     this.returnListener = null;
     this.newRecordListener = null;
+    this.backupListener = null;
+    this.restoreListener = null;
+    this.diagnosticListener = null;
     this.toastObserver = null;
     this.preferences = null;
     this.drawerOpen = false;
@@ -79,6 +82,18 @@ export class AppShell {
 
   onNewRecord(listener) {
     this.newRecordListener = listener;
+  }
+
+  onBackup(listener) {
+    this.backupListener = listener;
+  }
+
+  onRestore(listener) {
+    this.restoreListener = listener;
+  }
+
+  onDiagnostics(listener) {
+    this.diagnosticListener = listener;
   }
 
   getContentContainer() {
@@ -313,6 +328,27 @@ export class AppShell {
       .addEventListener("click", () => {
         this.closeUtilitiesMenu();
         this.navigateListener?.("settings");
+      });
+
+    this.elements.utilitiesMenu
+      .querySelector('[data-utility="backup"]')
+      .addEventListener("click", () => {
+        this.closeUtilitiesMenu();
+        this.backupListener?.();
+      });
+
+    this.elements.utilitiesMenu
+      .querySelector('[data-utility="restore"]')
+      .addEventListener("click", () => {
+        this.closeUtilitiesMenu();
+        this.restoreListener?.();
+      });
+
+    this.elements.utilitiesMenu
+      .querySelector('[data-utility="diagnostics"]')
+      .addEventListener("click", () => {
+        this.closeUtilitiesMenu();
+        this.diagnosticListener?.();
       });
 
     this.elements.returnButton.addEventListener("click", () => {

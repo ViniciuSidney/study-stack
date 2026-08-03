@@ -356,10 +356,34 @@ export class ExerciseService {
     });
   }
 
-  listPending() {
-    return Object.values(this.repository.getCollection("pendingImports")).sort(
-      (a, b) => b.receivedAt.localeCompare(a.receivedAt),
-    );
+  listPending({ includeResolved = false } = {}) {
+    return Object.values(this.repository.getCollection("pendingImports"))
+      .filter((entry) => includeResolved || !entry.resolvedAt)
+      .sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
+  }
+
+  dismissPending(id) {
+    const current = this.repository.getEntity("pendingImports", id);
+    if (!current) {
+      throw new RangeError("Importação pendente não encontrada.");
+    }
+
+    if (current.resolvedAt) {
+      return current;
+    }
+
+    const now = this.clock();
+    return this.repository.transaction((draft) => {
+      const entry = draft.collections.pendingImports[id];
+      entry.resolvedAt = now;
+      entry.resolution = {
+        action: "dismissed",
+        resolvedBy: "user",
+        message: "Pendência descartada manualmente sem importar o conteúdo.",
+      };
+      entry.entityVersion = Math.max(1, entry.entityVersion ?? 1);
+      return entry;
+    }).result;
   }
 
   #queuePending(payload, { status, issues, now, normalized = null }) {

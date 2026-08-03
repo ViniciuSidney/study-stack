@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 08
+## Estado atual: Fundação 09
 
 Já funciona:
 
@@ -67,10 +67,18 @@ Já funciona:
 - superação após duas respostas corretas distintas e consecutivas;
 - seção Erros com grupos Pendentes, Reincidentes, Revisados e Superados;
 - categorias Análise de erros e Revisão alimentadas por evidências reais;
+- backup JSON completo com assinatura de integridade;
+- restauração por mesclagem ou substituição;
+- prévia de entidades novas, idênticas e conflitantes;
+- ponto de recuperação automático antes da restauração;
+- diagnóstico estrutural, referencial e de armazenamento;
+- visualização e descarte de importações pendentes;
+- utilidades de manutenção no cabeçalho e em Configurações;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementados backup e restauração de arquivo, diagnóstico
-completo ou a integração funcional com o Flashcore.
+Ainda não foi implementada a integração funcional com o Flashcore. O próximo
+passo do projeto é a estabilização geral da v0.1 e o fechamento dos critérios
+de aceite antes da publicação.
 
 ## Requisitos
 
@@ -153,3 +161,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 - [`docs/foundation-06.md`](docs/foundation-06.md)
 - [`docs/foundation-07.md`](docs/foundation-07.md)
 - [`docs/foundation-08.md`](docs/foundation-08.md)
+- [`docs/foundation-09.md`](docs/foundation-09.md)

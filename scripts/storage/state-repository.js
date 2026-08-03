@@ -77,6 +77,65 @@ export class StateRepository {
     };
   }
 
+
+  replaceState(candidate, { createRecoveryPoint = true } = {}) {
+    this.#assertInitialized();
+    assertValidState(candidate, this.config.storage.schemaVersion);
+
+    const previousState = this.getState();
+    const now = this.clock();
+
+    if (createRecoveryPoint) {
+      this.storage.set(this.config.storage.recoveryKey, {
+        createdAt: now,
+        schemaVersion: previousState.schemaVersion,
+        state: previousState,
+      });
+    }
+
+    const next = clone(candidate);
+    next.appVersion = this.config.appVersion;
+    next.updatedAt = now;
+    updateIntegrity(next, now);
+    this.state = this.#persist(next);
+
+    return this.getState();
+  }
+
+  getRecoveryPoint() {
+    const recovery = this.storage.get(this.config.storage.recoveryKey, null);
+
+    if (!recovery?.state) {
+      return null;
+    }
+
+    const valid = (() => {
+      try {
+        assertValidState(recovery.state, this.config.storage.schemaVersion);
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+
+    return valid ? clone(recovery) : null;
+  }
+
+  restoreRecoveryPoint() {
+    const recovery = this.getRecoveryPoint();
+    if (!recovery) {
+      throw new RangeError("Nenhum ponto de recuperação válido foi encontrado.");
+    }
+
+    const restored = this.replaceState(recovery.state, { createRecoveryPoint: false });
+    this.clearRecoveryPoint();
+    return restored;
+  }
+
+  clearRecoveryPoint() {
+    this.storage.remove(this.config.storage.recoveryKey);
+  }
+
   upsertEntity(collectionName, entity) {
     this.#assertCollection(collectionName);
 

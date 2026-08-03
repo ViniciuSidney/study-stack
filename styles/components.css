@@ -2736,3 +2736,345 @@
   gap: 3px;
   min-width: 180px;
 }
+
+/* Foundation 09: backup, restore and diagnostics */
+.settings-maintenance-panel {
+  grid-column: 1 / -1;
+}
+
+.maintenance-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 14px;
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+}
+
+.maintenance-summary span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.maintenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.restore-modal,
+.diagnostic-modal,
+.pending-imports-modal {
+  width: min(900px, calc(100vw - 32px));
+  max-height: min(880px, calc(100dvh - 32px));
+}
+
+.restore-card,
+.diagnostic-card,
+.pending-imports-card {
+  min-height: 0;
+  max-height: min(880px, calc(100dvh - 32px));
+  overflow: hidden;
+}
+
+.restore-body,
+.diagnostic-body,
+.pending-imports-body {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.restore-panel,
+.diagnostic-panel {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.restore-panel > h3,
+.diagnostic-panel > h3 {
+  font-size: 0.96rem;
+}
+
+.file-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+}
+
+.file-input::file-selector-button {
+  margin-right: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.restore-json-input {
+  min-height: 150px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.restore-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.restore-mode {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: flex-start;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.restore-mode:has(input:checked) {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+}
+
+.restore-mode input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.restore-mode span {
+  display: grid;
+  gap: 4px;
+}
+
+.restore-mode small {
+  color: var(--text-subtle);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.restore-preview-content {
+  display: grid;
+  gap: 12px;
+}
+
+.restore-metrics,
+.diagnostic-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.restore-metric,
+.diagnostic-metrics > div {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.restore-metric strong,
+.diagnostic-metrics strong {
+  font-size: 1.05rem;
+}
+
+.restore-metric span,
+.diagnostic-metrics span {
+  color: var(--text-subtle);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.restore-issue-list,
+.diagnostic-issue-list,
+.restore-conflicts ul,
+.diagnostic-logs ul,
+.pending-import-item ul {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.restore-issue-list.error {
+  color: var(--danger);
+}
+
+.restore-issue-list.warning {
+  color: var(--warning-text, var(--text-soft));
+}
+
+.restore-conflicts > summary,
+.diagnostic-logs > summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.restore-replace-confirmation {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 13px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.restore-replace-confirmation[hidden] {
+  display: none;
+}
+
+.restore-footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.diagnostic-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.diagnostic-status span {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+}
+
+.diagnostic-healthy {
+  border-color: color-mix(in srgb, var(--success) 40%, var(--line));
+  background: color-mix(in srgb, var(--success-soft) 50%, var(--surface));
+}
+
+.diagnostic-warning {
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--line));
+}
+
+.diagnostic-error {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+  background: color-mix(in srgb, var(--danger-soft) 50%, var(--surface));
+}
+
+.diagnostic-metrics {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.diagnostic-integration-list {
+  display: grid;
+  gap: 7px;
+}
+
+.diagnostic-integration-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.diagnostic-integration-list > div:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.diagnostic-integration-list span {
+  text-transform: capitalize;
+}
+
+.diagnostic-integration-list strong {
+  color: var(--accent-hover);
+  font-size: 0.78rem;
+}
+
+.recovery-panel .action-row {
+  margin-top: 2px;
+}
+
+.pending-import-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pending-import-item {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.pending-import-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pending-import-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.pending-import-heading small {
+  color: var(--text-subtle);
+}
+
+.pending-import-heading > span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-subtle);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pending-invalid,
+.pending-needs_review {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+}
+
+.empty-inline {
+  padding: 18px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  text-align: center;
+}
