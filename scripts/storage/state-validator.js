@@ -1,3 +1,4 @@
+import { validateNote } from "../domain/note.js";
 import { validateRecord } from "../domain/record.js";
 import { validateSummary } from "../domain/summary.js";
 import { COLLECTION_NAMES } from "../config/storage-config.js";
@@ -93,6 +94,7 @@ export function validateState(state, expectedSchemaVersion) {
     const subjects = state.collections.subjects ?? {};
     const records = state.collections.records ?? {};
     const summaries = state.collections.summaries ?? {};
+    const notes = state.collections.notes ?? {};
 
     for (const [id, record] of Object.entries(records)) {
       const validation = validateRecord(record);
@@ -107,6 +109,10 @@ export function validateState(state, expectedSchemaVersion) {
 
       if (record.type === "summary" && !Object.hasOwn(summaries, id)) {
         errors.push(`records.${id} não possui Summary correspondente.`);
+      }
+
+      if (record.type === "note" && !Object.hasOwn(notes, id)) {
+        errors.push(`records.${id} não possui Note correspondente.`);
       }
     }
 
@@ -123,6 +129,36 @@ export function validateState(state, expectedSchemaVersion) {
         errors.push(`summaries.${id} referencia Record inexistente.`);
       } else if (record.type !== "summary") {
         errors.push(`summaries.${id} referencia Record de tipo incompatível.`);
+      }
+    }
+
+    for (const [id, note] of Object.entries(notes)) {
+      const validation = validateNote(note);
+
+      for (const error of validation.errors) {
+        errors.push(`notes.${id}: ${error}`);
+      }
+
+      const record = records[id];
+
+      if (!record) {
+        errors.push(`notes.${id} referencia Record inexistente.`);
+      } else if (record.type !== "note") {
+        errors.push(`notes.${id} referencia Record de tipo incompatível.`);
+      }
+
+      for (const linkedRecordId of note.linkedRecordIds ?? []) {
+        const linkedRecord = records[linkedRecordId];
+
+        if (!linkedRecord) {
+          errors.push(
+            `notes.${id} referencia Record vinculado inexistente: ${linkedRecordId}.`,
+          );
+        } else if (record && linkedRecord.subjectId !== record.subjectId) {
+          errors.push(
+            `notes.${id} vincula Record de outro assunto: ${linkedRecordId}.`,
+          );
+        }
       }
     }
   }

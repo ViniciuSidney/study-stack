@@ -21,6 +21,41 @@ function executeCommand(document, editor, command, value = null) {
   }
 }
 
+
+function applyHighlight(document, editor) {
+  const selection = document.getSelection?.();
+
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    return false;
+  }
+
+  const range = selection.getRangeAt(0);
+  const commonAncestor =
+    range.commonAncestorContainer.nodeType === 1
+      ? range.commonAncestorContainer
+      : range.commonAncestorContainer.parentElement;
+
+  if (!commonAncestor || !editor.contains(commonAncestor)) {
+    return false;
+  }
+
+  const mark = document.createElement("mark");
+
+  try {
+    range.surroundContents(mark);
+  } catch {
+    const fragment = range.extractContents();
+    mark.append(fragment);
+    range.insertNode(mark);
+  }
+
+  selection.removeAllRanges();
+  const nextRange = document.createRange();
+  nextRange.selectNodeContents(mark);
+  selection.addRange(nextRange);
+  return true;
+}
+
 function insertTable(document, editor) {
   const table =
     "<table><tbody><tr><th>Cabeçalho 1</th><th>Cabeçalho 2</th></tr>" +
@@ -114,7 +149,24 @@ export function createRichTextEditor({
     executeCommand(document, editor, "removeFormat");
     onInput();
   });
-  toolbar.append(tableButton, clearButton);
+  const highlightButton = createElement(document, "button", {
+    className: "rich-editor-button",
+    text: "Marca-texto",
+    attributes: {
+      type: "button",
+      title: "Destacar o texto selecionado",
+      "aria-label": "Destacar o texto selecionado",
+    },
+  });
+  highlightButton.addEventListener("mousedown", (event) => event.preventDefault());
+  highlightButton.addEventListener("click", () => {
+    editor.focus();
+    if (applyHighlight(document, editor)) {
+      onInput();
+    }
+  });
+
+  toolbar.append(tableButton, highlightButton, clearButton);
 
   editor.innerHTML = sanitizeRichHtml(value?.content ?? "");
   editor.addEventListener("input", onInput);

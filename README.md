@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 04
+## Estado atual: Fundação 05
 
 Já funciona:
 
@@ -37,6 +37,7 @@ Já funciona:
 - busca, filtros, Importantes e agrupamentos cronológicos;
 - arquivamento, restauração, histórico e contadores reais;
 - editor completo de Resumos;
+- editor completo de Anotações;
 - conteúdo rico sanitizado e pesquisável;
 - objetivo, conceitos, exemplos, dúvidas e síntese opcionais;
 - fonte, descrição e referências;
@@ -45,10 +46,16 @@ Já funciona:
 - reabertura de Resumos concluídos;
 - autosave temporário e recuperação de rascunho de edição;
 - descarte explícito de alterações temporárias;
+- fluxo rápido `Apenas um detalhe`;
+- títulos automáticos para detalhes rápidos;
+- marca-texto no editor;
+- checklists textuais com `[ ]` e `[x]`;
+- vínculos entre registros do mesmo assunto;
+- validação referencial dos vínculos;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementados o editor completo de Anotações, progresso,
-importações do Test Quest, backup ou restauração de arquivo.
+Ainda não foram implementados progresso, importações do Test Quest, backup ou
+restauração de arquivo.
 
 ## Requisitos
 
@@ -127,3 +134,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 - [`docs/foundation-02.md`](docs/foundation-02.md)
 - [`docs/foundation-03.md`](docs/foundation-03.md)
 - [`docs/foundation-04.md`](docs/foundation-04.md)
+- [`docs/foundation-05.md`](docs/foundation-05.md)

@@ -1,6 +1,7 @@
 import { APP_CONFIG } from "./config/app-config.js";
 import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js";
 import { DraftService } from "./services/draft-service.js";
+import { NoteService } from "./services/note-service.js";
 import { PreferencesService } from "./services/preferences-service.js";
 import { RecordService } from "./services/record-service.js";
 import { SubjectService } from "./services/subject-service.js";
@@ -11,6 +12,8 @@ import { StateRepository } from "./storage/state-repository.js";
 import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
+import { openNoteEditorModal } from "./ui/modals/note-editor-modal.js";
+import { openQuickDetailModal } from "./ui/modals/quick-detail-modal.js";
 import { openRecordModal } from "./ui/modals/record-modal.js";
 import { openSummaryEditorModal } from "./ui/modals/summary-editor-modal.js";
 import { Router } from "./ui/router.js";
@@ -32,6 +35,7 @@ export class StudyStackApp {
     this.shell = null;
     this.router = null;
     this.repository = null;
+    this.noteService = null;
     this.preferencesService = null;
     this.subjectService = null;
     this.recordService = null;
@@ -86,6 +90,11 @@ export class StudyStackApp {
       appVersion: APP_CONFIG.appVersion,
     });
     this.summaryService = new SummaryService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
+    this.noteService = new NoteService({
       repository: this.repository,
       clock: this.clock,
       appVersion: APP_CONFIG.appVersion,
@@ -227,14 +236,13 @@ export class StudyStackApp {
 
   renderRecordTypeSection(container, type) {
     const records = this.recordService.listBySubject(this.subject.id, { type });
-    const detailsById =
+    const views =
       type === "summary"
-        ? new Map(
-            this.summaryService
-              .listViewsBySubject(this.subject.id, records)
-              .map((view) => [view.record.id, view]),
-          )
-        : new Map();
+        ? this.summaryService.listViewsBySubject(this.subject.id, records)
+        : this.noteService.listViewsBySubject(this.subject.id, records);
+    const detailsById = new Map(
+      views.map((view) => [view.record.id, view]),
+    );
 
     renderRecordsSection({
       document: this.document,
@@ -243,8 +251,11 @@ export class StudyStackApp {
       records,
       detailsById,
       onCreate: () => this.openCreateRecord(type),
-      onOpen: (record) => this.openSummaryEditor(record),
-      onEdit: (record) => this.openEditRecord(record),
+      onQuickDetail: () => this.openQuickDetail(),
+      onOpen: (record) =>
+        record.type === "summary"
+          ? this.openSummaryEditor(record)
+          : this.openNoteEditor(record),
       onChangeStatus: (record, status) => this.changeRecordStatus(record, status),
       onToggleImportant: (record) => this.toggleRecordImportant(record),
       onToggleStudied: (record) => this.toggleSummaryStudied(record),
@@ -275,6 +286,8 @@ export class StudyStackApp {
 
         if (created.type === "summary") {
           this.window.setTimeout(() => this.openSummaryEditor(created), 0);
+        } else if (created.type === "note") {
+          this.window.setTimeout(() => this.openNoteEditor(created), 0);
         }
       },
       onClose: () => this.shell.syncToastLayer(),
@@ -284,6 +297,11 @@ export class StudyStackApp {
   openEditRecord(record) {
     if (record.type === "summary") {
       this.openSummaryEditor(record);
+      return;
+    }
+
+    if (record.type === "note") {
+      this.openNoteEditor(record);
       return;
     }
 
@@ -358,6 +376,83 @@ export class StudyStackApp {
     }
   }
 
+  openQuickDetail() {
+    if (!this.subject) {
+      this.shell.showToast("Abra um assunto válido para criar Anotações.", "warning");
+      return;
+    }
+
+    openQuickDetailModal({
+      document: this.document,
+      defaultStudyDate: this.clock().slice(0, 10),
+      onSubmit: (values) => {
+        this.noteService.createQuickDetail({
+          ...values,
+          subjectId: this.subject.id,
+        });
+        this.afterRecordMutation("Detalhe salvo como Anotação.");
+      },
+      onClose: () => this.shell.syncToastLayer(),
+    });
+  }
+
+  openNoteEditor(record) {
+    try {
+      let view = this.noteService.getView(record.id);
+
+      if (
+        view.note.createdFromQuickDetail &&
+        !view.note.quickDetailExpandedAt
+      ) {
+        view = this.noteService.markExpanded(record.id);
+      }
+
+      const storedDraft = this.draftService.get("note", record.id);
+      const recoveredDraft =
+        storedDraft &&
+        Date.parse(storedDraft.updatedAt) >= Date.parse(view.record.updatedAt)
+          ? storedDraft
+          : null;
+      const settings = this.repository.getEntity("settings", "global");
+
+      openNoteEditorModal({
+        document: this.document,
+        view,
+        linkOptions: this.noteService.getLinkOptions(
+          view.record.subjectId,
+          view.record.id,
+        ),
+        recoveredDraft,
+        autosaveDelayMs: settings?.autosaveDelayMs ?? 900,
+        onAutosave: ({ modalInstanceId, originalState, workingState }) =>
+          this.draftService.save({
+            subjectId: view.record.subjectId,
+            recordId: view.record.id,
+            recordType: "note",
+            modalInstanceId,
+            originalState,
+            workingState,
+          }),
+        onDiscardDraft: () => this.draftService.remove("note", view.record.id),
+        onSubmit: (workingState) => {
+          this.noteService.save(view.record.id, workingState);
+          this.afterRecordMutation("Anotação salva com sucesso.");
+        },
+        onClose: ({ draftPreserved, discarded, finalSaved }) => {
+          this.shell.syncToastLayer();
+
+          if (draftPreserved) {
+            this.shell.showToast("Alterações preservadas para continuar depois.");
+          } else if (discarded && !finalSaved) {
+            this.shell.showToast("Alterações do editor descartadas.");
+          }
+        },
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível abrir o editor de Anotação.");
+    }
+  }
+
   toggleSummaryStudied(record) {
     try {
       const view = this.summaryService.toggleStudied(record.id);
@@ -408,8 +503,8 @@ export class StudyStackApp {
       onConfirm: () => {
         try {
           this.recordService.archive(record.id, "Arquivamento manual");
-          if (record.type === "summary") {
-            this.draftService.remove("summary", record.id);
+          if (record.type === "summary" || record.type === "note") {
+            this.draftService.remove(record.type, record.id);
           }
           this.afterRecordMutation("Registro arquivado.");
         } catch (error) {

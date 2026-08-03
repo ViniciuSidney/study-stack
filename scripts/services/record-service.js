@@ -7,7 +7,7 @@ import {
   updateRecord,
   validateRecord,
 } from "../domain/record.js";
-import { createRichContent } from "../domain/rich-content.js";
+import { createEmptyNote } from "../domain/note.js";
 import { createEmptySummary } from "../domain/summary.js";
 import { createId } from "../utils/id.js";
 
@@ -35,15 +35,7 @@ function createSpecificEntity(record, now) {
 
   return {
     collection: "notes",
-    entity: {
-      id: record.id,
-      recordId: record.id,
-      content: createRichContent("", now),
-      linkedRecordIds: [],
-      createdFromQuickDetail: false,
-      quickDetailExpandedAt: null,
-      entityVersion: 1,
-    },
+    entity: createEmptyNote(record.id, now),
   };
 }
 

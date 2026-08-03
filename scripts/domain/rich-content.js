@@ -13,6 +13,7 @@ const ALLOWED_TAGS = new Set([
   "em",
   "u",
   "blockquote",
+  "mark",
   "table",
   "thead",
   "tbody",

@@ -17,9 +17,9 @@ const TYPE_CONFIG = Object.freeze({
     singular: "Anotação",
     icon: "✎",
     description:
-      "Os registros de Anotação já são persistentes. O editor específico será implementado na Fundação 05.",
+      "Registre ideias, dúvidas e conexões com texto formatado, checklists textuais e vínculos entre registros do mesmo assunto.",
     empty:
-      "Nenhuma Anotação foi criada para este assunto. Registre uma ideia, observação ou detalhe de estudo.",
+      "Nenhuma Anotação foi criada para este assunto. Abra o editor completo ou capture rapidamente Apenas um detalhe.",
   },
 });
 
@@ -38,23 +38,15 @@ function formatDate(value) {
 
 function createTagList(document, tags) {
   const list = createElement(document, "div", { className: "tag-list" });
-
   for (const tag of tags) {
     list.append(createElement(document, "span", { className: "tag", text: tag }));
   }
-
   return list;
 }
 
 function nextStatusAction(record) {
-  if (record.status === "draft") {
-    return { status: "in_progress", label: "Iniciar" };
-  }
-
-  if (record.status === "completed") {
-    return { status: "in_progress", label: "Reabrir" };
-  }
-
+  if (record.status === "draft") return { status: "in_progress", label: "Iniciar" };
+  if (record.status === "completed") return { status: "in_progress", label: "Reabrir" };
   return { status: "draft", label: "Voltar a rascunho" };
 }
 
@@ -71,7 +63,6 @@ function createRecordCard({
   record,
   detail = null,
   onOpen,
-  onEdit,
   onChangeStatus,
   onToggleImportant,
   onToggleStudied,
@@ -84,13 +75,8 @@ function createRecordCard({
       "data-record-status": record.status,
     },
   });
-
-  const header = createElement(document, "header", {
-    className: "record-card-header",
-  });
-  const titleGroup = createElement(document, "div", {
-    className: "record-title-group",
-  });
+  const header = createElement(document, "header", { className: "record-card-header" });
+  const titleGroup = createElement(document, "div", { className: "record-title-group" });
   titleGroup.append(
     createElement(document, "div", {
       className: "record-title-line",
@@ -104,87 +90,79 @@ function createRecordCard({
       }).format(new Date(record.updatedAt))}`,
     }),
   );
-
-  const badges = createElement(document, "div", {
-    className: "record-badges",
-  });
-  if (record.isImportant) {
-    badges.append(createBadge(document, "★ Importante", "important-badge"));
-  }
+  const badges = createElement(document, "div", { className: "record-badges" });
+  if (record.isImportant) badges.append(createBadge(document, "★ Importante", "important-badge"));
   if (type === "summary" && detail?.summary?.isStudied) {
     badges.append(createBadge(document, "✓ Estudado", "studied-badge"));
   }
-  badges.append(
-    createBadge(document, STATUS_LABELS[record.status], `status-${record.status}`),
-  );
+  if (type === "note" && detail?.note?.createdFromQuickDetail) {
+    badges.append(createBadge(document, "Detalhe rápido", "quick-detail-badge"));
+  }
+  badges.append(createBadge(document, STATUS_LABELS[record.status], `status-${record.status}`));
   header.append(titleGroup, badges);
   card.append(header);
 
-  const preview =
-    type === "summary"
-      ? detail?.summary?.mainContent?.plainText?.trim()
-      : record.personalNotes?.plainText?.trim();
-  card.append(
-    createElement(document, "p", {
-      className: `record-preview${preview ? "" : " record-preview-empty"}`,
-      text:
-        preview ||
-        (type === "summary"
-          ? "Conteúdo principal ainda não iniciado."
-          : "Nenhuma observação registrada."),
-    }),
-  );
+  const preview = type === "summary"
+    ? detail?.summary?.mainContent?.plainText?.trim()
+    : detail?.note?.content?.plainText?.trim();
+  card.append(createElement(document, "p", {
+    className: `record-preview${preview ? "" : " record-preview-empty"}`,
+    text: preview || (type === "summary"
+      ? "Conteúdo principal ainda não iniciado."
+      : "Conteúdo da Anotação ainda não iniciado."),
+  }));
 
-  if (type === "summary") {
-    card.append(
-      createElement(document, "p", {
-        className: `summary-readiness ${detail?.completionReady ? "ready" : "pending"}`,
-        text: detail?.completionReady
-          ? "Título e conteúdo válidos para conclusão."
-          : "Preencha título e conteúdo principal para concluir.",
+  card.append(createElement(document, "p", {
+    className: `summary-readiness ${detail?.completionReady ? "ready" : "pending"}`,
+    text: detail?.completionReady
+      ? "Título e conteúdo válidos para conclusão."
+      : `Preencha título e conteúdo ${type === "summary" ? "principal" : "da Anotação"} para concluir.`,
+  }));
+
+  if (type === "note") {
+    const facts = createElement(document, "div", { className: "note-card-facts" });
+    const checklist = detail?.checklist ?? { total: 0, completed: 0 };
+    facts.append(
+      createElement(document, "span", {
+        text: checklist.total
+          ? `☑ ${checklist.completed}/${checklist.total} itens`
+          : "☐ Sem checklist",
+      }),
+      createElement(document, "span", {
+        text: `🔗 ${detail?.note?.linkedRecordIds?.length ?? 0} vínculo(s)`,
       }),
     );
+    card.append(facts);
   }
 
-  if (record.tags.length) {
-    card.append(createTagList(document, record.tags));
-  }
+  if (record.tags.length) card.append(createTagList(document, record.tags));
 
-  const actions = createElement(document, "div", {
-    className: "record-actions",
+  const actions = createElement(document, "div", { className: "record-actions" });
+  const openButton = createElement(document, "button", {
+    className: "button button-primary button-small",
+    text: type === "summary" ? "Abrir Resumo" : "Abrir Anotação",
+    attributes: { type: "button" },
   });
+  openButton.addEventListener("click", () => onOpen(record));
+  actions.append(openButton);
 
   if (type === "summary") {
-    const openButton = createElement(document, "button", {
-      className: "button button-primary button-small",
-      text: "Abrir Resumo",
-      attributes: { type: "button" },
-    });
     const studiedButton = createElement(document, "button", {
       className: "button button-secondary button-small",
       text: detail?.summary?.isStudied ? "Desmarcar estudo" : "Marcar estudado",
       attributes: { type: "button" },
     });
-    openButton.addEventListener("click", () => onOpen(record));
     studiedButton.addEventListener("click", () => onToggleStudied(record));
-    actions.append(openButton, studiedButton);
+    actions.append(studiedButton);
   } else {
-    const editButton = createElement(document, "button", {
-      className: "button button-secondary button-small",
-      text: "Editar",
-      attributes: { type: "button" },
-    });
     const statusAction = nextStatusAction(record);
     const statusButton = createElement(document, "button", {
       className: "button button-secondary button-small",
       text: statusAction.label,
       attributes: { type: "button" },
     });
-    editButton.addEventListener("click", () => onEdit(record));
-    statusButton.addEventListener("click", () =>
-      onChangeStatus(record, statusAction.status),
-    );
-    actions.append(editButton, statusButton);
+    statusButton.addEventListener("click", () => onChangeStatus(record, statusAction.status));
+    actions.append(statusButton);
   }
 
   const importantButton = createElement(document, "button", {
@@ -192,13 +170,12 @@ function createRecordCard({
     text: record.isImportant ? "Desmarcar importante" : "Marcar importante",
     attributes: { type: "button" },
   });
+  importantButton.addEventListener("click", () => onToggleImportant(record));
   const archiveButton = createElement(document, "button", {
     className: "button button-quiet-danger button-small",
     text: "Arquivar",
     attributes: { type: "button" },
   });
-
-  importantButton.addEventListener("click", () => onToggleImportant(record));
   archiveButton.addEventListener("click", () => onArchive(record));
   actions.append(importantButton, archiveButton);
   card.append(actions);
@@ -207,46 +184,29 @@ function createRecordCard({
 
 function groupByDate(records) {
   const groups = new Map();
-
   for (const record of records) {
-    if (!groups.has(record.studyDate)) {
-      groups.set(record.studyDate, []);
-    }
+    if (!groups.has(record.studyDate)) groups.set(record.studyDate, []);
     groups.get(record.studyDate).push(record);
   }
-
   return [...groups.entries()].sort(([a], [b]) => b.localeCompare(a));
 }
 
 function setupFilters({ searchInput, statusSelect, scope }) {
   function apply() {
-    const search = searchInput.value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/gu, "")
-      .toLocaleLowerCase("pt-BR")
-      .trim();
+    const search = searchInput.value.normalize("NFD").replace(/[\u0300-\u036f]/gu, "")
+      .toLocaleLowerCase("pt-BR").trim();
     const status = statusSelect.value;
-
     scope.querySelectorAll(".record-card").forEach((card) => {
       const matchesSearch = !search || card.dataset.recordSearch.includes(search);
-      const matchesStatus =
-        status === "all" || card.dataset.recordStatus === status;
+      const matchesStatus = status === "all" || card.dataset.recordStatus === status;
       card.hidden = !(matchesSearch && matchesStatus);
     });
-
     scope.querySelectorAll(".date-group, .important-block").forEach((group) => {
-      const visibleCards = [...group.querySelectorAll(".record-card")].some(
-        (card) => !card.hidden,
-      );
-      group.hidden = !visibleCards;
+      group.hidden = ![...group.querySelectorAll(".record-card")].some((card) => !card.hidden);
     });
-
-    const hasVisible = [...scope.querySelectorAll(".record-card")].some(
-      (card) => !card.hidden,
-    );
-    scope.querySelector(".filter-empty").hidden = hasVisible;
+    scope.querySelector(".filter-empty").hidden = [...scope.querySelectorAll(".record-card")]
+      .some((card) => !card.hidden);
   }
-
   searchInput.addEventListener("input", apply);
   statusSelect.addEventListener("change", apply);
 }
@@ -258,8 +218,8 @@ export function renderRecordsSection({
   records,
   detailsById = new Map(),
   onCreate,
+  onQuickDetail = () => {},
   onOpen = () => {},
-  onEdit,
   onChangeStatus,
   onToggleImportant,
   onToggleStudied = () => {},
@@ -273,38 +233,45 @@ export function renderRecordsSection({
   copy.append(
     createElement(document, "p", { className: "eyebrow", text: config.eyebrow }),
     createElement(document, "h2", { text: config.title }),
-    createElement(document, "p", {
-      className: "section-description",
-      text: config.description,
-    }),
+    createElement(document, "p", { className: "section-description", text: config.description }),
   );
+  const headerActions = createElement(document, "div", { className: "section-header-actions" });
+  if (type === "note") {
+    const quickButton = createElement(document, "button", {
+      className: "button button-secondary",
+      text: "Apenas um detalhe",
+      attributes: { type: "button" },
+    });
+    quickButton.addEventListener("click", onQuickDetail);
+    headerActions.append(quickButton);
+  }
   const createButton = createElement(document, "button", {
     className: "button button-primary",
     text: `+ Novo ${config.singular.toLocaleLowerCase("pt-BR")}`,
     attributes: { type: "button" },
   });
   createButton.addEventListener("click", onCreate);
-  header.append(copy, createButton);
+  headerActions.append(createButton);
+  header.append(copy, headerActions);
   inner.append(header);
 
   if (!records.length) {
-    const empty = createElement(document, "section", {
-      className: "panel empty-state",
-    });
+    const empty = createElement(document, "section", { className: "panel empty-state" });
     empty.append(
-      createElement(document, "div", {
-        className: "placeholder-icon",
-        text: config.icon,
-      }),
-      createElement(document, "h3", {
-        text: `Nenhum ${config.singular.toLocaleLowerCase("pt-BR")} ainda`,
-      }),
+      createElement(document, "div", { className: "placeholder-icon", text: config.icon }),
+      createElement(document, "h3", { text: `Nenhum ${config.singular.toLocaleLowerCase("pt-BR")} ainda` }),
       createElement(document, "p", { text: config.empty }),
     );
     const actions = createElement(document, "div", { className: "action-row" });
+    if (type === "note") {
+      const quickButton = createElement(document, "button", {
+        className: "button button-secondary", text: "Apenas um detalhe", attributes: { type: "button" },
+      });
+      quickButton.addEventListener("click", onQuickDetail);
+      actions.append(quickButton);
+    }
     const button = createElement(document, "button", {
-      className: "button button-primary",
-      text: `Criar ${config.singular.toLocaleLowerCase("pt-BR")}`,
+      className: "button button-primary", text: `Criar ${config.singular.toLocaleLowerCase("pt-BR")}`,
       attributes: { type: "button" },
     });
     button.addEventListener("click", onCreate);
@@ -315,99 +282,49 @@ export function renderRecordsSection({
     return;
   }
 
-  const toolbar = createElement(document, "section", {
-    className: "records-toolbar panel",
-  });
+  const toolbar = createElement(document, "section", { className: "records-toolbar panel" });
   const searchInput = createElement(document, "input", {
-    attributes: {
-      type: "search",
-      placeholder: `Buscar em ${config.title.toLocaleLowerCase("pt-BR")}...`,
-      "aria-label": `Buscar em ${config.title}`,
-    },
+    attributes: { type: "search", placeholder: `Buscar em ${config.title.toLocaleLowerCase("pt-BR")}...`,
+      "aria-label": `Buscar em ${config.title}` },
   });
-  const statusSelect = createElement(document, "select", {
-    attributes: { "aria-label": "Filtrar por status" },
-  });
-  [
-    ["all", "Todos os status"],
-    ["draft", "Rascunhos"],
-    ["in_progress", "Em andamento"],
-    ["completed", "Concluídos"],
-  ].forEach(([value, label]) => {
-    statusSelect.append(
-      createElement(document, "option", {
-        text: label,
-        attributes: { value },
-      }),
-    );
-  });
+  const statusSelect = createElement(document, "select", { attributes: { "aria-label": "Filtrar por status" } });
+  [["all", "Todos os status"], ["draft", "Rascunhos"], ["in_progress", "Em andamento"], ["completed", "Concluídos"]]
+    .forEach(([value, label]) => statusSelect.append(createElement(document, "option", { text: label, attributes: { value } })));
   toolbar.append(searchInput, statusSelect);
   inner.append(toolbar);
 
   const scope = createElement(document, "div", { className: "records-scope" });
+  const cardOptions = (record) => ({ document, type, record, detail: detailsById.get(record.id) ?? null,
+    onOpen, onChangeStatus, onToggleImportant, onToggleStudied, onArchive });
   const important = records.filter((record) => record.isImportant);
-  const cardOptions = (record) => ({
-    document,
-    type,
-    record,
-    detail: detailsById.get(record.id) ?? null,
-    onOpen,
-    onEdit,
-    onChangeStatus,
-    onToggleImportant,
-    onToggleStudied,
-    onArchive,
-  });
-
   if (important.length) {
-    const importantBlock = createElement(document, "section", {
-      className: "important-block",
-    });
-    const importantHeading = createElement(document, "div", {
-      className: "subsection-heading",
-    });
-    const importantCopy = createElement(document, "div");
-    importantCopy.append(
-      createElement(document, "p", { className: "eyebrow", text: "Atalho" }),
-      createElement(document, "h3", { text: "Importantes" }),
-    );
-    importantHeading.append(importantCopy);
-    importantBlock.append(importantHeading);
+    const block = createElement(document, "section", { className: "important-block" });
+    const heading = createElement(document, "div", { className: "subsection-heading" });
+    const headingCopy = createElement(document, "div");
+    headingCopy.append(createElement(document, "p", { className: "eyebrow", text: "Atalho" }),
+      createElement(document, "h3", { text: "Importantes" }));
+    heading.append(headingCopy);
     const grid = createElement(document, "div", { className: "record-grid" });
     important.forEach((record) => grid.append(createRecordCard(cardOptions(record))));
-    importantBlock.append(grid);
-    scope.append(importantBlock);
+    block.append(heading, grid);
+    scope.append(block);
   }
 
   groupByDate(records).forEach(([date, dateRecords], index) => {
-    const group = createElement(document, "details", {
-      className: "date-group panel",
-    });
+    const group = createElement(document, "details", { className: "date-group panel" });
     group.open = index === 0;
-    const summary = createElement(document, "summary", {
-      className: "date-group-summary",
-    });
-    summary.append(
-      createElement(document, "strong", { text: formatDate(date) }),
-      createElement(document, "span", {
-        text: `${dateRecords.length} registro${dateRecords.length === 1 ? "" : "s"}`,
-      }),
-    );
-    const grid = createElement(document, "div", {
-      className: "record-grid date-record-grid",
-    });
+    const summary = createElement(document, "summary", { className: "date-group-summary" });
+    summary.append(createElement(document, "strong", { text: formatDate(date) }),
+      createElement(document, "span", { text: `${dateRecords.length} registro${dateRecords.length === 1 ? "" : "s"}` }));
+    const grid = createElement(document, "div", { className: "record-grid date-record-grid" });
     dateRecords.forEach((record) => grid.append(createRecordCard(cardOptions(record))));
     group.append(summary, grid);
     scope.append(group);
   });
-
-  scope.append(
-    createElement(document, "div", {
-      className: "panel filter-empty",
-      text: "Nenhum registro corresponde aos filtros atuais.",
-    }),
-  );
-  scope.querySelector(".filter-empty").hidden = true;
+  const filterEmpty = createElement(document, "div", { className: "panel filter-empty",
+    text: "Nenhum registro corresponde aos filtros atuais." });
+  filterEmpty.hidden = true;
+  scope.append(filterEmpty);
   inner.append(scope);
   container.append(inner);
   setupFilters({ searchInput, statusSelect, scope });
