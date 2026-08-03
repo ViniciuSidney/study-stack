@@ -300,3 +300,83 @@
     gap: 5px;
   }
 }
+
+/* Foundation 06 */
+@media (max-width: 1180px) {
+  .overview-progress-lead {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .overview-progress-meta {
+    flex-wrap: wrap;
+  }
+
+  .progress-category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .overview-progress-lead {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .overview-progress-meta {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .overview-personal-perception {
+    width: min(100%, 220px);
+  }
+
+  .overview-progress-score {
+    width: 112px;
+    height: 112px;
+  }
+
+  .overview-progress-score > div {
+    width: 84px;
+    height: 84px;
+  }
+
+  .progress-category-grid,
+  .overview-fact-grid,
+  .overview-lower-grid,
+  .overview-editor-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-panel-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .overview-history-panel .button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .overview-progress-panel,
+  .overview-moment-panel,
+  .overview-list-panel,
+  .overview-history-panel {
+    padding: 16px;
+  }
+
+  .overview-record-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .overview-record-list strong {
+    white-space: normal;
+  }
+
+  .overview-editor-modal,
+  .overview-editor-card {
+    max-height: calc(100dvh - 18px);
+  }
+}

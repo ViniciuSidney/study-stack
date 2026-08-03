@@ -2,6 +2,8 @@ import { APP_CONFIG } from "./config/app-config.js";
 import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js";
 import { DraftService } from "./services/draft-service.js";
 import { NoteService } from "./services/note-service.js";
+import { OverviewService } from "./services/overview-service.js";
+import { ProgressService } from "./services/progress-service.js";
 import { PreferencesService } from "./services/preferences-service.js";
 import { RecordService } from "./services/record-service.js";
 import { SubjectService } from "./services/subject-service.js";
@@ -13,6 +15,7 @@ import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
 import { openNoteEditorModal } from "./ui/modals/note-editor-modal.js";
+import { openOverviewEditorModal } from "./ui/modals/overview-editor-modal.js";
 import { openQuickDetailModal } from "./ui/modals/quick-detail-modal.js";
 import { openRecordModal } from "./ui/modals/record-modal.js";
 import { openSummaryEditorModal } from "./ui/modals/summary-editor-modal.js";
@@ -37,6 +40,8 @@ export class StudyStackApp {
     this.repository = null;
     this.noteService = null;
     this.preferencesService = null;
+    this.overviewService = null;
+    this.progressService = null;
     this.subjectService = null;
     this.recordService = null;
     this.summaryService = null;
@@ -103,6 +108,21 @@ export class StudyStackApp {
       repository: this.repository,
       clock: this.clock,
     });
+    this.overviewService = new OverviewService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
+    this.progressService = new ProgressService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
+
+    if (this.subject) {
+      this.progressService.ensureCurrent(this.subject.id);
+      this.subject = this.repository.getEntity("subjects", this.subject.id);
+    }
 
     this.shell = new AppShell({
       document: this.document,
@@ -195,15 +215,24 @@ export class StudyStackApp {
     const recordCounts = this.recordService.getCounts(this.subject.id);
 
     if (sectionId === "overview") {
+      const activeRecords = this.recordService.listBySubject(this.subject.id);
+      const progress = this.progressService.ensureCurrent(this.subject.id);
+      this.subject = this.repository.getEntity("subjects", this.subject.id);
+      this.shell.setProgress(progress);
+      this.shell.setSubjectContext(this.subject);
+
       renderOverviewSection({
         document: this.document,
         container,
         subject: this.subject,
-        storageInfo: this.getStorageInfo(),
+        progress,
         recordCounts,
-        recentRecords: this.recordService.listBySubject(this.subject.id),
+        recentRecords: activeRecords,
+        importantRecords: activeRecords.filter((record) => record.isImportant),
+        recentEvents: this.recordService.listHistory(this.subject.id),
         navigate: (target) => this.router.navigate(target),
         onCreate: () => this.openCreateRecord(),
+        onEditOverview: () => this.openOverviewEditor(),
       });
     } else if (sectionId === "summaries" || sectionId === "notes") {
       const type = sectionId === "summaries" ? "summary" : "note";
@@ -261,6 +290,28 @@ export class StudyStackApp {
       onToggleStudied: (record) => this.toggleSummaryStudied(record),
       onArchive: (record) => this.confirmArchiveRecord(record),
     });
+  }
+
+  openOverviewEditor() {
+    try {
+      const { subject } = this.overviewService.getView(this.subject.id);
+
+      openOverviewEditorModal({
+        document: this.document,
+        subject,
+        onSubmit: (values) => {
+          this.overviewService.update(subject.id, values);
+          this.subject = this.repository.getEntity("subjects", subject.id);
+          this.shell.setSubjectContext(this.subject);
+          this.updateShellState();
+          this.shell.showToast("Visão Geral atualizada.");
+          this.renderSection("overview");
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível editar a Visão Geral.");
+    }
   }
 
   openCreateRecord(preferredType = null) {
@@ -525,6 +576,7 @@ export class StudyStackApp {
   }
 
   afterRecordMutation(message) {
+    this.progressService.ensureCurrent(this.subject.id);
     this.subject = this.repository.getEntity("subjects", this.subject.id);
     this.shell.setSubjectContext(this.subject);
     this.updateShellState();
@@ -541,8 +593,15 @@ export class StudyStackApp {
 
     if (this.subject) {
       this.shell.updateCounters(this.recordService.getCounts(this.subject.id));
+      this.shell.setProgress(
+        this.repository.getEntity(
+          "progressSnapshots",
+          `progress-${this.subject.id}`,
+        ),
+      );
     } else {
       this.shell.updateCounters({});
+      this.shell.setProgress(null);
     }
   }
 

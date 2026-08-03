@@ -35,6 +35,7 @@ export class AppShell {
       subjectStatus: getRequiredElement(document, "#subjectStatus"),
       saveState: getRequiredElement(document, "#saveState"),
       newRecordButton: getRequiredElement(document, "#newRecordButton"),
+      progressButton: getRequiredElement(document, "#progressButton"),
       toastRegion: getRequiredElement(document, "#toastRegion"),
     };
 
@@ -119,6 +120,24 @@ export class AppShell {
     this.elements.newRecordButton.title = enabled
       ? "Criar um Resumo ou uma Anotação."
       : "Abra a aplicação com um assunto válido para criar registros.";
+  }
+
+  setProgress(progress) {
+    const strong = this.elements.progressButton.querySelector("strong");
+    const label = this.elements.progressButton.querySelector("span");
+
+    if (!progress) {
+      strong.textContent = "0/10";
+      label.textContent = "Sem vínculo";
+      this.elements.progressButton.disabled = true;
+      this.elements.progressButton.title = "Abra um assunto válido para ver o progresso.";
+      return;
+    }
+
+    strong.textContent = `${progress.currentTotal}/${progress.goalTotal}`;
+    label.textContent = `${progress.percentage}% concluído`;
+    this.elements.progressButton.disabled = false;
+    this.elements.progressButton.title = "Abrir a Visão Geral e conferir as evidências.";
   }
 
   updateCounters(counts) {
@@ -302,6 +321,10 @@ export class AppShell {
 
     this.elements.newRecordButton.addEventListener("click", () => {
       this.newRecordListener?.();
+    });
+
+    this.elements.progressButton.addEventListener("click", () => {
+      this.navigateListener?.("overview");
     });
   }
 

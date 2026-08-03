@@ -70,3 +70,21 @@ test("validação rejeita Record ligado a Subject inexistente", () => {
   assert.equal(result.valid, false);
   assert.match(result.errors.join(" "), /Subject inexistente/);
 });
+
+test("validação rejeita ProgressSnapshot ligado a Subject inexistente", async () => {
+  const { calculateProgress } = await import("../../scripts/domain/progress.js");
+  const { createSubjectFromContext } = await import("../../scripts/domain/subject.js");
+  const { normalizeSubjectContext } = await import("../../scripts/domain/subject-context.js");
+  const { VALID_SUBJECT_CONTEXT } = await import("../fixtures/subject-context.js");
+  const state = createState();
+  const subject = createSubjectFromContext(
+    normalizeSubjectContext(VALID_SUBJECT_CONTEXT),
+    NOW,
+  );
+  const snapshot = calculateProgress({ subject, calculatedAt: NOW });
+  state.collections.progressSnapshots[snapshot.id] = snapshot;
+
+  const result = validateState(state, "1.0.0");
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join(" "), /ProgressSnapshot|Subject inexistente/);
+});

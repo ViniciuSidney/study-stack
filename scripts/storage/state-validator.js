@@ -1,4 +1,5 @@
 import { validateNote } from "../domain/note.js";
+import { validateProgressSnapshot } from "../domain/progress.js";
 import { validateRecord } from "../domain/record.js";
 import { validateSummary } from "../domain/summary.js";
 import { COLLECTION_NAMES } from "../config/storage-config.js";
@@ -95,6 +96,7 @@ export function validateState(state, expectedSchemaVersion) {
     const records = state.collections.records ?? {};
     const summaries = state.collections.summaries ?? {};
     const notes = state.collections.notes ?? {};
+    const progressSnapshots = state.collections.progressSnapshots ?? {};
 
     for (const [id, record] of Object.entries(records)) {
       const validation = validateRecord(record);
@@ -160,6 +162,26 @@ export function validateState(state, expectedSchemaVersion) {
           );
         }
       }
+    }
+
+    const snapshotSubjects = new Set();
+    for (const [id, snapshot] of Object.entries(progressSnapshots)) {
+      const validation = validateProgressSnapshot(snapshot);
+
+      for (const error of validation.errors) {
+        errors.push(`progressSnapshots.${id}: ${error}`);
+      }
+
+      if (!Object.hasOwn(subjects, snapshot.subjectId)) {
+        errors.push(`progressSnapshots.${id} referencia Subject inexistente.`);
+      }
+
+      if (snapshotSubjects.has(snapshot.subjectId)) {
+        errors.push(
+          `Existe mais de um ProgressSnapshot para o Subject ${snapshot.subjectId}.`,
+        );
+      }
+      snapshotSubjects.add(snapshot.subjectId);
     }
   }
 

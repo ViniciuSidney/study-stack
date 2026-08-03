@@ -26,3 +26,5 @@ Documentos locais de implementação:
 
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.
+
+- `foundation-06.md`: Visão Geral funcional e progresso por evidências.

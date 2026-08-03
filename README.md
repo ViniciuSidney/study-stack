@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 05
+## Estado atual: Fundação 06
 
 Já funciona:
 
@@ -33,29 +33,25 @@ Já funciona:
 - entidade `Subject` persistente;
 - contrato Concept Compass `1.0.0`;
 - entidade base `Record` e ciclo de vida persistente;
-- criação real de Resumos e Anotações;
+- criação e edição real de Resumos e Anotações;
 - busca, filtros, Importantes e agrupamentos cronológicos;
 - arquivamento, restauração, histórico e contadores reais;
-- editor completo de Resumos;
-- editor completo de Anotações;
 - conteúdo rico sanitizado e pesquisável;
-- objetivo, conceitos, exemplos, dúvidas e síntese opcionais;
-- fonte, descrição e referências;
-- conclusão validada por título e conteúdo principal;
+- conclusão validada por título e conteúdo;
 - marca `Estudado` independente da conclusão;
-- reabertura de Resumos concluídos;
-- autosave temporário e recuperação de rascunho de edição;
-- descarte explícito de alterações temporárias;
+- autosave temporário e recuperação de rascunhos;
 - fluxo rápido `Apenas um detalhe`;
-- títulos automáticos para detalhes rápidos;
-- marca-texto no editor;
-- checklists textuais com `[ ]` e `[x]`;
-- vínculos entre registros do mesmo assunto;
-- validação referencial dos vínculos;
+- checklists textuais e vínculos entre registros;
+- Visão Geral funcional e editável;
+- estado manual do assunto e percepção pessoal visível de 0% a 100%;
+- cálculo de progresso versionado por evidências;
+- `ProgressSnapshot` persistido com fingerprint;
+- categorias Base, Prática, Análise de erros, Revisão e Consolidação;
+- botão compacto de progresso funcional no cabeçalho;
 - testes unitários com o test runner nativo do Node.js.
 
-Ainda não foram implementados progresso, importações do Test Quest, backup ou
-restauração de arquivo.
+Ainda não foram implementadas as telas e integrações reais de Exercícios,
+Registros de Erro, backup ou restauração de arquivo.
 
 ## Requisitos
 
@@ -135,3 +131,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 - [`docs/foundation-03.md`](docs/foundation-03.md)
 - [`docs/foundation-04.md`](docs/foundation-04.md)
 - [`docs/foundation-05.md`](docs/foundation-05.md)
+- [`docs/foundation-06.md`](docs/foundation-06.md)
