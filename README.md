@@ -1,104 +1,67 @@
 # Study Stack
 
-Aplicação web para organizar conteúdos estudados, registrar resumos e
-anotações, importar resultados do Test Quest e acompanhar erros, progresso e
-consolidação por assunto.
+O **Study Stack** é um caderno conectado para organizar o que foi estudado por assunto, registrar evidências de aprendizagem e orientar o estudante até a consolidação final.
 
-## Organização recomendada
+> Versão estável atual: **v0.1.0**
 
-Mantenha o protótipo arquivado e use esta pasta como projeto definitivo:
+## Principais recursos
+
+- contexto vinculado a `Matéria → Tema → Assunto` do Concept Compass;
+- criação e edição de Resumos e Anotações;
+- conteúdo rico sanitizado, busca, filtros e registros importantes;
+- autosave recuperável e rascunhos persistentes;
+- importação de sessões e questões do Test Quest;
+- tratamento seguro de duplicidades, divergências e pendências;
+- Registros de Erro com análise, revisão, reincidência e superação;
+- caminho metacognitivo para práticas sem erros;
+- progresso objetivo de 10 pontos baseado em evidências;
+- roteiro guiado: Base, Prática, Análise, Revisão e Consolidação;
+- avanço manual e recomendações de próxima ação;
+- arquivamento e restauração sem exclusão destrutiva comum;
+- histórico cronológico por assunto;
+- backup completo com assinatura de integridade;
+- restauração por mesclagem ou substituição com ponto de recuperação;
+- diagnóstico estrutural, referencial e de armazenamento;
+- temas claro, escuro e do sistema;
+- layout responsivo, navegação por teclado e barras de rolagem estilizadas.
+
+## Fluxo de estudo
 
 ```text
-Study Stack/
-├── docs-e-assets/
-├── prototipo/
-│   └── study-stack-wireframe-07/
-└── desenvolvimento/
-    └── study-stack/
+Concept Compass
+↓
+Study Stack: Base teórica
+↓
+Test Quest: Prática
+↓
+Study Stack: Análise de erros ou verificação metacognitiva
+↓
+Revisão
+↓
+Consolidação em 10/10
 ```
 
-O protótipo contém simulações e dados fictícios. Esta pasta implementa a
-aplicação real de forma incremental.
+A ordem orienta o estudo, mas a navegação geral permanece livre. A aplicação diferencia a etapa atual, a etapa recomendada e a etapa apenas consultada.
 
-## Estado atual: Fundação 10
+## Pontuação objetiva
 
-Já funciona:
+| Categoria | Limite | Evidência principal |
+|---|---:|---|
+| Base | 2 | Resumo concluído e marcado como estudado |
+| Prática | 3 | Sessões válidas importadas do Test Quest |
+| Análise | 2 | Registros de Erro completos ou verificações metacognitivas |
+| Revisão | 2 | Revisões e confirmações posteriores |
+| Consolidação | 1 | Confirmação consciente após os nove pontos anteriores |
 
-- AppShell responsivo;
-- sidebar recolhível no desktop e drawer mobile;
-- rotas internas por hash;
-- tema claro, escuro ou do sistema;
-- schema de armazenamento `1.0.0`;
-- estado raiz validado antes de cada gravação;
-- entidade `Subject` persistente;
-- contrato Concept Compass `1.0.0`;
-- entidade base `Record` e ciclo de vida persistente;
-- criação e edição real de Resumos e Anotações;
-- busca, filtros, Importantes e agrupamentos cronológicos;
-- arquivamento, restauração, histórico e contadores reais;
-- conteúdo rico sanitizado e pesquisável;
-- conclusão validada por título e conteúdo;
-- marca `Estudado` independente da conclusão;
-- autosave temporário e recuperação de rascunhos;
-- fluxo rápido `Apenas um detalhe`;
-- checklists textuais e vínculos entre registros;
-- Visão Geral funcional e editável;
-- estado manual do assunto e percepção pessoal visível de 0% a 100%;
-- cálculo de progresso versionado por evidências;
-- `ProgressSnapshot` persistido com fingerprint;
-- categorias Base, Prática, Análise de erros, Revisão e Consolidação;
-- botão compacto de progresso funcional no cabeçalho;
-- contrato Test Quest `1.0.0`;
-- importação manual por arquivo ou JSON colado;
-- recebimento por parâmetros de URL ou handoff em `localStorage`;
-- entidades `ImportedSession` e `ImportedQuestion`;
-- snapshot original imutável separado das observações pessoais;
-- idempotência e preservação de reimportações divergentes;
-- seção Exercícios com métricas, busca, filtros e cards;
-- modal de sessão com respostas, correções e filtros por resultado;
-- listas com ao menos 15 respostas alimentam a categoria Prática;
-- criação seletiva de Registros de Erro a partir das questões incorretas;
-- entidades `ErrorRecord`, `ErrorOccurrence` e `ErrorEvidence`;
-- análise por causa, regra correta e estratégia de prevenção;
-- autosave e recuperação de rascunhos das análises de erro;
-- categorias e vínculos com Resumos ou Anotações do mesmo assunto;
-- revisão reversível com contagem histórica;
-- reincidências que reiniciam a sequência sem apagar evidências antigas;
-- superação após duas respostas corretas distintas e consecutivas;
-- seção Erros com grupos Pendentes, Reincidentes, Revisados e Superados;
-- categorias Análise de erros e Revisão alimentadas por evidências reais;
-- backup JSON completo com assinatura de integridade;
-- restauração por mesclagem ou substituição;
-- prévia de entidades novas, idênticas e conflitantes;
-- ponto de recuperação automático antes da restauração;
-- diagnóstico estrutural, referencial e de armazenamento;
-- visualização e descarte de importações pendentes;
-- utilidades de manutenção no cabeçalho e em Configurações;
-- Roteiro para consolidar diretamente na Visão Geral;
-- etapas Base, Prática, Análise, Revisão e Consolidação consultáveis;
-- separação entre etapa atual, recomendada e consultada;
-- avanço manual com aviso único e retorno explícito a pendências anteriores;
-- ações diretas para Resumos, Test Quest, Exercícios, Erros e consolidação;
-- modal por categoria com evidências conquistadas e requisitos pendentes;
-- pontuação objetiva integrada ao Roteiro para consolidar;
-- progresso geral ao lado da trilha e barra dinâmica na etapa consultada;
-- verificações metacognitivas para acertos difíceis, lentos ou inseguros;
-- caminho alternativo sem criação de Registros de Erro fictícios;
-- consolidação manual após os nove pontos anteriores;
-- suspensão da consolidação quando uma evidência anterior deixa de contar;
-- testes unitários com o test runner nativo do Node.js.
-
-Ainda não foi implementada a integração funcional com o Flashcore. O próximo
-passo do projeto é a revisão final da experiência do Fluxo Guiado, seguida da
-estabilização geral da v0.1 e do fechamento dos critérios de aceite.
+O progresso é recalculado a partir das evidências. Arquivar ou restaurar uma evidência pode suspender ou recompor pontos sem apagar o histórico.
 
 ## Requisitos
 
 - Node.js 20 ou superior.
 
-Nenhuma dependência externa é necessária.
+Não há dependências externas de produção.
 
-## Executar
+## Executar localmente
 
 ```bash
 npm run dev
@@ -110,42 +73,21 @@ Abra:
 http://127.0.0.1:4173/
 ```
 
-Em `localhost` ou `127.0.0.1`, a aplicação usa um contexto controlado de
-desenvolvimento quando nenhum contrato é informado.
+Em `localhost` ou `127.0.0.1`, a aplicação usa um contexto controlado de desenvolvimento quando nenhum contrato é informado.
 
-### Testar vínculo ausente
+### Vínculo ausente
 
 ```text
 http://127.0.0.1:4173/?noContext=1
 ```
 
-### Exigir contrato mesmo no ambiente local
+### Exigir contrato no ambiente local
 
 ```text
 http://127.0.0.1:4173/?strictContext=1
 ```
 
-### Testar contexto explícito
-
-```text
-http://127.0.0.1:4173/?contractVersion=1.0.0&sentAt=2026-08-02T21%3A00%3A00.000Z&sourceApp=concept_compass&matterId=matter-biology&matterName=Biologia&themeId=theme-ecology&themeName=Ecologia&subjectId=subject-ecology-food-webs&subjectName=Cadeias%20e%20Teias%20Alimentares&sourceArchived=false#/overview
-```
-
-## Armazenamento
-
-Chave principal:
-
-```text
-study-stack:v1:state
-```
-
-Acesso ao navegador ocorre somente por adaptadores e repositórios. Regras de
-domínio não dependem diretamente do `localStorage`.
-
-Os rascunhos temporários do editor são armazenados na coleção
-`draftBuffers`, dentro do mesmo estado versionado.
-
-## Verificações
+## Verificação técnica
 
 ```bash
 npm run check
@@ -154,24 +96,48 @@ npm run check
 O comando executa:
 
 1. verificação sintática dos arquivos JavaScript;
-2. testes unitários.
+2. suíte automatizada com o test runner nativo do Node.js.
 
-## Git
+A candidata `v0.1.0` foi fechada com **166 testes automatizados aprovados**, os 12 blocos de testes manuais aprovados e os retestes direcionados aprovados.
 
-- `main`: estados aprovados ou publicados;
-- `dev`: desenvolvimento da v0.1;
-- branches curtas opcionais para funcionalidades isoladas.
+## Armazenamento e segurança
 
-Esta entrega deve ser adicionada e testada na branch `dev`.
+Chave principal:
 
-## Documentação técnica
+```text
+study-stack:v1:state
+```
 
-- [`docs/foundation-02.md`](docs/foundation-02.md)
-- [`docs/foundation-03.md`](docs/foundation-03.md)
-- [`docs/foundation-04.md`](docs/foundation-04.md)
-- [`docs/foundation-05.md`](docs/foundation-05.md)
-- [`docs/foundation-06.md`](docs/foundation-06.md)
-- [`docs/foundation-07.md`](docs/foundation-07.md)
-- [`docs/foundation-08.md`](docs/foundation-08.md)
-- [`docs/foundation-09.md`](docs/foundation-09.md)
-- [`docs/foundation-10.md`](docs/foundation-10.md)
+- todas as gravações passam por adaptadores e repositórios;
+- o estado é validado antes da persistência;
+- backups possuem assinatura de integridade;
+- restaurações por substituição criam ponto de recuperação;
+- dados importados permanecem separados das observações pessoais;
+- o armazenamento é local ao navegador e à origem da aplicação.
+
+Antes de atualizações importantes, crie um backup em **Configurações → Criar backup**.
+
+## Limitações conhecidas da v0.1.0
+
+- dados ainda não são sincronizados entre dispositivos ou contas;
+- a integração funcional com o Flashcore permanece futura;
+- o seletor de questões corretas para evidências funciona, mas poderá receber uma experiência mais agradável em versão futura;
+- PWA, instalação e operação offline não fazem parte desta entrega estável;
+- o smoke test público deve ser executado após a publicação no GitHub Pages.
+
+Essas limitações não envolvem perda ou corrupção conhecida de dados.
+
+## Branches e publicação
+
+- `dev`: desenvolvimento e candidata aprovada;
+- `main`: versão publicada;
+- tag prevista: `v0.1.0`.
+
+A publicação deve manter `main`, tag, GitHub Release e GitHub Pages no mesmo commit.
+
+## Documentação
+
+- [CHANGELOG.md](CHANGELOG.md)
+- [Notas da versão](RELEASE_NOTES.md)
+- [Registro de qualidade da v0.1.0](docs/qa-v0.1.0.md)
+- [Histórico das fundações](docs/README.md)

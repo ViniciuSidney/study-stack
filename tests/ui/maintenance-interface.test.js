@@ -15,12 +15,12 @@ test("Configurações oferece backup, restauração, diagnóstico e pendências"
   assert.match(source, /Ver importações pendentes/);
 });
 
-test("menu de utilidades ativa as ferramentas da Fundação 09", async () => {
+test("menu de utilidades apresenta as ferramentas e a versão estável", async () => {
   const html = await read("../../index.html");
   assert.match(html, /data-utility="backup"/);
   assert.match(html, /data-utility="restore"/);
   assert.match(html, /data-utility="diagnostics"/);
-  assert.match(html, /Study Stack · Fundação 10/);
+  assert.match(html, /Study Stack · v0\.1\.0/);
 });
 
 test("modais de manutenção mantêm corpo rolável e rodapé separado", async () => {

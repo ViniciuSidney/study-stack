@@ -18,7 +18,7 @@ Arquivos principais:
 - 10: Plano de Testes e Critérios de Aceite
 - 11: Validação do Protótipo e Decisões Aprovadas
 
-Documentos locais de implementação:
+Documentos locais de implementação e lançamento:
 
 - [`foundation-02.md`](foundation-02.md) — schema, persistência e Subject.
 - [`foundation-03.md`](foundation-03.md) — Record e ciclo de vida persistente.
@@ -29,6 +29,7 @@ Documentos locais de implementação:
 - [`foundation-08.md`](foundation-08.md) — ciclo completo dos Registros de Erro.
 - [`foundation-09.md`](foundation-09.md) — backup, restauração, diagnóstico e pendências.
 - [`foundation-10.md`](foundation-10.md) — Fluxo Guiado de Consolidação.
+- [`qa-v0.1.0.md`](qa-v0.1.0.md) — registro da execução e aprovação da candidata v0.1.0.
 
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.
