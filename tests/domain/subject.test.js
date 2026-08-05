@@ -61,3 +61,18 @@ test("sincronização atualiza rótulos sem apagar dados internos", () => {
     "Entendimento inicial",
   );
 });
+
+test("sincronização adiciona o roteiro a Subjects criados antes da Fundação 10", () => {
+  const subject = createSubjectFromContext(context(), NOW);
+  delete subject.guidedFlow;
+  const result = mergeSubjectWithContext(
+    subject,
+    context(),
+    "2026-08-03T01:00:00.000Z",
+  );
+
+  assert.equal(result.changed, true);
+  assert.equal(result.subject.guidedFlow.currentStage, "base");
+  assert.deepEqual(result.subject.guidedFlow.metacognitiveChecks, []);
+  assert.equal(validateSubject(result.subject).valid, true);
+});

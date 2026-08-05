@@ -3,6 +3,11 @@ import {
   getRichContentPlainText,
   validateRichContent,
 } from "./rich-content.js";
+import {
+  createDefaultGuidedFlow,
+  normalizeGuidedFlow,
+  validateGuidedFlow,
+} from "./guided-flow.js";
 
 export const SUBJECT_STUDY_STATES = Object.freeze([
   "initial_base",
@@ -83,6 +88,7 @@ export function createSubjectFromContext(context, now) {
       lastReason: null,
       confirmationCount: 0,
     },
+    guidedFlow: createDefaultGuidedFlow(now),
     lastActivityAt: null,
     sourceLastSyncedAt: now,
     createdAt: now,
@@ -97,9 +103,11 @@ export function mergeSubjectWithContext(subject, context, now) {
   }
 
   const sourceFields = sourceFieldsFromContext(context);
-  const changed = Object.entries(sourceFields).some(
+  const sourceChanged = Object.entries(sourceFields).some(
     ([key, value]) => JSON.stringify(subject[key] ?? null) !== JSON.stringify(value),
   );
+  const guidedFlowResult = normalizeGuidedFlow(subject.guidedFlow, subject.id, now);
+  const changed = sourceChanged || guidedFlowResult.changed;
 
   if (!changed) {
     return { subject, changed: false };
@@ -110,9 +118,10 @@ export function mergeSubjectWithContext(subject, context, now) {
     subject: {
       ...subject,
       ...sourceFields,
-      sourceLastSyncedAt: now,
+      guidedFlow: guidedFlowResult.guidedFlow,
+      sourceLastSyncedAt: sourceChanged ? now : subject.sourceLastSyncedAt,
       updatedAt: now,
-      entityVersion: Math.max(1, Number(subject.entityVersion) || 1),
+      entityVersion: Math.max(2, Number(subject.entityVersion) || 1),
     },
   };
 }
@@ -236,6 +245,9 @@ export function validateSubject(subject) {
   if (!subject.consolidation || typeof subject.consolidation !== "object") {
     errors.push("consolidation inválido.");
   }
+
+  const guidedFlowValidation = validateGuidedFlow(subject.guidedFlow, subject.id);
+  errors.push(...guidedFlowValidation.errors.map((error) => `guidedFlow: ${error}`));
 
   if (!Number.isInteger(subject.entityVersion) || subject.entityVersion < 1) {
     errors.push("entityVersion inválido.");

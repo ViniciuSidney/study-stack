@@ -20,7 +20,7 @@ test("menu de utilidades ativa as ferramentas da Fundação 09", async () => {
   assert.match(html, /data-utility="backup"/);
   assert.match(html, /data-utility="restore"/);
   assert.match(html, /data-utility="diagnostics"/);
-  assert.match(html, /Study Stack · Fundação 09/);
+  assert.match(html, /Study Stack · Fundação 10/);
 });
 
 test("modais de manutenção mantêm corpo rolável e rodapé separado", async () => {

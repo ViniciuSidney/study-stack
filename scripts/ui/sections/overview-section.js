@@ -1,4 +1,3 @@
-import { PROGRESS_CATEGORY_DEFINITIONS } from "../../domain/progress.js";
 import { getRichContentPlainText } from "../../domain/rich-content.js";
 import { clearElement, createElement } from "../../utils/dom.js";
 
@@ -17,13 +16,6 @@ const RECORD_TYPE_LABELS = Object.freeze({
   error_record: "Erro",
 });
 
-const CATEGORY_HELP = Object.freeze({
-  base: "Resumo concluído e marcação de estudo.",
-  practice: "Listas válidas com pelo menos 15 respostas.",
-  errorAnalysis: "Registros de Erro com análise completa.",
-  review: "Erros revisados e evidências de superação.",
-  consolidation: "Confirmação após alcançar os 9 pontos anteriores.",
-});
 
 export function getPerceivedMasteryPresentation(value) {
   const informed = Number.isInteger(value) && value >= 0 && value <= 100;
@@ -71,43 +63,6 @@ function createMetric(document, label, value, onClick, description = "") {
   return button;
 }
 
-function createProgressCategory(document, key, category) {
-  const definition = PROGRESS_CATEGORY_DEFINITIONS[key];
-  const card = createElement(document, "article", {
-    className: `progress-category ${category.activePoints === category.cap ? "complete" : ""}`,
-  });
-  const header = createElement(document, "div", {
-    className: "progress-category-header",
-  });
-  header.append(
-    createElement(document, "strong", { text: definition.label }),
-    createElement(document, "span", {
-      text: `${category.activePoints}/${category.cap}`,
-    }),
-  );
-  const track = createElement(document, "div", {
-    className: "progress-mini-track",
-    attributes: {
-      role: "progressbar",
-      "aria-label": `Progresso em ${definition.label}`,
-      "aria-valuemin": "0",
-      "aria-valuemax": String(category.cap),
-      "aria-valuenow": String(category.activePoints),
-    },
-  });
-  const fill = createElement(document, "span", {
-    className: "progress-mini-fill",
-  });
-  fill.style.width = `${(category.activePoints / category.cap) * 100}%`;
-  track.append(fill);
-  card.append(
-    header,
-    track,
-    createElement(document, "p", { text: CATEGORY_HELP[key] }),
-  );
-  return card;
-}
-
 function createPersonalPerception(document, mastery) {
   const presentation = getPerceivedMasteryPresentation(mastery);
   const indicator = createElement(document, "aside", {
@@ -118,31 +73,11 @@ function createPersonalPerception(document, mastery) {
     },
   });
   indicator.append(
-    createElement(document, "span", { text: "Percepção pessoal" }),
-    createElement(document, "strong", { text: presentation.displayValue }),
+    createElement(document, "span", { text: "Percepção" }),
+    createElement(document, "strong", {
+      text: presentation.informed ? presentation.displayValue : "—",
+    }),
   );
-
-  const track = createElement(document, "div", {
-    className: "overview-personal-track",
-    attributes: presentation.informed
-      ? {
-          role: "progressbar",
-          "aria-label": "Percepção pessoal de domínio",
-          "aria-valuemin": "0",
-          "aria-valuemax": "100",
-          "aria-valuenow": String(presentation.value),
-        }
-      : {
-          role: "status",
-          "aria-label": "Percepção pessoal não informada",
-        },
-  });
-  const fill = createElement(document, "span", {
-    className: "overview-personal-fill",
-  });
-  fill.style.width = `${presentation.value ?? 0}%`;
-  track.append(fill);
-  indicator.append(track);
 
   return indicator;
 }
@@ -219,6 +154,342 @@ function createHistoryList(document, events) {
   return list;
 }
 
+
+function createGuidedFlowPanel({
+  document,
+  subject,
+  progress,
+  flowView,
+  onMakeStageCurrent,
+  onStageAction,
+  onOpenStageHelp,
+}) {
+  const panel = createElement(document, "section", {
+    className: `panel guided-flow-panel ${flowView.completed ? "completed" : ""}`,
+  });
+  const header = createElement(document, "header", {
+    className: "guided-flow-header",
+  });
+  const headerCopy = createElement(document, "div");
+  headerCopy.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Roteiro para consolidar",
+    }),
+    createElement(document, "h3", {
+      text: flowView.completed
+        ? "Assunto consolidado"
+        : `Etapa atual: ${flowView.current.label}`,
+    }),
+    createElement(document, "p", {
+      text: flowView.completed
+        ? "Os 10 pontos estão ativos. O caminho permanece disponível para consulta."
+        : `Recomendação atual: ${flowView.recommended.label}. O avanço só acontece quando você decidir.`,
+    }),
+  );
+  header.append(headerCopy);
+
+  const navigation = createElement(document, "div", {
+    className: "guided-flow-navigation",
+  });
+  const progressSummary = createElement(document, "section", {
+    className: "guided-flow-progress-summary",
+    attributes: { "aria-label": "Pontuação objetiva do assunto" },
+  });
+  const score = createElement(document, "div", {
+    className: "overview-progress-score guided-flow-progress-score",
+    attributes: {
+      role: "progressbar",
+      "aria-label": "Progresso geral do assunto",
+      "aria-valuemin": "0",
+      "aria-valuemax": String(progress.goalTotal),
+      "aria-valuenow": String(progress.currentTotal),
+    },
+  });
+  score.style.setProperty("--progress-angle", `${progress.percentage * 3.6}deg`);
+  const scoreInner = createElement(document, "div");
+  scoreInner.append(
+    createElement(document, "strong", { text: `${progress.currentTotal}` }),
+    createElement(document, "span", { text: `de ${progress.goalTotal}` }),
+  );
+  score.append(scoreInner);
+
+  const progressCopy = createElement(document, "div", {
+    className: "guided-flow-progress-copy",
+  });
+  const progressMeta = createElement(document, "div", {
+    className: "overview-progress-meta guided-flow-progress-meta",
+  });
+  const stateRow = createElement(document, "div", {
+    className: "overview-state-row",
+  });
+  stateRow.append(
+    createElement(document, "span", {
+      className: "state-badge",
+      text: STUDY_STATE_LABELS[subject.studyState] ?? subject.studyState,
+    }),
+    createElement(document, "small", {
+      text: `Recalculado em ${formatDateTime(progress.calculatedAt)}`,
+    }),
+  );
+  progressMeta.append(
+    stateRow,
+    createPersonalPerception(document, subject.overview.perceivedMastery),
+  );
+  progressCopy.append(
+    progressMeta,
+    createElement(document, "h4", {
+      text: `${progress.percentage}% do caminho atual`,
+    }),
+    createElement(document, "p", {
+      text: "Pontuação baseada nas evidências persistidas deste assunto.",
+    }),
+  );
+  progressSummary.append(score, progressCopy);
+
+  const trackWrap = createElement(document, "div", {
+    className: "guided-flow-track-wrap",
+  });
+  const track = createElement(document, "div", {
+    className: "guided-flow-track",
+    attributes: { role: "tablist", "aria-label": "Etapas de consolidação" },
+  });
+  const detail = createElement(document, "div", {
+    className: "guided-flow-detail",
+    attributes: { role: "tabpanel" },
+  });
+  let selectedStage = flowView.currentStage;
+  const buttons = new Map();
+
+  function renderDetail(stageKey) {
+    selectedStage = stageKey;
+    const stage = flowView.stages.find((candidate) => candidate.key === stageKey);
+    buttons.forEach((button, key) => {
+      const selected = key === stageKey;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-selected", String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
+    clearElement(detail);
+
+    const copy = createElement(document, "div", {
+      className: "guided-flow-detail-copy",
+    });
+    const badges = createElement(document, "div", {
+      className: "guided-flow-badges",
+    });
+    if (stage.current) {
+      badges.append(createElement(document, "span", { text: "Etapa atual" }));
+    }
+    if (stage.recommended && !stage.current) {
+      badges.append(
+        createElement(document, "span", {
+          className: "recommended",
+          text: "Recomendada",
+        }),
+      );
+    }
+    if (stage.complete) {
+      badges.append(
+        createElement(document, "span", { className: "complete", text: "Concluída" }),
+      );
+    }
+    copy.append(
+      badges,
+      createElement(document, "h4", { text: stage.label }),
+      createElement(document, "p", { text: stage.description }),
+    );
+
+    const stageProgress = createElement(document, "div", {
+      className: "guided-flow-stage-progress",
+    });
+    const stageProgressHeader = createElement(document, "div", {
+      className: "guided-flow-stage-progress-header",
+    });
+    stageProgressHeader.append(
+      createElement(document, "strong", {
+        text: `${stage.activePoints}/${stage.cap} pontos`,
+      }),
+      createElement(document, "span", {
+        text: `${Math.round((stage.activePoints / stage.cap) * 100)}%`,
+      }),
+    );
+    const stageProgressTrack = createElement(document, "div", {
+      className: "guided-flow-stage-progress-track",
+      attributes: {
+        role: "progressbar",
+        "aria-label": `Progresso em ${stage.label}`,
+        "aria-valuemin": "0",
+        "aria-valuemax": String(stage.cap),
+        "aria-valuenow": String(stage.activePoints),
+      },
+    });
+    const stageProgressFill = createElement(document, "span", {
+      className: "guided-flow-stage-progress-fill",
+    });
+    stageProgressFill.style.width = `${(stage.activePoints / stage.cap) * 100}%`;
+    stageProgressTrack.append(stageProgressFill);
+    stageProgress.append(stageProgressHeader, stageProgressTrack);
+    copy.append(stageProgress);
+
+    const missingText = stage.complete
+      ? "Todos os requisitos desta etapa estão cumpridos."
+      : stage.missing[0] || "Consulte os requisitos desta etapa.";
+    copy.append(
+      createElement(document, "p", {
+        className: stage.complete
+          ? "guided-flow-stage-note complete"
+          : "guided-flow-stage-note",
+        text: missingText,
+      }),
+    );
+    if (!stage.canBecomeCurrent && stage.blockedReason) {
+      copy.append(
+        createElement(document, "p", {
+          className: "guided-flow-blocked-reason",
+          text: stage.blockedReason,
+        }),
+      );
+    }
+
+    const actions = createElement(document, "div", {
+      className: "guided-flow-actions",
+    });
+    const helpButton = createElement(document, "button", {
+      className: "button button-ghost",
+      text: "Como conquistar estes pontos?",
+      attributes: { type: "button" },
+    });
+    helpButton.addEventListener("click", () => onOpenStageHelp(stage));
+    actions.append(helpButton);
+
+    if (!stage.current) {
+      const makeCurrentButton = createElement(document, "button", {
+        className: "button button-secondary",
+        text: "Tornar etapa atual",
+        attributes: {
+          type: "button",
+          title: stage.blockedReason ?? "Tornar esta etapa atual",
+        },
+      });
+      makeCurrentButton.disabled = !stage.canBecomeCurrent;
+      makeCurrentButton.addEventListener("click", () => onMakeStageCurrent(stage.key));
+      actions.append(makeCurrentButton);
+    }
+
+    if (stage.action) {
+      const actionButton = createElement(document, "button", {
+        className: "button button-primary",
+        text: stage.action.label,
+        attributes: { type: "button" },
+      });
+      actionButton.addEventListener("click", () => onStageAction(stage.action));
+      actions.append(actionButton);
+      if (stage.action.secondary) {
+        const secondaryButton = createElement(document, "button", {
+          className: "guided-flow-secondary-action",
+          text: stage.action.secondary.label,
+          attributes: { type: "button" },
+        });
+        secondaryButton.addEventListener("click", () =>
+          onStageAction(stage.action.secondary),
+        );
+        actions.append(secondaryButton);
+      }
+    }
+
+    detail.append(copy, actions);
+  }
+
+  flowView.stages.forEach((stage, index) => {
+    const button = createElement(document, "button", {
+      className: [
+        "guided-flow-stage",
+        stage.current ? "current" : "",
+        stage.recommended ? "recommended" : "",
+        stage.complete ? "complete" : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
+      attributes: {
+        type: "button",
+        role: "tab",
+        "aria-selected": String(stage.key === selectedStage),
+        "aria-controls": "guided-flow-detail",
+      },
+    });
+    button.tabIndex = stage.key === selectedStage ? 0 : -1;
+    button.append(
+      createElement(document, "span", {
+        className: "guided-flow-stage-index",
+        text: stage.complete ? "✓" : String(index + 1),
+      }),
+      createElement(document, "strong", { text: stage.shortLabel }),
+      createElement(document, "small", {
+        text: `${stage.activePoints}/${stage.cap}`,
+      }),
+    );
+    button.addEventListener("click", () => renderDetail(stage.key));
+    button.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextIndex = (index + direction + flowView.stages.length) % flowView.stages.length;
+      const nextStage = flowView.stages[nextIndex];
+      renderDetail(nextStage.key);
+      buttons.get(nextStage.key)?.focus();
+    });
+    buttons.set(stage.key, button);
+    track.append(button);
+  });
+  detail.id = "guided-flow-detail";
+  trackWrap.append(track);
+  navigation.append(progressSummary, trackWrap);
+
+  panel.append(header, navigation);
+  if (flowView.regression) {
+    const notice = createElement(document, "div", {
+      className: "guided-flow-system-notice regression",
+    });
+    notice.append(
+      createElement(document, "p", { text: flowView.regressionMessage }),
+      createElement(document, "button", {
+        className: "button button-secondary",
+        text: `Voltar para ${flowView.recommended.shortLabel}`,
+        attributes: { type: "button" },
+      }),
+    );
+    notice.lastElementChild.addEventListener("click", () =>
+      onMakeStageCurrent(flowView.recommendedStage),
+    );
+    panel.append(notice);
+  } else if (flowView.advanceAvailable) {
+    const notice = createElement(document, "div", {
+      className: "guided-flow-system-notice advance",
+    });
+    notice.append(
+      createElement(document, "p", {
+        text: `${flowView.current.label} está concluída. Prosseguir para ${flowView.recommended.label} é recomendado, mas continua sendo uma decisão sua.`,
+      }),
+      createElement(document, "button", {
+        className: "button button-primary",
+        text: `Prosseguir para ${flowView.recommended.shortLabel}`,
+        attributes: { type: "button" },
+      }),
+    );
+    notice.lastElementChild.addEventListener("click", () =>
+      onMakeStageCurrent(flowView.recommendedStage),
+    );
+    panel.append(notice);
+  }
+  panel.append(detail);
+  renderDetail(selectedStage);
+  return panel;
+}
+
+
 export function renderOverviewSection({
   document,
   container,
@@ -231,6 +502,10 @@ export function renderOverviewSection({
   navigate,
   onCreate,
   onEditOverview,
+  guidedFlow,
+  onMakeStageCurrent,
+  onStageAction,
+  onOpenStageHelp,
 }) {
   clearElement(container);
 
@@ -240,7 +515,7 @@ export function renderOverviewSection({
   const header = createElement(document, "header", { className: "section-header" });
   const headerCopy = createElement(document, "div");
   headerCopy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Fundação 09" }),
+    createElement(document, "p", { className: "eyebrow", text: "Fundação 10" }),
     createElement(document, "h2", { text: "Visão Geral" }),
     createElement(document, "p", {
       className: "section-description",
@@ -265,70 +540,18 @@ export function renderOverviewSection({
   header.append(headerCopy, actions);
   inner.append(header);
 
-  const progressPanel = createElement(document, "section", {
-    className: "panel overview-progress-panel",
-  });
-  const progressLead = createElement(document, "div", {
-    className: "overview-progress-lead",
-  });
-  const score = createElement(document, "div", {
-    className: "overview-progress-score",
-    attributes: {
-      role: "progressbar",
-      "aria-label": "Progresso geral do assunto",
-      "aria-valuemin": "0",
-      "aria-valuemax": String(progress.goalTotal),
-      "aria-valuenow": String(progress.currentTotal),
-    },
-  });
-  score.style.setProperty("--progress-angle", `${progress.percentage * 3.6}deg`);
-  const scoreInner = createElement(document, "div");
-  scoreInner.append(
-    createElement(document, "strong", { text: `${progress.currentTotal}` }),
-    createElement(document, "span", { text: `de ${progress.goalTotal}` }),
+  inner.append(
+    createGuidedFlowPanel({
+      document,
+      subject,
+      progress,
+      flowView: guidedFlow,
+      onMakeStageCurrent,
+      onStageAction,
+      onOpenStageHelp,
+    }),
   );
-  score.append(scoreInner);
 
-  const leadCopy = createElement(document, "div", {
-    className: "overview-progress-copy",
-  });
-  const progressMeta = createElement(document, "div", {
-    className: "overview-progress-meta",
-  });
-  const stateRow = createElement(document, "div", {
-    className: "overview-state-row",
-  });
-  stateRow.append(
-    createElement(document, "span", {
-      className: "state-badge",
-      text: STUDY_STATE_LABELS[subject.studyState] ?? subject.studyState,
-    }),
-    createElement(document, "small", {
-      text: `Recalculado em ${formatDateTime(progress.calculatedAt)}`,
-    }),
-  );
-  progressMeta.append(
-    stateRow,
-    createPersonalPerception(document, subject.overview.perceivedMastery),
-  );
-  leadCopy.append(
-    progressMeta,
-    createElement(document, "h3", { text: `${progress.percentage}% do caminho atual` }),
-    createElement(document, "p", {
-      text:
-        "A pontuação vem de evidências persistidas. A percepção pessoal é exibida separadamente e não altera este cálculo.",
-    }),
-  );
-  progressLead.append(score, leadCopy);
-
-  const categoryGrid = createElement(document, "div", {
-    className: "progress-category-grid",
-  });
-  Object.keys(PROGRESS_CATEGORY_DEFINITIONS).forEach((key) => {
-    categoryGrid.append(createProgressCategory(document, key, progress.categories[key]));
-  });
-  progressPanel.append(progressLead, categoryGrid);
-  inner.append(progressPanel);
 
   const metrics = createElement(document, "section", { className: "metrics-grid" });
   metrics.append(
@@ -357,9 +580,9 @@ export function renderOverviewSection({
   factGrid.append(
     createOverviewFact(
       document,
-      "Próximo passo",
+      "Próximo passo pessoal",
       getRichContentPlainText(subject.overview.nextStep),
-      "Defina uma ação pequena e concreta para continuar.",
+      "O roteiro acima mostra a recomendação objetiva; aqui você pode registrar uma intenção pessoal.",
     ),
     createOverviewFact(
       document,

@@ -20,7 +20,7 @@ Study Stack/
 O protótipo contém simulações e dados fictícios. Esta pasta implementa a
 aplicação real de forma incremental.
 
-## Estado atual: Fundação 09
+## Estado atual: Fundação 10
 
 Já funciona:
 
@@ -74,11 +74,23 @@ Já funciona:
 - diagnóstico estrutural, referencial e de armazenamento;
 - visualização e descarte de importações pendentes;
 - utilidades de manutenção no cabeçalho e em Configurações;
+- Roteiro para consolidar diretamente na Visão Geral;
+- etapas Base, Prática, Análise, Revisão e Consolidação consultáveis;
+- separação entre etapa atual, recomendada e consultada;
+- avanço manual com aviso único e retorno explícito a pendências anteriores;
+- ações diretas para Resumos, Test Quest, Exercícios, Erros e consolidação;
+- modal por categoria com evidências conquistadas e requisitos pendentes;
+- pontuação objetiva integrada ao Roteiro para consolidar;
+- progresso geral ao lado da trilha e barra dinâmica na etapa consultada;
+- verificações metacognitivas para acertos difíceis, lentos ou inseguros;
+- caminho alternativo sem criação de Registros de Erro fictícios;
+- consolidação manual após os nove pontos anteriores;
+- suspensão da consolidação quando uma evidência anterior deixa de contar;
 - testes unitários com o test runner nativo do Node.js.
 
 Ainda não foi implementada a integração funcional com o Flashcore. O próximo
-passo do projeto é a estabilização geral da v0.1 e o fechamento dos critérios
-de aceite antes da publicação.
+passo do projeto é a revisão final da experiência do Fluxo Guiado, seguida da
+estabilização geral da v0.1 e do fechamento dos critérios de aceite.
 
 ## Requisitos
 
@@ -162,3 +174,4 @@ Esta entrega deve ser adicionada e testada na branch `dev`.
 - [`docs/foundation-07.md`](docs/foundation-07.md)
 - [`docs/foundation-08.md`](docs/foundation-08.md)
 - [`docs/foundation-09.md`](docs/foundation-09.md)
+- [`docs/foundation-10.md`](docs/foundation-10.md)

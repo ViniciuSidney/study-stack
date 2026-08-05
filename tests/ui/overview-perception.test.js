@@ -25,13 +25,14 @@ test("percepção pessoal ausente possui estado explícito", () => {
   assert.equal(presentation.displayValue, "Não informado");
 });
 
-test("Visão Geral apresenta a percepção pessoal como indicador compacto", async () => {
+test("Visão Geral apresenta a percepção pessoal como selo compacto", async () => {
   const css = await readFile(fileURLToPath(componentsCssUrl), "utf8");
 
   assert.match(css, /\.overview-progress-meta\s*\{/);
   assert.match(css, /\.overview-personal-perception\s*\{/);
+  assert.match(css, /display:\s*inline-flex/);
+  assert.match(css, /padding:\s*5px 8px/);
   assert.match(css, /border-radius:\s*999px/);
-  assert.match(css, /\.overview-personal-track\s*\{/);
-  assert.match(css, /height:\s*4px/);
-  assert.match(css, /\.overview-personal-fill\s*\{/);
+  assert.doesNotMatch(css, /\.overview-personal-track\s*\{/);
+  assert.doesNotMatch(css, /\.overview-personal-fill\s*\{/);
 });

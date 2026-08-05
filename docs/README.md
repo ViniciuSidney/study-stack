@@ -27,8 +27,9 @@ Documentos locais de implementação:
 - [`foundation-06.md`](foundation-06.md) — Visão Geral e progresso por evidências.
 - [`foundation-07.md`](foundation-07.md) — Exercícios importados do Test Quest.
 - [`foundation-08.md`](foundation-08.md) — ciclo completo dos Registros de Erro.
+- [`foundation-09.md`](foundation-09.md) — backup, restauração, diagnóstico e pendências.
+- [`foundation-10.md`](foundation-10.md) — Fluxo Guiado de Consolidação.
 
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.
 
-- `foundation-09.md`: backup, restauração, diagnóstico e pendências.

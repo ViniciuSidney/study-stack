@@ -9,6 +9,7 @@ import {
   validateImportedSession,
 } from "../domain/imported-session.js";
 import { validateProgressSnapshot } from "../domain/progress.js";
+import { validateGuidedFlow } from "../domain/guided-flow.js";
 import { validateRecord } from "../domain/record.js";
 import { validateSummary } from "../domain/summary.js";
 import { COLLECTION_NAMES } from "../config/storage-config.js";
@@ -384,6 +385,71 @@ export function validateState(state, expectedSchemaVersion) {
           errors.push(`importedQuestions.${id} referencia ErrorRecord inexistente: ${errorRecordId}.`);
         } else if (!errorRecord.linkedQuestionIds.includes(id)) {
           errors.push(`importedQuestions.${id} não consta no ErrorRecord ${errorRecordId}.`);
+        }
+      }
+    }
+
+    for (const [id, subject] of Object.entries(subjects)) {
+      if (!Object.hasOwn(subject, "guidedFlow")) {
+        continue;
+      }
+
+      const validation = validateGuidedFlow(subject.guidedFlow, id);
+      for (const error of validation.errors) {
+        errors.push(`subjects.${id}.guidedFlow: ${error}`);
+      }
+
+      for (const check of subject.guidedFlow?.metacognitiveChecks ?? []) {
+        const question = importedQuestions[check.questionId];
+        const session = importedSessions[check.sessionId];
+
+        if (!question) {
+          errors.push(
+            `subjects.${id}.guidedFlow referencia questão inexistente: ${check.questionId}.`,
+          );
+        } else {
+          if (question.subjectId !== id) {
+            errors.push(
+              `subjects.${id}.guidedFlow referencia questão de outro assunto: ${check.questionId}.`,
+            );
+          }
+          if (question.result !== "correct") {
+            errors.push(
+              `subjects.${id}.guidedFlow exige questão correta: ${check.questionId}.`,
+            );
+          }
+          if (question.sessionId !== check.sessionId) {
+            errors.push(
+              `subjects.${id}.guidedFlow diverge da sessão da questão ${check.questionId}.`,
+            );
+          }
+        }
+
+        if (!session) {
+          errors.push(
+            `subjects.${id}.guidedFlow referencia sessão inexistente: ${check.sessionId}.`,
+          );
+        } else if (session.subjectId !== id) {
+          errors.push(
+            `subjects.${id}.guidedFlow referencia sessão de outro assunto: ${check.sessionId}.`,
+          );
+        }
+
+        const confirmationQuestionId = check.review?.confirmationQuestionId;
+        if (confirmationQuestionId) {
+          const confirmationQuestion = importedQuestions[confirmationQuestionId];
+          if (!confirmationQuestion) {
+            errors.push(
+              `subjects.${id}.guidedFlow referencia questão de confirmação inexistente: ${confirmationQuestionId}.`,
+            );
+          } else if (
+            confirmationQuestion.subjectId !== id ||
+            confirmationQuestion.result !== "correct"
+          ) {
+            errors.push(
+              `subjects.${id}.guidedFlow possui confirmação incompatível: ${confirmationQuestionId}.`,
+            );
+          }
         }
       }
     }

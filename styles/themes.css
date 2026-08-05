@@ -28,6 +28,11 @@ html[data-theme="dark"] {
 
   --shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.22);
   --shadow-md: 0 22px 60px rgba(0, 0, 0, 0.4);
+
+  --scrollbar-track: #151c23;
+  --scrollbar-thumb: #4d5f6d;
+  --scrollbar-thumb-hover: #6b8292;
+  --scrollbar-thumb-active: #6ea7c7;
 }
 
 html[data-reduced-motion="true"] *,

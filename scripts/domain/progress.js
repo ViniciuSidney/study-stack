@@ -1,6 +1,6 @@
 import { getRichContentPlainText } from "./rich-content.js";
 
-export const PROGRESS_CALCULATION_VERSION = "1.1.0";
+export const PROGRESS_CALCULATION_VERSION = "1.2.0";
 
 export const PROGRESS_CATEGORY_DEFINITIONS = Object.freeze({
   base: Object.freeze({ label: "Base", cap: 2 }),
@@ -90,8 +90,30 @@ function practiceEvidence({ subjectId, records, importedSessions }) {
   };
 }
 
-function errorEvidence({ subjectId, records, errorRecords }) {
+function errorEvidence({
+  subject,
+  subjectId,
+  records,
+  importedSessions,
+  errorRecords,
+}) {
   const recordMap = buildRecordMap(records);
+  const activeSessionIds = new Set(
+    normalizeCollection(importedSessions)
+      .filter((session) => {
+        if (session.subjectId !== subjectId) {
+          return false;
+        }
+        const record = recordMap.get(session.recordId);
+        return Boolean(
+          record &&
+            !record.archivedAt &&
+            (session.stats?.validForPractice ??
+              Number(session.stats?.answered) >= 15),
+        );
+      })
+      .map((session) => session.id),
+  );
   const active = normalizeCollection(errorRecords).filter((errorRecord) => {
     if (errorRecord.subjectId !== subjectId) {
       return false;
@@ -100,24 +122,50 @@ function errorEvidence({ subjectId, records, errorRecords }) {
     const record = recordMap.get(errorRecord.recordId);
     return !record?.archivedAt;
   });
-  const analyzed = active.filter((errorRecord) => errorRecord.analysis?.isComplete);
-  const reviewed = active.filter((errorRecord) => errorRecord.reviewStatus === "reviewed");
-  const overcome = active.filter((errorRecord) => errorRecord.masteryStatus === "overcome");
+  const checks = Array.isArray(subject?.guidedFlow?.metacognitiveChecks)
+    ? subject.guidedFlow.metacognitiveChecks.filter((check) =>
+        activeSessionIds.has(check.sessionId),
+      )
+    : [];
+  const analyzedErrors = active.filter(
+    (errorRecord) => errorRecord.analysis?.isComplete,
+  );
+  const reviewedErrors = active.filter(
+    (errorRecord) => errorRecord.reviewStatus === "reviewed",
+  );
+  const overcomeErrors = active.filter(
+    (errorRecord) => errorRecord.masteryStatus === "overcome",
+  );
+  const analyzedChecks = checks.filter((check) => check.analysis?.isComplete);
+  const reviewedChecks = checks.filter((check) =>
+    ["reviewed", "confirmed"].includes(check.review?.status),
+  );
+  const confirmedChecks = checks.filter(
+    (check) => check.review?.status === "confirmed",
+  );
+  const analysisEvidenceIds = [
+    ...analyzedErrors.map((errorRecord) => errorRecord.id),
+    ...analyzedChecks.map((check) => check.id),
+  ];
+  const reviewEvidenceIds = [
+    ...new Set([
+      ...reviewedErrors.map((errorRecord) => errorRecord.id),
+      ...overcomeErrors.map((errorRecord) => errorRecord.id),
+      ...reviewedChecks.map((check) => check.id),
+      ...confirmedChecks.map((check) => check.id),
+    ]),
+  ];
 
   return {
     analysisPoints: Math.min(
       PROGRESS_CATEGORY_DEFINITIONS.errorAnalysis.cap,
-      analyzed.length,
+      analysisEvidenceIds.length,
     ),
-    analysisEvidenceIds: analyzed.map((errorRecord) => errorRecord.id),
+    analysisEvidenceIds,
     reviewPoints:
-      Number(reviewed.length > 0) + Number(overcome.length > 0),
-    reviewEvidenceIds: [
-      ...new Set([
-        ...reviewed.map((errorRecord) => errorRecord.id),
-        ...overcome.map((errorRecord) => errorRecord.id),
-      ]),
-    ],
+      Number(reviewedErrors.length > 0 || reviewedChecks.length > 0) +
+      Number(overcomeErrors.length > 0 || confirmedChecks.length > 0),
+    reviewEvidenceIds,
   };
 }
 
@@ -187,6 +235,16 @@ export function buildProgressInputFingerprint({
       overcomeAt: errorRecord.overcomeAt ?? null,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
+  const metacognitiveState = (subject?.guidedFlow?.metacognitiveChecks ?? [])
+    .map((check) => ({
+      id: check.id,
+      questionId: check.questionId,
+      analysisComplete: Boolean(check.analysis?.isComplete),
+      reviewStatus: check.review?.status ?? "pending",
+      confirmationQuestionId: check.review?.confirmationQuestionId ?? null,
+      updatedAt: check.updatedAt ?? null,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
 
   return stableHash({
     calculationVersion: PROGRESS_CALCULATION_VERSION,
@@ -202,6 +260,7 @@ export function buildProgressInputFingerprint({
     summaryState,
     sessionState,
     errorState,
+    metacognitiveState,
   });
 }
 
@@ -228,12 +287,18 @@ export function calculateProgress({
     importedSessions,
   });
   const errors = errorEvidence({
+    subject,
     subjectId: subject.id,
     records,
+    importedSessions,
     errorRecords,
   });
+  const prerequisitePoints =
+    base.points + practice.points + errors.analysisPoints + errors.reviewPoints;
   const consolidationPoints =
-    subject.consolidation?.status === "confirmed" ? 1 : 0;
+    subject.consolidation?.status === "confirmed" && prerequisitePoints >= 9
+      ? 1
+      : 0;
 
   const categories = {
     base: createCategory(
@@ -289,10 +354,14 @@ export function calculateProgress({
     );
   }
   if (categories.errorAnalysis.activePoints === 0) {
-    suspendedReasons.push("Análise aguardando Registros de Erro completos.");
+    suspendedReasons.push(
+      "Análise aguardando Registros de Erro ou verificações de acertos difíceis.",
+    );
   }
   if (categories.review.activePoints === 0) {
-    suspendedReasons.push("Revisão aguardando evidências de erros revisados.");
+    suspendedReasons.push(
+      "Revisão aguardando erros revisados ou verificações metacognitivas confirmadas.",
+    );
   }
   if (categories.consolidation.activePoints === 0) {
     suspendedReasons.push(

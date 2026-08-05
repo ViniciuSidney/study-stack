@@ -6,6 +6,7 @@ import { DiagnosticService } from "./services/diagnostic-service.js";
 import { DraftService } from "./services/draft-service.js";
 import { ExerciseService } from "./services/exercise-service.js";
 import { ErrorService } from "./services/error-service.js";
+import { GuidedFlowService } from "./services/guided-flow-service.js";
 import { NoteService } from "./services/note-service.js";
 import { OverviewService } from "./services/overview-service.js";
 import { ProgressService } from "./services/progress-service.js";
@@ -19,10 +20,13 @@ import { StateRepository } from "./storage/state-repository.js";
 import { createInitialState } from "./storage/state-schema.js";
 import { AppShell } from "./ui/app-shell.js";
 import { openConfirmationModal } from "./ui/modals/confirmation-modal.js";
+import { openConsolidationModal } from "./ui/modals/consolidation-modal.js";
 import { openDiagnosticModal } from "./ui/modals/diagnostic-modal.js";
 import { openExerciseSessionModal } from "./ui/modals/exercise-session-modal.js";
 import { openErrorEditorModal } from "./ui/modals/error-editor-modal.js";
 import { openErrorEvidenceModal } from "./ui/modals/error-evidence-modal.js";
+import { openFlowStageHelpModal } from "./ui/modals/flow-stage-help-modal.js";
+import { openMetacognitiveReviewModal } from "./ui/modals/metacognitive-review-modal.js";
 import { openNoteEditorModal } from "./ui/modals/note-editor-modal.js";
 import { openOverviewEditorModal } from "./ui/modals/overview-editor-modal.js";
 import { openPendingImportsModal } from "./ui/modals/pending-imports-modal.js";
@@ -64,6 +68,7 @@ export class StudyStackApp {
     this.draftService = null;
     this.exerciseService = null;
     this.errorService = null;
+    this.guidedFlowService = null;
     this.initialTestQuestNotice = null;
     this.clock = () => new Date().toISOString();
   }
@@ -137,6 +142,11 @@ export class StudyStackApp {
       clock: this.clock,
       appVersion: APP_CONFIG.appVersion,
     });
+    this.guidedFlowService = new GuidedFlowService({
+      repository: this.repository,
+      clock: this.clock,
+      appVersion: APP_CONFIG.appVersion,
+    });
     this.backupService = new BackupService({
       repository: this.repository,
       clock: this.clock,
@@ -160,6 +170,7 @@ export class StudyStackApp {
     });
 
     if (this.subject) {
+      this.guidedFlowService.ensure(this.subject.id);
       this.consumeInitialTestQuestPayload();
       this.progressService.ensureCurrent(this.subject.id);
       this.subject = this.repository.getEntity("subjects", this.subject.id);
@@ -195,6 +206,9 @@ export class StudyStackApp {
         this.initialTestQuestNotice.message,
         this.initialTestQuestNotice.type,
       );
+    }
+    if (this.subject) {
+      this.window.setTimeout(() => this.showGuidedFlowNotice(), 120);
     }
   }
 
@@ -277,11 +291,13 @@ export class StudyStackApp {
       this.shell.setProgress(progress);
       this.shell.setSubjectContext(this.subject);
 
+      const guidedFlow = this.guidedFlowService.getView(this.subject.id);
       renderOverviewSection({
         document: this.document,
         container,
         subject: this.subject,
         progress,
+        guidedFlow,
         recordCounts,
         recentRecords: activeRecords,
         importantRecords: activeRecords.filter((record) => record.isImportant),
@@ -289,6 +305,9 @@ export class StudyStackApp {
         navigate: (target) => this.router.navigate(target),
         onCreate: () => this.openCreateRecord(),
         onEditOverview: () => this.openOverviewEditor(),
+        onMakeStageCurrent: (stage) => this.makeGuidedStageCurrent(stage),
+        onStageAction: (action) => this.executeGuidedAction(action),
+        onOpenStageHelp: (stage) => this.openGuidedStageHelp(stage),
       });
     } else if (sectionId === "summaries" || sectionId === "notes") {
       const type = sectionId === "summaries" ? "summary" : "note";
@@ -610,6 +629,185 @@ export class StudyStackApp {
     }
   }
 
+  makeGuidedStageCurrent(stage) {
+    try {
+      const view = this.guidedFlowService.setCurrentStage(this.subject.id, stage);
+      this.subject = this.repository.getEntity("subjects", this.subject.id);
+      this.shell.setSubjectContext(this.subject);
+      this.shell.showToast(`${view.current.label} agora é a etapa atual.`);
+      this.renderSection("overview");
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível alterar a etapa atual.");
+    }
+  }
+
+  openGuidedStageHelp(stage) {
+    openFlowStageHelpModal({
+      document: this.document,
+      stage,
+      onAction: (action) => this.executeGuidedAction(action),
+      onClose: () => this.shell.syncToastLayer(),
+    });
+  }
+
+  executeGuidedAction(action) {
+    if (!action?.type) {
+      return;
+    }
+    switch (action.type) {
+      case "create_summary":
+        this.openCreateRecord("summary");
+        break;
+      case "open_summary": {
+        const record = action.recordId
+          ? this.repository.getEntity("records", action.recordId)
+          : null;
+        if (record) {
+          this.openSummaryEditor(record);
+        } else {
+          this.router.navigate("summaries");
+        }
+        break;
+      }
+      case "open_summaries":
+        this.router.navigate("summaries");
+        break;
+      case "open_test_quest":
+        this.openTestQuestForSubject();
+        break;
+      case "import_result":
+        this.openTestQuestImport();
+        break;
+      case "open_exercises":
+        this.router.navigate("exercises");
+        break;
+      case "open_errors":
+        this.router.navigate("errors");
+        break;
+      case "open_metacognitive":
+        this.openMetacognitiveReview();
+        break;
+      case "confirm_consolidation":
+        this.openConsolidation();
+        break;
+      case "open_stage_help": {
+        const view = this.guidedFlowService.getView(this.subject.id);
+        const stage = view.stages.find(
+          (candidate) =>
+            candidate.key === (action.stageKey ?? view.recommendedStage),
+        );
+        if (stage) {
+          this.openGuidedStageHelp(stage);
+        }
+        break;
+      }
+      default:
+        this.shell.showToast("A ação recomendada ainda não está disponível.", "warning");
+    }
+  }
+
+  openTestQuestForSubject() {
+    try {
+      const url = new URL(APP_CONFIG.integration.testQuestUrl);
+      url.searchParams.set("contractVersion", "1.0.0");
+      url.searchParams.set("sentAt", this.clock());
+      url.searchParams.set("sourceApp", "study_stack");
+      url.searchParams.set("matterId", this.subject.matterId);
+      url.searchParams.set("matterName", this.subject.matterName);
+      url.searchParams.set("themeId", this.subject.themeId);
+      url.searchParams.set("themeName", this.subject.themeName);
+      url.searchParams.set("subjectId", this.subject.id);
+      url.searchParams.set("subjectName", this.subject.subjectName);
+      url.searchParams.set("returnUrl", this.window.location.href);
+      const anchor = this.document.createElement("a");
+      anchor.href = url.toString();
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.hidden = true;
+      this.document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      this.shell.showToast("Test Quest aberto com o contexto deste assunto.");
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível abrir o Test Quest.");
+    }
+  }
+
+  openMetacognitiveReview() {
+    try {
+      const view = this.guidedFlowService.getMetacognitiveView(this.subject.id);
+      openMetacognitiveReviewModal({
+        document: this.document,
+        view,
+        onCreate: (values) => {
+          this.guidedFlowService.createMetacognitiveCheck(this.subject.id, values);
+          this.afterRecordMutation("Verificação metacognitiva registrada.");
+        },
+        onReview: (checkId) => {
+          this.guidedFlowService.markMetacognitiveReviewed(
+            this.subject.id,
+            checkId,
+          );
+          this.afterRecordMutation("Verificação marcada como revisada.");
+        },
+        onConfirm: (checkId, questionId) => {
+          this.guidedFlowService.confirmMetacognitive(
+            this.subject.id,
+            checkId,
+            questionId,
+          );
+          this.afterRecordMutation(
+            "Compreensão confirmada com outra questão correta.",
+          );
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(
+        error,
+        "Não foi possível abrir a verificação metacognitiva.",
+      );
+    }
+  }
+
+  openConsolidation() {
+    try {
+      const flowView = this.guidedFlowService.getView(this.subject.id);
+      openConsolidationModal({
+        document: this.document,
+        flowView,
+        onSubmit: (finalObservation) => {
+          this.guidedFlowService.confirmConsolidation(
+            this.subject.id,
+            finalObservation,
+          );
+          this.afterRecordMutation("Consolidação final confirmada.");
+        },
+        onClose: () => this.shell.syncToastLayer(),
+      });
+    } catch (error) {
+      this.handleFailure(error, "Não foi possível abrir a consolidação final.");
+    }
+  }
+
+  showGuidedFlowNotice() {
+    if (!this.subject || !this.guidedFlowService || !this.shell) {
+      return;
+    }
+    try {
+      const notice = this.guidedFlowService.consumeAdvanceNotice(this.subject.id);
+      if (notice) {
+        this.subject = this.repository.getEntity("subjects", this.subject.id);
+        this.shell.showToast(notice.message, notice.type);
+        if (this.router?.getCurrentSection() === "overview") {
+          this.renderSection("overview");
+        }
+      }
+    } catch (error) {
+      console.error("Não foi possível atualizar o aviso do roteiro.", error);
+    }
+  }
+
   openOverviewEditor() {
     try {
       const { subject } = this.overviewService.getView(this.subject.id);
@@ -900,6 +1098,7 @@ export class StudyStackApp {
     this.updateShellState();
     this.shell.showToast(message);
     this.renderSection(this.router.getCurrentSection());
+    this.window.setTimeout(() => this.showGuidedFlowNotice(), 100);
   }
 
   updateShellState() {

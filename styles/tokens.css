@@ -46,4 +46,10 @@
 
   --transition-fast: 160ms ease;
   --transition-normal: 240ms ease;
+
+  --scrollbar-size: 10px;
+  --scrollbar-track: #e8edf1;
+  --scrollbar-thumb: #aab8c3;
+  --scrollbar-thumb-hover: #7e929f;
+  --scrollbar-thumb-active: #315f7a;
 }

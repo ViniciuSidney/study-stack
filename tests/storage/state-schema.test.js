@@ -88,3 +88,19 @@ test("validação rejeita ProgressSnapshot ligado a Subject inexistente", async 
   assert.equal(result.valid, false);
   assert.match(result.errors.join(" "), /ProgressSnapshot|Subject inexistente/);
 });
+
+test("estado da Fundação 09 sem guidedFlow continua restaurável", async () => {
+  const { createSubjectFromContext } = await import("../../scripts/domain/subject.js");
+  const { normalizeSubjectContext } = await import("../../scripts/domain/subject-context.js");
+  const { VALID_SUBJECT_CONTEXT } = await import("../fixtures/subject-context.js");
+  const state = createState();
+  const subject = createSubjectFromContext(
+    normalizeSubjectContext(VALID_SUBJECT_CONTEXT),
+    NOW,
+  );
+  delete subject.guidedFlow;
+  state.collections.subjects[subject.id] = subject;
+
+  const result = validateState(state, "1.0.0");
+  assert.equal(result.valid, true);
+});

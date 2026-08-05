@@ -53,12 +53,17 @@ export class ProgressService {
     const previousTotal = current?.currentTotal ?? 0;
     const pointsBeforeConsolidation = nonConsolidationPoints(snapshot);
     const currentConsolidationStatus = subject.consolidation?.status ?? "not_eligible";
-    const nextConsolidationStatus =
-      ["confirmed", "suspended"].includes(currentConsolidationStatus)
-        ? currentConsolidationStatus
-        : pointsBeforeConsolidation >= 9
-          ? "eligible"
-          : "not_eligible";
+    let nextConsolidationStatus = currentConsolidationStatus;
+
+    if (currentConsolidationStatus === "confirmed") {
+      nextConsolidationStatus =
+        pointsBeforeConsolidation >= 9 ? "confirmed" : "suspended";
+    } else if (currentConsolidationStatus === "suspended") {
+      nextConsolidationStatus = "suspended";
+    } else {
+      nextConsolidationStatus =
+        pointsBeforeConsolidation >= 9 ? "eligible" : "not_eligible";
+    }
 
     if (nextConsolidationStatus !== currentConsolidationStatus) {
       const subjectForCalculation = structuredClone(subject);
@@ -72,10 +77,14 @@ export class ProgressService {
 
       if (draftSubject.consolidation.status !== nextConsolidationStatus) {
         draftSubject.consolidation.status = nextConsolidationStatus;
+        draftSubject.consolidation.suspendedAt =
+          nextConsolidationStatus === "suspended" ? now : null;
         draftSubject.consolidation.lastReason =
           nextConsolidationStatus === "eligible"
             ? "As categorias anteriores alcançaram 9 pontos."
-            : "As categorias anteriores ainda não alcançaram 9 pontos.";
+            : nextConsolidationStatus === "suspended"
+              ? "A consolidação foi suspensa porque uma evidência anterior deixou de contar."
+              : "As categorias anteriores ainda não alcançaram 9 pontos.";
         draftSubject.updatedAt = now;
       }
 
