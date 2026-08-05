@@ -187,6 +187,7 @@ export function renderExercisesSection({
   aggregate,
   pendingImports = [],
   onImport,
+  onOpenPending,
   onOpen,
   onArchive,
 }) {
@@ -221,15 +222,25 @@ export function renderExercisesSection({
     const warning = createElement(document, "section", {
       className: "import-warning-panel panel",
     });
-    warning.append(
+    const warningCopy = createElement(document, "div", {
+      className: "import-warning-copy",
+    });
+    warningCopy.append(
       createElement(document, "strong", {
-        text: `${pendingImports.length} importação(ões) preservada(s) para revisão`,
+        text: `${pendingImports.length} importação(ões) preservada(s) como pendência`,
       }),
       createElement(document, "p", {
         text:
-          "Nenhum dado existente foi sobrescrito. Pendências de vínculo, contrato ou reimportação serão tratadas na área de Importações Pendentes.",
+          "O Study Stack manteve os dados atuais e guardou o novo resultado sem aplicá-lo. Abra as pendências para conferir o motivo e decidir se deseja descartá-lo.",
       }),
     );
+    const reviewButton = createElement(document, "button", {
+      className: "button button-secondary button-small",
+      text: "Ver importações pendentes",
+      attributes: { type: "button" },
+    });
+    reviewButton.addEventListener("click", onOpenPending);
+    warning.append(warningCopy, reviewButton);
     inner.append(warning);
   }
 

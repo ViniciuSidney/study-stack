@@ -62,3 +62,17 @@ test("histórico do modal de erro recalcula a linha ao ser expandido", async () 
   assert.match(timelineRule, /margin:\s*12px\s+0\s+0/);
   assert.match(timelineRule, /padding:\s*0\s+0\s+4px/);
 });
+
+test("modal de consolidação limita diálogo e card pela mesma altura", async () => {
+  const css = await readComponentsCss();
+  const dialogRule = ruleBody(css, ".consolidation-modal");
+  const cardRule = ruleBody(css, ".consolidation-card");
+  const bodyRule = ruleBody(css, ".consolidation-body");
+
+  assert.match(dialogRule, /max-height:\s*min\(900px,\s*calc\(100dvh\s*-\s*32px\)\)/);
+  assert.match(cardRule, /max-height:\s*min\(900px,\s*calc\(100dvh\s*-\s*32px\)\)/);
+  assert.match(cardRule, /min-height:\s*0/);
+  assert.match(cardRule, /overflow:\s*hidden/);
+  assert.match(bodyRule, /overflow-y:\s*auto/);
+  assert.match(bodyRule, /padding-bottom:\s*28px/);
+});

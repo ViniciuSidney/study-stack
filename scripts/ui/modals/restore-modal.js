@@ -145,7 +145,7 @@ export function openRestoreModal({
     }),
   );
   replaceConfirmation.hidden = true;
-  body.append(sourcePanel, modePanel, previewPanel, replaceConfirmation);
+  body.append(sourcePanel, modePanel, replaceConfirmation, previewPanel);
 
   const errorMessage = createElement(document, "p", {
     className: "form-error",
@@ -171,9 +171,13 @@ export function openRestoreModal({
     attributes: { type: "button" },
   });
   restoreButton.disabled = true;
+  const restoreRequirementHint = createElement(document, "small", {
+    className: "restore-requirement-hint",
+    text: "Valide o backup antes de aplicar.",
+  });
   const footerActions = createElement(document, "div", { className: "restore-footer-actions" });
   footerActions.append(cancelButton, restoreButton);
-  footer.append(previewButton, footerActions);
+  footer.append(previewButton, restoreRequirementHint, footerActions);
 
   card.append(header, body, footer);
   dialog.append(card);
@@ -191,6 +195,19 @@ export function openRestoreModal({
     restoreButton.className = requiresConfirmation
       ? "button button-danger"
       : "button button-primary";
+
+    if (!preview?.valid) {
+      restoreRequirementHint.textContent = "Valide o backup antes de aplicar.";
+      restoreButton.title = "Valide o backup antes de aplicar.";
+    } else if (requiresConfirmation && !replaceCheck.checked) {
+      restoreRequirementHint.textContent =
+        "Marque a confirmação de substituição para habilitar o botão.";
+      restoreButton.title =
+        "Marque a confirmação de substituição para habilitar o botão.";
+    } else {
+      restoreRequirementHint.textContent = "A restauração está pronta para ser aplicada.";
+      restoreButton.title = "Aplicar a restauração validada.";
+    }
   }
 
   function renderPreview(result) {

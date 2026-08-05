@@ -29,3 +29,10 @@ test("modais de manutenção mantêm corpo rolável e rodapé separado", async (
   assert.match(css, /\.restore-body[\s\S]*overflow-y:\s*auto/);
   assert.match(css, /\.diagnostic-body[\s\S]*overflow-y:\s*auto/);
 });
+
+test("restauração por substituição explica a confirmação obrigatória", async () => {
+  const source = await read("../../scripts/ui/modals/restore-modal.js");
+  assert.match(source, /Marque a confirmação de substituição/);
+  assert.match(source, /restore-requirement-hint/);
+  assert.match(source, /body\.append\(sourcePanel, modePanel, replaceConfirmation, previewPanel\)/);
+});

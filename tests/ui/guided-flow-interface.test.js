@@ -86,3 +86,13 @@ test("trilha compacta as cinco etapas pela largura real do componente", async ()
   assert.match(responsive, /@container guided-flow-track \(max-width:\s*500px\)/);
   assert.match(responsive, /@container guided-flow-panel \(max-width:\s*760px\)/);
 });
+
+test("Prática mantém Test Quest acessível e oferece caminho sem erros antes de 3/3", async () => {
+  const service = await read("../../scripts/services/guided-flow-service.js");
+  const overview = await read("../../scripts/ui/sections/overview-section.js");
+
+  assert.match(service, /Abrir Test Quest novamente/);
+  assert.match(service, /hasPracticeWithoutErrors/);
+  assert.match(service, /tertiary:[\s\S]*open_metacognitive/);
+  assert.match(overview, /stage\.action\.tertiary/);
+});

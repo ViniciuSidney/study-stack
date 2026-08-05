@@ -1,5 +1,31 @@
 import { createElement } from "../../utils/dom.js";
 
+const STATUS_PRESENTATION = Object.freeze({
+  needs_review: {
+    label: "Reimportação divergente",
+    guidance:
+      "Já existe uma lista com o mesmo ID e conteúdo diferente. A lista atual foi mantida. Para conservar as duas, gere a nova sessão no Test Quest com outro ID; caso contrário, descarte esta pendência.",
+  },
+  pending_link: {
+    label: "Vínculo de assunto pendente",
+    guidance:
+      "O resultado pertence a outro assunto ou a um assunto ainda não disponível. Abra o assunto correto antes de importar novamente.",
+  },
+  invalid: {
+    label: "Arquivo inválido",
+    guidance:
+      "O contrato ou o conteúdo não pôde ser validado. Corrija ou exporte novamente o resultado no Test Quest antes de tentar outra importação.",
+  },
+});
+
+function getStatusPresentation(status) {
+  return STATUS_PRESENTATION[status] ?? {
+    label: String(status ?? "pendente").replaceAll("_", " "),
+    guidance:
+      "Confira o motivo registrado. Nenhuma pendência é aplicada automaticamente.",
+  };
+}
+
 function formatDate(value) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
@@ -26,7 +52,8 @@ export function openPendingImportsModal({
     createElement(document, "h2", { text: "Importações pendentes" }),
     createElement(document, "p", {
       className: "modal-description",
-      text: "Resultados incompatíveis são preservados sem alterar as listas já existentes.",
+      text:
+        "Revisar uma pendência significa conferir o motivo e decidir o que fazer. Nenhum resultado pendente é aplicado automaticamente.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -50,13 +77,14 @@ export function openPendingImportsModal({
     );
   } else {
     entries.forEach((entry) => {
+      const presentation = getStatusPresentation(entry.status);
       const item = createElement(document, "article", {
         className: `pending-import-item pending-${entry.status}`,
       });
       const heading = createElement(document, "div", { className: "pending-import-heading" });
       heading.append(
         createElement(document, "div"),
-        createElement(document, "span", { text: entry.status.replaceAll("_", " ") }),
+        createElement(document, "span", { text: presentation.label }),
       );
       heading.firstElementChild.append(
         createElement(document, "strong", { text: entry.sourceId || "Origem desconhecida" }),
@@ -66,10 +94,17 @@ export function openPendingImportsModal({
       entry.validationIssues.forEach((issue) => {
         issues.append(createElement(document, "li", { text: issue }));
       });
+      const guidance = createElement(document, "p", {
+        className: "pending-import-guidance",
+        text: presentation.guidance,
+      });
       const actions = createElement(document, "div", { className: "action-row" });
       const dismissButton = createElement(document, "button", {
         className: "button button-quiet-danger",
-        text: "Descartar pendência",
+        text:
+          entry.status === "needs_review"
+            ? "Manter lista atual e descartar pendência"
+            : "Descartar pendência",
         attributes: { type: "button" },
       });
       dismissButton.addEventListener("click", () => {
@@ -85,7 +120,7 @@ export function openPendingImportsModal({
         }
       });
       actions.append(dismissButton);
-      item.append(heading, issues, actions);
+      item.append(heading, issues, guidance, actions);
       list.append(item);
     });
   }

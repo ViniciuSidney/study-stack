@@ -137,7 +137,7 @@ export function openSummaryEditorModal({
     createElement(document, "p", {
       className: "modal-description",
       text:
-        "Título e conteúdo principal são obrigatórios apenas para concluir. O restante pode crescer com o estudo.",
+        "Título e conteúdo principal são obrigatórios apenas para concluir. O autosave preserva um rascunho de recuperação; use Salvar Resumo para aplicar status, seleções e demais alterações ao registro.",
     }),
   );
   const closeButton = createElement(document, "button", {

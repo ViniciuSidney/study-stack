@@ -742,3 +742,21 @@
     max-width: none;
   }
 }
+
+
+/* Estabilização v0.1 */
+@media (max-width: 700px) {
+  .import-warning-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .import-warning-panel .button {
+    width: 100%;
+  }
+
+  .restore-requirement-hint {
+    width: 100%;
+    flex-basis: auto;
+  }
+}

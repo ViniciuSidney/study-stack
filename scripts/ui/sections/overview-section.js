@@ -385,17 +385,19 @@ function createGuidedFlowPanel({
       });
       actionButton.addEventListener("click", () => onStageAction(stage.action));
       actions.append(actionButton);
-      if (stage.action.secondary) {
-        const secondaryButton = createElement(document, "button", {
-          className: "guided-flow-secondary-action",
-          text: stage.action.secondary.label,
-          attributes: { type: "button" },
+      [stage.action.secondary, stage.action.tertiary]
+        .filter(Boolean)
+        .forEach((extraAction) => {
+          const extraButton = createElement(document, "button", {
+            className: "guided-flow-secondary-action",
+            text: extraAction.label,
+            attributes: { type: "button" },
+          });
+          extraButton.addEventListener("click", () =>
+            onStageAction(extraAction),
+          );
+          actions.append(extraButton);
         });
-        secondaryButton.addEventListener("click", () =>
-          onStageAction(stage.action.secondary),
-        );
-        actions.append(secondaryButton);
-      }
     }
 
     detail.append(copy, actions);

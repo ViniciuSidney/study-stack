@@ -200,6 +200,40 @@ test("prática sem erros oferece verificação metacognitiva", () => {
   assert.equal(analysis.action.type, "open_metacognitive");
 });
 
+
+test("uma lista sem erros libera a verificação antes de completar Prática", () => {
+  const setupResult = setup();
+  completeBase(setupResult);
+  setupResult.guidedFlowService.setCurrentStage(setupResult.subject.id, "practice");
+  setupResult.exerciseService.importPayload(allCorrectPayload(1), {
+    expectedSubjectId: setupResult.subject.id,
+  });
+  setupResult.progressService.ensureCurrent(setupResult.subject.id);
+
+  let view = setupResult.guidedFlowService.getView(setupResult.subject.id);
+  let practice = view.stages.find((stage) => stage.key === "practice");
+
+  assert.equal(practice.activePoints, 1);
+  assert.equal(practice.action.type, "open_test_quest");
+  assert.equal(practice.action.secondary.type, "import_result");
+  assert.equal(practice.action.tertiary.type, "open_metacognitive");
+
+  setupResult.exerciseService.importPayload(allCorrectPayload(2), {
+    expectedSubjectId: setupResult.subject.id,
+  });
+  setupResult.exerciseService.importPayload(allCorrectPayload(3), {
+    expectedSubjectId: setupResult.subject.id,
+  });
+  setupResult.progressService.ensureCurrent(setupResult.subject.id);
+  view = setupResult.guidedFlowService.getView(setupResult.subject.id);
+  practice = view.stages.find((stage) => stage.key === "practice");
+
+  assert.equal(practice.activePoints, 3);
+  assert.equal(practice.action.type, "open_exercises");
+  assert.equal(practice.action.secondary.type, "open_test_quest");
+  assert.equal(practice.action.tertiary.type, "open_metacognitive");
+});
+
 test("duas verificações, revisão e confirmação completam o caminho alternativo", () => {
   const setupResult = setup();
   completeBase(setupResult);

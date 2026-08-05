@@ -320,6 +320,7 @@ export class StudyStackApp {
         aggregate: this.exerciseService.getAggregate(this.subject.id),
         pendingImports: this.exerciseService.listPending(),
         onImport: () => this.openTestQuestImport(),
+        onOpenPending: () => this.openPendingImports(),
         onOpen: (view) => this.openExerciseSession(view),
         onArchive: (record) => this.confirmArchiveRecord(record),
       });

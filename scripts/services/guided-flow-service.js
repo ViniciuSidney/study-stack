@@ -652,6 +652,8 @@ export class GuidedFlowService {
     }
 
     if (stage === "practice") {
+      const hasPracticeWithoutErrors =
+        context.activeSessions.length > 0 && context.incorrectQuestions.length === 0;
       if (category.activePoints < category.cap) {
         return {
           type: "open_test_quest",
@@ -661,12 +663,28 @@ export class GuidedFlowService {
             type: "import_result",
             label: "Já resolveu? Importar resultado",
           },
+          tertiary: hasPracticeWithoutErrors
+            ? {
+                type: "open_metacognitive",
+                label: "Verificar acertos difíceis",
+              }
+            : null,
         };
       }
       return {
         type: "open_exercises",
         label: "Consultar exercícios",
         description: "A prática necessária já foi registrada.",
+        secondary: {
+          type: "open_test_quest",
+          label: "Abrir Test Quest novamente",
+        },
+        tertiary: hasPracticeWithoutErrors
+          ? {
+              type: "open_metacognitive",
+              label: "Verificar acertos difíceis",
+            }
+          : null,
       };
     }
 

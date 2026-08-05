@@ -3379,14 +3379,27 @@
 .metacognitive-modal,
 .consolidation-modal {
   width: min(900px, calc(100vw - 32px));
+  max-height: min(900px, calc(100dvh - 32px));
 }
 
 .flow-help-card,
 .metacognitive-card,
 .consolidation-card {
+  width: 100%;
   max-height: min(900px, calc(100dvh - 32px));
   min-height: 0;
   overflow: hidden;
+}
+
+.consolidation-card .modal-footer {
+  flex-shrink: 0;
+}
+
+.consolidation-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 28px;
+  scroll-padding-bottom: 28px;
 }
 
 .flow-help-body,
@@ -3845,4 +3858,36 @@
 
 .guided-flow-panel.completed .guided-flow-stage-progress-fill {
   background: var(--success);
+}
+
+
+/* Estabilização v0.1: pendências, restauração e ações guiadas */
+.import-warning-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.import-warning-copy {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.import-warning-panel .button {
+  flex: 0 0 auto;
+}
+
+.pending-import-guidance {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.restore-requirement-hint {
+  flex: 1 1 220px;
+  color: var(--text-subtle);
+  font-size: 0.74rem;
+  line-height: 1.4;
 }
