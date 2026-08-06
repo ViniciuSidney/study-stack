@@ -20,7 +20,7 @@ test("menu de utilidades apresenta as ferramentas e a versão estável", async (
   assert.match(html, /data-utility="backup"/);
   assert.match(html, /data-utility="restore"/);
   assert.match(html, /data-utility="diagnostics"/);
-  assert.match(html, /Study Stack · v0\.1\.0/);
+  assert.match(html, /Study Stack · v0\.1\.1/);
 });
 
 test("modais de manutenção mantêm corpo rolável e rodapé separado", async () => {

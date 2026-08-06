@@ -6,79 +6,74 @@ import {
 export function renderMissingContextState({
   document,
   container,
-  context,
-  onOpenDevelopmentContext,
-  onOpenSettings,
+  conceptCompassUrl,
 }) {
   clearElement(container);
 
   const inner = createElement(document, "div", {
-    className: "content-inner",
+    className: "content-inner missing-context-layout",
   });
-
-  const header = createElement(document, "header", {
-    className: "section-header",
-  });
-  const headerCopy = createElement(document, "div");
-  headerCopy.append(
-    createElement(document, "p", {
-      className: "eyebrow",
-      text: "Vínculo ausente",
-    }),
-    createElement(document, "h2", {
-      text: "Nenhum assunto válido foi recebido",
-    }),
-    createElement(document, "p", {
-      className: "section-description",
-      text:
-        "O Study Stack não cria assuntos isolados. Abra um assunto no " +
-        "Concept Compass e use a ação Abrir no Study Stack.",
-    }),
-  );
-  header.append(headerCopy);
 
   const panel = createElement(document, "section", {
     className: "panel missing-context-panel",
+    attributes: {
+      "aria-labelledby": "missingContextTitle",
+    },
   });
-  panel.append(
-    createElement(document, "div", {
-      className: "placeholder-icon",
-      text: "!",
-      attributes: { "aria-hidden": "true" },
-    }),
-    createElement(document, "h3", { text: "Contrato obrigatório" }),
+
+  const icon = createElement(document, "img", {
+    className: "missing-context-icon",
+    attributes: {
+      src: "assets/icons/app-icon.svg",
+      alt: "",
+      width: "112",
+      height: "112",
+      "aria-hidden": "true",
+    },
+  });
+
+  const copy = createElement(document, "div", {
+    className: "missing-context-copy",
+  });
+  copy.append(
     createElement(document, "p", {
-      text: context.errors.join(" "),
+      className: "eyebrow",
+      text: "Study Stack",
+    }),
+    createElement(document, "h2", {
+      text: "Comece pelo Concept Compass",
+      attributes: { id: "missingContextTitle" },
+    }),
+    createElement(document, "p", {
+      className: "missing-context-lead",
+      text:
+        "O Study Stack organiza seus resumos, exercícios, erros e progresso " +
+        "dentro de um assunto específico.",
+    }),
+    createElement(document, "p", {
+      text:
+        "Abra o Concept Compass, escolha o assunto que deseja estudar e use " +
+        "a opção Abrir no Study Stack.",
     }),
   );
 
-  const code = createElement(document, "div", {
-    className: "code-block",
+  const action = createElement(document, "a", {
+    className: "button button-primary missing-context-action",
+    text: "Abrir Concept Compass",
+    attributes: {
+      href: conceptCompassUrl,
+      "aria-label": "Abrir o Concept Compass para escolher um assunto",
+    },
+  });
+
+  const note = createElement(document, "p", {
+    className: "missing-context-note",
     text:
-      "?contractVersion=1.0.0&sentAt=...&sourceApp=concept_compass" +
-      "&matterId=...&matterName=...&themeId=...&themeName=..." +
-      "&subjectId=...&subjectName=...#/overview",
+      "O acesso direto ao Study Stack não seleciona automaticamente um assunto.",
+    attributes: { role: "note" },
   });
 
-  const actions = createElement(document, "div", {
-    className: "action-row",
-  });
-  const devButton = createElement(document, "button", {
-    className: "button button-primary",
-    text: "Usar contexto de desenvolvimento",
-    attributes: { type: "button" },
-  });
-  const settingsButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Abrir Configurações",
-    attributes: { type: "button" },
-  });
-
-  devButton.addEventListener("click", onOpenDevelopmentContext);
-  settingsButton.addEventListener("click", onOpenSettings);
-
-  actions.append(devButton, settingsButton);
-  panel.append(code, actions);
-  inner.append(header, panel);
+  panel.append(icon, copy, action, note);
+  inner.append(panel);
   container.append(inner);
 }

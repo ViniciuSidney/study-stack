@@ -169,27 +169,85 @@
 }
 
 .foundation-panel,
-.settings-panel,
-.missing-context-panel {
+.settings-panel {
   padding: 22px;
 }
 
 .foundation-panel h3,
-.settings-panel h3,
-.missing-context-panel h3 {
+.settings-panel h3 {
   margin-bottom: 8px;
 }
 
 .foundation-panel p,
-.settings-panel p,
-.missing-context-panel p {
+.settings-panel p {
   color: var(--text-soft);
 }
 
 .foundation-panel .eyebrow,
-.settings-panel .eyebrow,
-.missing-context-panel .eyebrow {
+.settings-panel .eyebrow {
   margin-bottom: 8px;
+}
+
+.missing-context-layout {
+  width: min(100%, 680px);
+}
+
+.missing-context-panel {
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  padding: clamp(28px, 5vw, 52px);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+  text-align: center;
+}
+
+.missing-context-icon {
+  display: block;
+  width: clamp(88px, 16vw, 116px);
+  height: auto;
+}
+
+.missing-context-copy {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.missing-context-copy .eyebrow {
+  color: var(--accent);
+}
+
+.missing-context-copy h2 {
+  max-width: 560px;
+  font-size: clamp(1.65rem, 4vw, 2.35rem);
+  line-height: 1.08;
+}
+
+.missing-context-copy p {
+  max-width: 560px;
+  color: var(--text-soft);
+}
+
+.missing-context-copy .missing-context-lead {
+  color: var(--text);
+  font-size: 1.04rem;
+  font-weight: 650;
+}
+
+.missing-context-action {
+  display: inline-flex;
+  min-width: 220px;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.missing-context-note {
+  max-width: 520px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--text-subtle);
+  font-size: 0.84rem;
 }
 
 .status-list {

@@ -2,6 +2,26 @@
 
 Todas as mudanças relevantes do Study Stack serão registradas neste arquivo.
 
+## [0.1.1] — 2026-08-06
+
+### Adicionado
+
+- ícone oficial do Study Stack em SVG e PNG, com cartões de estudo empilhados;
+- ícone aplicado no cabeçalho, favicon e atalho para dispositivos móveis;
+- modo visual dedicado para o acesso público sem assunto vinculado.
+
+### Alterado
+
+- a antiga tela técnica de “Vínculo ausente” foi substituída por uma orientação direta ao usuário;
+- o acesso sem contexto agora explica a dependência do Concept Compass e oferece um botão para continuar;
+- navegação, contexto e ações indisponíveis ficam ocultos nessa entrada, evitando aparência de aplicação quebrada.
+
+### Qualidade
+
+- 168 testes automatizados aprovados;
+- dois testes específicos adicionados para a tela pública e a identidade visual;
+- schema de dados mantido em `1.0.0`, sem migração necessária.
+
 ## [0.1.0] — 2026-08-05
 
 ### Adicionado

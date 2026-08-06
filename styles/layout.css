@@ -40,9 +40,16 @@
   height: 42px;
   place-items: center;
   border-radius: 12px;
-  background: var(--accent);
+  overflow: hidden;
+  background: transparent;
   color: var(--accent-contrast);
   font-weight: 800;
+}
+
+.brand-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .brand-title {
@@ -262,4 +269,31 @@ body.drawer-open {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
+}
+
+
+.app-shell.missing-context-mode {
+  grid-template-rows: var(--header-height) minmax(0, 1fr);
+}
+
+.missing-context-mode .global-header {
+  justify-content: center;
+}
+
+.missing-context-mode .navigation-toggle,
+.missing-context-mode .header-actions,
+.missing-context-mode .subject-context,
+.missing-context-mode .sidebar {
+  display: none;
+}
+
+.missing-context-mode .workspace,
+.missing-context-mode.sidebar-collapsed .workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.missing-context-mode .content-panel {
+  display: grid;
+  place-items: center;
+  padding-block: clamp(28px, 7vh, 72px);
 }

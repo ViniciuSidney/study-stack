@@ -112,9 +112,17 @@
   }
 
   .foundation-panel,
-  .settings-panel,
-  .missing-context-panel {
+  .settings-panel {
     padding: 18px;
+  }
+
+  .missing-context-panel {
+    gap: 18px;
+    padding: 28px 20px;
+  }
+
+  .missing-context-action {
+    width: 100%;
   }
 
   .toast-region {
@@ -758,5 +766,46 @@
   .restore-requirement-hint {
     width: 100%;
     flex-basis: auto;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .app-shell.missing-context-mode {
+    display: grid;
+    grid-template-rows: var(--header-height) minmax(0, 1fr);
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .missing-context-mode .global-header {
+    position: static;
+  }
+
+  .missing-context-mode .workspace,
+  .missing-context-mode.sidebar-collapsed .workspace {
+    display: grid;
+    min-height: 0;
+  }
+
+  .missing-context-mode .content-panel {
+    display: grid;
+    min-height: 0;
+    place-items: center;
+    padding: 28px 18px 40px;
+  }
+}
+
+@media (max-width: 420px) {
+  .missing-context-mode .brand-copy .eyebrow {
+    display: block;
+  }
+
+  .missing-context-panel {
+    padding: 24px 18px;
+  }
+
+  .missing-context-copy h2 {
+    font-size: 1.65rem;
   }
 }

@@ -100,6 +100,13 @@ export class AppShell {
     return this.elements.mainContent;
   }
 
+  setMissingContextMode(enabled) {
+    this.elements.appShell.classList.toggle(
+      "missing-context-mode",
+      Boolean(enabled),
+    );
+  }
+
   setSubjectContext(context) {
     if (context.valid === false || (!context.valid && !context.id)) {
       this.elements.subjectArea.textContent = "Concept Compass";

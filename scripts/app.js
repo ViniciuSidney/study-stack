@@ -184,6 +184,7 @@ export class StudyStackApp {
     });
 
     this.shell.initialize(this.preferences);
+    this.shell.setMissingContextMode(!this.context.valid);
     this.shell.setSubjectContext(this.subject ?? this.context);
     this.shell.setNewRecordEnabled(Boolean(this.context.valid && this.subject));
     this.updateShellState();
@@ -242,8 +243,21 @@ export class StudyStackApp {
   }
 
   renderSection(sectionId) {
-    this.shell.setActiveSection(sectionId);
     const container = this.shell.getContentContainer();
+
+    if (!this.context.valid || !this.subject) {
+      this.document.title = APP_CONFIG.appName;
+      renderMissingContextState({
+        document: this.document,
+        container,
+        conceptCompassUrl:
+          APP_CONFIG.integration.conceptCompassFallbackUrl,
+      });
+      this.shell.focusContent();
+      return;
+    }
+
+    this.shell.setActiveSection(sectionId);
 
     if (sectionId === "settings") {
       renderSettingsSection({
@@ -258,25 +272,6 @@ export class StudyStackApp {
         onRestore: () => this.openRestore(),
         onDiagnostics: () => this.openDiagnostics(),
         onPendingImports: () => this.openPendingImports(),
-      });
-      this.shell.focusContent();
-      return;
-    }
-
-    if (!this.context.valid || !this.subject) {
-      renderMissingContextState({
-        document: this.document,
-        container,
-        context: this.context,
-        onOpenDevelopmentContext: () => {
-          const url = new URL(this.window.location.href);
-          url.searchParams.delete("noContext");
-          url.searchParams.delete("strictContext");
-          url.searchParams.set("dev", "1");
-          url.hash = "#/overview";
-          this.window.location.assign(url);
-        },
-        onOpenSettings: () => this.router.navigate("settings"),
       });
       this.shell.focusContent();
       return;
