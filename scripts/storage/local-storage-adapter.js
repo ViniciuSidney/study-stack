@@ -37,7 +37,9 @@ export class LocalStorageAdapter {
 
   set(key, value) {
     try {
-      this.storage.setItem(this.#resolveKey(key), JSON.stringify(value));
+      const resolvedKey = this.#resolveKey(key);
+      this.storage.setItem(resolvedKey, JSON.stringify(value));
+      this.#notify("set", resolvedKey);
       return value;
     } catch (error) {
       throw new StorageError(`Não foi possível salvar "${key}".`, {
@@ -48,12 +50,29 @@ export class LocalStorageAdapter {
 
   remove(key) {
     try {
-      this.storage.removeItem(this.#resolveKey(key));
+      const resolvedKey = this.#resolveKey(key);
+      this.storage.removeItem(resolvedKey);
+      this.#notify("remove", resolvedKey);
     } catch (error) {
       throw new StorageError(`Não foi possível remover "${key}".`, {
         cause: error,
       });
     }
+  }
+
+  #notify(operation, key) {
+    if (
+      typeof globalThis.dispatchEvent !== "function" ||
+      typeof globalThis.CustomEvent !== "function"
+    ) {
+      return;
+    }
+
+    globalThis.dispatchEvent(
+      new globalThis.CustomEvent("study-stack:storage-change", {
+        detail: { operation, key },
+      }),
+    );
   }
 
   #resolveKey(key) {

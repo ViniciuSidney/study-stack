@@ -1,12 +1,17 @@
 import { StudyStackApp } from "./app.js";
+import { ConceptCompassSummaryPublisher } from "./integrations/concept-compass-summary-publisher.js";
 
 const app = new StudyStackApp({
   document,
   window,
 });
+const conceptCompassSummaryPublisher = new ConceptCompassSummaryPublisher({
+  window,
+});
 
 try {
   app.start();
+  conceptCompassSummaryPublisher.install().publish();
 } catch (error) {
   console.error("Falha ao iniciar o Study Stack.", error);
 
