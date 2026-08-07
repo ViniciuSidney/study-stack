@@ -22,6 +22,11 @@ function createHistoryEvent(subject, now, appVersion) {
   };
 }
 
+function getDeletionTombstone(repository, subjectId) {
+  const integration = repository.getEntity("integrationState", "global");
+  return integration?.conceptCompass?.deletedSubjects?.[subjectId] ?? null;
+}
+
 export class SubjectService {
   constructor({ repository, clock, appVersion }) {
     this.repository = repository;
@@ -35,6 +40,25 @@ export class SubjectService {
     }
 
     const now = this.clock();
+    const deletionTombstone = getDeletionTombstone(this.repository, context.subjectId);
+
+    if (deletionTombstone) {
+      this.repository.transaction((draft) => {
+        const integration = draft.collections.integrationState.global;
+        integration.conceptCompass = {
+          ...integration.conceptCompass,
+          status: "deleted_subject",
+          lastContractVersion: context.contractVersion,
+          lastSubjectId: null,
+          lastReceivedAt: context.sentAt || now,
+          lastIssue:
+            "O Assunto informado foi excluído definitivamente no Concept Compass e não pode ser recriado com o mesmo ID.",
+        };
+        integration.updatedAt = now;
+      });
+      return null;
+    }
+
     const existing = this.repository.getEntity(
       "subjects",
       context.subjectId,

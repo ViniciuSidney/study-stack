@@ -1,8 +1,12 @@
 import { StudyStackApp } from "./app.js";
+import { ConceptCompassDeletionConsumer } from "./integrations/concept-compass-deletion-consumer.js";
 import { ConceptCompassSummaryPublisher } from "./integrations/concept-compass-summary-publisher.js";
 
 const app = new StudyStackApp({
   document,
+  window,
+});
+const bootstrapDeletionConsumer = new ConceptCompassDeletionConsumer({
   window,
 });
 const conceptCompassSummaryPublisher = new ConceptCompassSummaryPublisher({
@@ -10,7 +14,24 @@ const conceptCompassSummaryPublisher = new ConceptCompassSummaryPublisher({
 });
 
 try {
+  bootstrapDeletionConsumer.consume();
   app.start();
+  if (!app.subject) {
+    app.shell?.setMissingContextMode(true);
+    app.shell?.setNewRecordEnabled(false);
+  }
+
+  const liveDeletionConsumer = new ConceptCompassDeletionConsumer({
+    window,
+    repository: app.repository,
+    onSubjectsDeleted({ subjectIds }) {
+      if (app.subject?.id && subjectIds.includes(app.subject.id)) {
+        window.location.reload();
+      }
+    },
+  });
+
+  liveDeletionConsumer.install();
   conceptCompassSummaryPublisher.install().publish();
 } catch (error) {
   console.error("Falha ao iniciar o Study Stack.", error);

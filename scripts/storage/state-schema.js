@@ -43,6 +43,7 @@ export function createDefaultIntegrationState({ now }) {
       lastSubjectId: null,
       lastReceivedAt: null,
       lastIssue: null,
+      deletedSubjects: {},
     },
     testQuest: {
       status: "idle",
