@@ -1,4 +1,5 @@
 import { StudyStackApp } from "./app.js";
+import { ActiveSubjectStateWatcher } from "./integrations/active-subject-state-watcher.js";
 import { ConceptCompassDeletionConsumer } from "./integrations/concept-compass-deletion-consumer.js";
 import { ConceptCompassSummaryPublisher } from "./integrations/concept-compass-summary-publisher.js";
 
@@ -30,8 +31,18 @@ try {
       }
     },
   });
+  const activeSubjectStateWatcher = new ActiveSubjectStateWatcher({
+    window,
+    getSubjectId: () => app.subject?.id ?? null,
+    onUnavailable({ subjectId }) {
+      if (app.subject?.id === subjectId) {
+        window.location.reload();
+      }
+    },
+  });
 
   liveDeletionConsumer.install();
+  activeSubjectStateWatcher.install().check();
   conceptCompassSummaryPublisher.install().publish();
 } catch (error) {
   console.error("Falha ao iniciar o Study Stack.", error);
