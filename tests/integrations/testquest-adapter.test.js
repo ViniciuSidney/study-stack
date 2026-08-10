@@ -1,11 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { APP_CONFIG } from "../../scripts/config/app-config.js";
 import { TestQuestAdapter } from "../../scripts/integrations/testquest-adapter.js";
 import { MemoryStorage } from "../fixtures/memory-storage.js";
 import { createTestQuestResult } from "../fixtures/testquest-result.js";
 
 test("lê payload JSON diretamente dos parâmetros da URL", () => {
+  assert.deepEqual(
+    APP_CONFIG.integration.testQuestContractVersions,
+    ["1.0.0", "1.1.0"],
+  );
+
   const payload = createTestQuestResult();
   const url = new URL("https://example.com/study-stack/");
   url.searchParams.set("testQuestPayload", JSON.stringify(payload));
