@@ -114,6 +114,7 @@ function createSessionCard({ document, view, onOpen, onArchive }) {
   });
   stats.append(
     createStat(document, "Acertos", session.stats.correct, "correct"),
+    createStat(document, "Parciais", session.stats.partial ?? 0, "partial"),
     createStat(document, "Erros", session.stats.incorrect, "incorrect"),
     createStat(document, "Em branco", session.stats.unanswered, "unanswered"),
     createStat(document, "Respondidas", session.stats.answered),
@@ -289,6 +290,12 @@ export function renderExercisesSection({
       "Aproveitamento",
       `${aggregate.percentage}%`,
       `${aggregate.correct} acerto(s)`,
+    ),
+    createMetric(
+      document,
+      "Respostas parciais",
+      aggregate.partial,
+      "Valem 50% no aproveitamento",
     ),
     createMetric(
       document,
