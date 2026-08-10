@@ -47,7 +47,7 @@ export function createDefaultIntegrationState({ now }) {
     },
     testQuest: {
       status: "idle",
-      supportedContractVersions: ["1.0.0"],
+      supportedContractVersions: ["1.0.0", "1.1.0"],
       lastContractVersion: null,
       lastSessionId: null,
       lastReceivedAt: null,

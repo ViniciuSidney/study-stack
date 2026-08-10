@@ -257,6 +257,14 @@ export function validateState(state, expectedSchemaVersion) {
         if (session.subjectId !== question.subjectId) {
           errors.push(`importedQuestions.${id} diverge do assunto da sessão.`);
         }
+        if (
+          session.sourceContractVersion === "1.1.0" &&
+          !Object.hasOwn(question, "scorePercentage")
+        ) {
+          errors.push(
+            `importedQuestions.${id} não possui scorePercentage exigido pela sessão 1.1.0.`,
+          );
+        }
       }
     }
 

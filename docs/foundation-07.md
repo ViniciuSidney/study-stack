@@ -7,7 +7,7 @@ Test Quest e conectando sessões válidas ao cálculo objetivo de prática.
 
 ## Contrato aceito
 
-Envelope `testQuestSessionResult`, versão `1.0.0`:
+Envelopes `testQuestSessionResult`, versões `1.0.0` e `1.1.0`:
 
 - `contractVersion`;
 - `sentAt`;
@@ -17,6 +17,10 @@ Envelope `testQuestSessionResult`, versão `1.0.0`:
 - `session` com título e data;
 - `questions` com enunciado, respostas, correção e resultado;
 - `resultUrl` e `payloadFingerprint` opcionais.
+
+O contrato `1.1.0` acrescenta `partial` e `scorePercentage`, mantendo a
+compatibilidade com o `1.0.0`. A especificação completa e seus exemplos estão
+em [`test-quest-contract-v1.1.md`](test-quest-contract-v1.1.md).
 
 O adaptador aceita o contrato por:
 

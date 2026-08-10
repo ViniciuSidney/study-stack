@@ -1,4 +1,5 @@
 import {
+  TEST_QUEST_CONTRACT_VERSIONS,
   createImportedQuestion,
   createImportedSession,
   normalizeTestQuestPayload,
@@ -196,7 +197,7 @@ export class ExerciseService {
       const integration = draft.collections.integrationState.global;
       integration.testQuest = {
         status: "connected",
-        supportedContractVersions: ["1.0.0"],
+        supportedContractVersions: [...TEST_QUEST_CONTRACT_VERSIONS],
         lastContractVersion: normalized.contractVersion,
         lastSessionId: normalized.sessionId,
         lastReceivedAt: now,
@@ -332,6 +333,7 @@ export class ExerciseService {
         questions: total.questions + view.session.stats.total,
         answered: total.answered + view.session.stats.answered,
         correct: total.correct + view.session.stats.correct,
+        partial: total.partial + (view.session.stats.partial ?? 0),
         incorrect: total.incorrect + view.session.stats.incorrect,
         unanswered: total.unanswered + view.session.stats.unanswered,
         validSessions:
@@ -342,6 +344,7 @@ export class ExerciseService {
         questions: 0,
         answered: 0,
         correct: 0,
+        partial: 0,
         incorrect: 0,
         unanswered: 0,
         validSessions: 0,
@@ -351,7 +354,7 @@ export class ExerciseService {
     return Object.freeze({
       ...stats,
       percentage: stats.questions
-        ? Math.round((stats.correct / stats.questions) * 100)
+        ? Math.round(((stats.correct + stats.partial * 0.5) / stats.questions) * 100)
         : 0,
     });
   }
@@ -413,7 +416,7 @@ export class ExerciseService {
       const integration = draft.collections.integrationState.global;
       integration.testQuest = {
         status: status === "invalid" ? "error" : "attention",
-        supportedContractVersions: ["1.0.0"],
+        supportedContractVersions: [...TEST_QUEST_CONTRACT_VERSIONS],
         lastContractVersion: normalized?.contractVersion ?? null,
         lastSessionId: normalized?.sessionId ?? null,
         lastReceivedAt: now,

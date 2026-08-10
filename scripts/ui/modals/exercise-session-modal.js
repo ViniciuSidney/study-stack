@@ -2,6 +2,7 @@ import { createElement } from "../../utils/dom.js";
 
 const RESULT_LABELS = Object.freeze({
   correct: "Correta",
+  partial: "Parcial",
   incorrect: "Incorreta",
   unanswered: "Não respondida",
 });
@@ -220,7 +221,7 @@ export function openExerciseSessionModal({
     createElement(document, "h2", { text: session.sessionTitle }),
     createElement(document, "p", {
       className: "modal-description",
-      text: `${session.stats.total} questões · ${session.stats.correct} acertos · ${session.stats.incorrect} erros · ${session.stats.percentage}% de aproveitamento`,
+      text: `${session.stats.total} questões · ${session.stats.correct} acertos · ${session.stats.partial ?? 0} parciais · ${session.stats.incorrect} erros · ${session.stats.percentage}% de aproveitamento`,
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -238,6 +239,7 @@ export function openExerciseSessionModal({
   });
   const stats = [
     ["Acertos", session.stats.correct, "correct"],
+    ["Parciais", session.stats.partial ?? 0, "partial"],
     ["Erros", session.stats.incorrect, "incorrect"],
     ["Em branco", session.stats.unanswered, "unanswered"],
     ["Respondidas", session.stats.answered, ""],
@@ -261,12 +263,14 @@ export function openExerciseSessionModal({
   const counts = {
     all: questions.length,
     correct: session.stats.correct,
+    partial: session.stats.partial ?? 0,
     incorrect: session.stats.incorrect,
     unanswered: session.stats.unanswered,
   };
   [
     ["Todas", "all"],
     ["Corretas", "correct"],
+    ["Parciais", "partial"],
     ["Incorretas", "incorrect"],
     ["Em branco", "unanswered"],
   ].forEach(([label, value]) =>

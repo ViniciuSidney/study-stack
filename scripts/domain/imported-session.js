@@ -5,7 +5,7 @@ import {
   validateRichContent,
 } from "./rich-content.js";
 
-export const TEST_QUEST_CONTRACT_VERSIONS = Object.freeze(["1.0.0"]);
+export const TEST_QUEST_CONTRACT_VERSIONS = Object.freeze(["1.0.0", "1.1.0"]);
 export const IMPORT_STATUSES = Object.freeze([
   "valid",
   "needs_review",
@@ -26,6 +26,7 @@ export const QUESTION_DIFFICULTIES = Object.freeze([
 ]);
 export const QUESTION_RESULTS = Object.freeze([
   "correct",
+  "partial",
   "incorrect",
   "unanswered",
 ]);
@@ -112,12 +113,14 @@ function normalizeDifficulty(value) {
   return normalizeEnum(aliases[normalized] ?? normalized, DIFFICULTY_SET, "unknown");
 }
 
-function normalizeResult(value, userAnswer) {
+function normalizeResult(value, userAnswer, contractVersion, questionNumber) {
   const aliases = {
     correto: "correct",
     correta: "correct",
     correct: "correct",
     acerto: "correct",
+    parcial: "partial",
+    partial: "partial",
     incorreto: "incorrect",
     incorreta: "incorrect",
     incorrect: "incorrect",
@@ -131,10 +134,48 @@ function normalizeResult(value, userAnswer) {
   const result = aliases[normalized] ?? normalized;
 
   if (RESULT_SET.has(result)) {
+    if (contractVersion === "1.0.0" && result === "partial") {
+      throw new TypeError(
+        `A questão ${questionNumber} usa resultado parcial, disponível apenas no contrato 1.1.0.`,
+      );
+    }
     return result;
   }
 
+  if (contractVersion === "1.1.0") {
+    throw new TypeError(`A questão ${questionNumber} possui result inválido.`);
+  }
+
   return normalizeString(userAnswer) ? "incorrect" : "unanswered";
+}
+
+function normalizeScorePercentage(question, result, contractVersion, questionNumber) {
+  const expectedByResult = {
+    correct: 100,
+    partial: 50,
+    incorrect: 0,
+    unanswered: null,
+  };
+  const expected = expectedByResult[result];
+
+  if (contractVersion === "1.0.0") {
+    return expected;
+  }
+
+  if (!Object.hasOwn(question, "scorePercentage")) {
+    throw new TypeError(
+      `A questão ${questionNumber} exige scorePercentage no contrato 1.1.0.`,
+    );
+  }
+
+  const received = question.scorePercentage;
+  if (received !== expected) {
+    throw new TypeError(
+      `A questão ${questionNumber} possui scorePercentage incompatível com result ${result}.`,
+    );
+  }
+
+  return received;
 }
 
 function stableFingerprint(value) {
@@ -231,6 +272,14 @@ export function normalizeTestQuestPayload(payload, now) {
     const result = normalizeResult(
       getQuestionField(question, "result", "status", "outcome"),
       userAnswerValue,
+      contractVersion,
+      index + 1,
+    );
+    const scorePercentage = normalizeScorePercentage(
+      question,
+      result,
+      contractVersion,
+      index + 1,
     );
     const statement = toRichContent(statementValue, now);
 
@@ -263,6 +312,7 @@ export function normalizeTestQuestPayload(payload, now) {
         optional: true,
       }),
       result,
+      scorePercentage,
       originalSnapshot: structuredClone(question),
     };
   });
@@ -282,6 +332,9 @@ export function normalizeTestQuestPayload(payload, now) {
       userAnswer: question.userAnswer?.plainText ?? null,
       correctAnswer: question.correctAnswer?.plainText ?? null,
       result: question.result,
+      ...(contractVersion === "1.1.0"
+        ? { scorePercentage: question.scorePercentage }
+        : {}),
     })),
   };
 
@@ -308,13 +361,14 @@ export function calculateSessionStats(questions) {
   const normalized = Array.isArray(questions) ? questions : [];
   const total = normalized.length;
   const correct = normalized.filter((question) => question.result === "correct").length;
+  const partial = normalized.filter((question) => question.result === "partial").length;
   const incorrect = normalized.filter(
     (question) => question.result === "incorrect",
   ).length;
   const unanswered = normalized.filter(
     (question) => question.result === "unanswered",
   ).length;
-  const answered = correct + incorrect;
+  const answered = correct + partial + incorrect;
   const difficultyBreakdown = {
     easy: normalized.filter((question) => question.difficulty === "easy").length,
     medium: normalized.filter((question) => question.difficulty === "medium").length,
@@ -326,9 +380,10 @@ export function calculateSessionStats(questions) {
     total,
     answered,
     correct,
+    partial,
     incorrect,
     unanswered,
-    percentage: total ? Math.round((correct / total) * 100) : 0,
+    percentage: total ? Math.round(((correct + partial * 0.5) / total) * 100) : 0,
     validForPractice: answered >= 15,
     difficultyBreakdown,
   };
@@ -390,6 +445,7 @@ export function createImportedQuestion({
     expectedCriteria: structuredClone(normalizedQuestion.expectedCriteria),
     metacognition: structuredClone(normalizedQuestion.metacognition),
     result: normalizedQuestion.result,
+    scorePercentage: normalizedQuestion.scorePercentage,
     questionNotes: null,
     originalSnapshot: structuredClone(normalizedQuestion.originalSnapshot),
     errorRecordIds: [],
@@ -461,6 +517,13 @@ export function validateImportedSession(session) {
         errors.push(`stats.${key} inválido.`);
       }
     }
+    const partial = session.stats.partial ?? 0;
+    if (!Number.isInteger(partial) || partial < 0) {
+      errors.push("stats.partial inválido.");
+    }
+    if (session.sourceContractVersion === "1.1.0" && !Object.hasOwn(session.stats, "partial")) {
+      errors.push("stats.partial ausente para o contrato 1.1.0.");
+    }
     if (
       !Number.isFinite(session.stats.percentage) ||
       session.stats.percentage < 0 ||
@@ -480,21 +543,38 @@ export function validateImportedSession(session) {
     }
     if (
       Number.isInteger(session.stats.correct) &&
+      Number.isInteger(partial) &&
       Number.isInteger(session.stats.incorrect) &&
       Number.isInteger(session.stats.unanswered) &&
       Number.isInteger(session.stats.total) &&
-      session.stats.correct + session.stats.incorrect + session.stats.unanswered !==
+      session.stats.correct + partial + session.stats.incorrect + session.stats.unanswered !==
         session.stats.total
     ) {
       errors.push("As contagens de resultado divergem de stats.total.");
     }
     if (
       Number.isInteger(session.stats.correct) &&
+      Number.isInteger(partial) &&
       Number.isInteger(session.stats.incorrect) &&
       Number.isInteger(session.stats.answered) &&
-      session.stats.correct + session.stats.incorrect !== session.stats.answered
+      session.stats.correct + partial + session.stats.incorrect !== session.stats.answered
     ) {
-      errors.push("stats.answered diverge de acertos e erros.");
+      errors.push("stats.answered diverge de acertos, parciais e erros.");
+    }
+    if (
+      Number.isInteger(session.stats.total) &&
+      Number.isInteger(session.stats.correct) &&
+      Number.isInteger(partial) &&
+      Number.isFinite(session.stats.percentage)
+    ) {
+      const expectedPercentage = session.stats.total
+        ? Math.round(
+            ((session.stats.correct + partial * 0.5) / session.stats.total) * 100,
+          )
+        : 0;
+      if (session.stats.percentage !== expectedPercentage) {
+        errors.push("stats.percentage diverge da pontuação ponderada.");
+      }
     }
     if (
       typeof session.stats.validForPractice === "boolean" &&
@@ -541,6 +621,19 @@ export function validateImportedQuestion(question) {
   }
   if (!RESULT_SET.has(question.result)) {
     errors.push("result inválido.");
+  }
+  const expectedScoreByResult = {
+    correct: 100,
+    partial: 50,
+    incorrect: 0,
+    unanswered: null,
+  };
+  if (Object.hasOwn(question, "scorePercentage")) {
+    if (question.scorePercentage !== expectedScoreByResult[question.result]) {
+      errors.push("scorePercentage incompatível com result.");
+    }
+  } else if (question.result === "partial") {
+    errors.push("scorePercentage ausente para resultado parcial.");
   }
   const requiredContent = validateRichContent(question.statement);
   errors.push(...requiredContent.errors.map((error) => `statement: ${error}`));

@@ -30,6 +30,7 @@ test("seção oferece importação, métricas, busca e filtros", async () => {
   assert.match(section, /Buscar em títulos, questões e respostas/);
   assert.match(section, /Válidas para prática/);
   assert.match(section, /Com erros/);
+  assert.match(section, /Respostas parciais/);
   assert.match(section, /Ver importações pendentes/);
   assert.match(section, /preservada\(s\) como pendência/);
 });
@@ -40,6 +41,7 @@ test("modal detalhado separa respostas e cria erros somente após seleção", as
   assert.match(modal, /Sua resposta/);
   assert.match(modal, /Resposta correta/);
   assert.match(modal, /Correção e explicação/);
+  assert.match(modal, /Parciais/);
   assert.match(modal, /Selecionar para criar Registro de Erro/);
   assert.match(modal, /Criar Registros de Erro/);
   assert.match(modal, /onCreateErrors\(questionIds\)/);

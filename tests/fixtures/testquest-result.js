@@ -55,3 +55,35 @@ export function createTestQuestResult(overrides = {}) {
     questions: overrides.questions ?? questions,
   };
 }
+
+export function createTestQuestResultV11(overrides = {}) {
+  const base = createTestQuestResult({ contractVersion: "1.1.0" });
+  const questions = base.questions.map((question, index) => {
+    if (index === 13) {
+      return {
+        ...question,
+        type: "discursive",
+        result: "partial",
+        scorePercentage: 50,
+        userAnswer: "Resposta parcialmente correta",
+      };
+    }
+
+    return {
+      ...question,
+      scorePercentage:
+        question.result === "correct"
+          ? 100
+          : question.result === "incorrect"
+            ? 0
+            : null,
+    };
+  });
+
+  return createTestQuestResult({
+    ...base,
+    ...overrides,
+    contractVersion: "1.1.0",
+    questions: overrides.questions ?? questions,
+  });
+}

@@ -29,6 +29,10 @@ test("cria todas as coleções previstas no schema v1", () => {
   assert.deepEqual(Object.keys(state.collections), [...COLLECTION_NAMES]);
   assert.equal(state.collections.settings.global.id, "global");
   assert.equal(state.collections.integrationState.global.id, "global");
+  assert.deepEqual(
+    state.collections.integrationState.global.testQuest.supportedContractVersions,
+    ["1.0.0", "1.1.0"],
+  );
 });
 
 test("estado inicial passa pela validação estrutural", () => {

@@ -13,7 +13,10 @@ import { StateRepository } from "../../scripts/storage/state-repository.js";
 import { createInitialState } from "../../scripts/storage/state-schema.js";
 import { MemoryStorage } from "../fixtures/memory-storage.js";
 import { VALID_SUBJECT_CONTEXT } from "../fixtures/subject-context.js";
-import { createTestQuestResult } from "../fixtures/testquest-result.js";
+import {
+  createTestQuestResult,
+  createTestQuestResultV11,
+} from "../fixtures/testquest-result.js";
 
 function setup() {
   let tick = 0;
@@ -187,4 +190,35 @@ test("lista válida concede ponto de prática e arquivamento remove a evidência
   recordService.archive(imported.session.record.id);
   const archived = progressService.ensureCurrent(subject.id);
   assert.equal(archived.categories.practice.activePoints, 0);
+});
+
+test("importa contrato 1.1.0 e agrega aproveitamento ponderado", () => {
+  const { repository, subject, exerciseService } = setup();
+  const result = exerciseService.importPayload(createTestQuestResultV11(), {
+    expectedSubjectId: subject.id,
+  });
+  const aggregate = exerciseService.getAggregate(subject.id);
+  const integration = repository.getEntity("integrationState", "global");
+
+  assert.equal(result.status, "imported");
+  assert.equal(result.session.session.sourceContractVersion, "1.1.0");
+  assert.equal(result.session.session.stats.partial, 1);
+  assert.equal(result.session.session.stats.percentage, 68);
+  assert.equal(result.session.errorCandidateCount, 4);
+  assert.equal(aggregate.partial, 1);
+  assert.equal(aggregate.percentage, 68);
+  assert.deepEqual(
+    integration.testQuest.supportedContractVersions,
+    ["1.0.0", "1.1.0"],
+  );
+
+  const tampered = repository.getState();
+  const partialQuestion = Object.values(
+    tampered.collections.importedQuestions,
+  ).find((question) => question.result === "partial");
+  delete partialQuestion.scorePercentage;
+  assert.throws(
+    () => repository.replaceState(tampered, { createRecoveryPoint: false }),
+    /scorePercentage exigido pela sessão 1.1.0/,
+  );
 });
