@@ -2,6 +2,30 @@
 
 Todas as mudanças relevantes do Study Stack serão registradas neste arquivo.
 
+## [Não lançado]
+
+## [0.2.0] — 2026-08-09
+
+### Corrigido
+
+- Assuntos, Temas ou Matérias arquivados no Concept Compass bloqueiam imediatamente a edição no Study Stack já aberto;
+- restauração no Concept Compass libera a mesma aba automaticamente, sem F5;
+- renomeação e movimentação atualizam nomes, hierarquia e retorno profundo na aba aberta;
+- exclusão integrada exibe um estado próprio de **Assunto não disponível** em vez da tela genérica sem contexto;
+- a integração deixou de recarregar a página para reconciliar exclusões entre abas.
+
+### Qualidade
+
+- observador dedicado para `organizador-conteudos:data`, com reconciliação por `storage`, foco e visibilidade;
+- testes automatizados para arquivamento hierárquico, restauração, renomeação, movimentação e exclusão.
+
+### Integração
+
+- retorno ao Concept Compass passou a abrir em nova aba com isolamento seguro;
+- telas de arquivamento, exclusão e vínculo ausente passaram a usar uma URL de retorno comum e validada;
+- arquivamento de Matéria, Tema ou Assunto passou a apresentar concordância correta e orientação específica;
+- resumo de progresso e comandos de exclusão usam os contratos `1.0.0` compartilhados com o Concept Compass.
+
 ## [0.1.1] — 2026-08-06
 
 ### Adicionado

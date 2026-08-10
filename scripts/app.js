@@ -1,5 +1,9 @@
 import { APP_CONFIG } from "./config/app-config.js";
 import { ConceptCompassAdapter } from "./integrations/concept-compass-adapter.js";
+import {
+  CONCEPT_COMPASS_DATA_STORAGE_KEY,
+  readConceptCompassSubjectSnapshot,
+} from "./integrations/concept-compass-subject-watcher.js";
 import { TestQuestAdapter } from "./integrations/testquest-adapter.js";
 import { BackupService } from "./services/backup-service.js";
 import { DiagnosticService } from "./services/diagnostic-service.js";
@@ -45,6 +49,7 @@ import { renderPlaceholderSection } from "./ui/sections/placeholder-section.js";
 import { renderRecordsSection } from "./ui/sections/records-section.js";
 import { renderSettingsSection } from "./ui/sections/settings-section.js";
 import { renderMissingContextState } from "./ui/states/missing-context-state.js";
+import { renderSourceSubjectState } from "./ui/states/source-subject-state.js";
 
 export class StudyStackApp {
   constructor({ document, window }) {
@@ -52,6 +57,7 @@ export class StudyStackApp {
     this.window = window;
     this.context = null;
     this.subject = null;
+    this.subjectAvailability = "missing";
     this.preferences = null;
     this.shell = null;
     this.router = null;
@@ -109,8 +115,14 @@ export class StudyStackApp {
 
     if (this.context.valid) {
       this.subject = this.subjectService.synchronize(this.context);
+      this.subjectAvailability = this.subject
+        ? this.subject.sourceArchived
+          ? "archived"
+          : "active"
+        : "deleted";
     } else {
       this.subjectService.registerContextIssue(this.context);
+      this.subjectAvailability = "missing";
     }
 
     this.recordService = new RecordService({
@@ -169,7 +181,7 @@ export class StudyStackApp {
       appVersion: APP_CONFIG.appVersion,
     });
 
-    if (this.subject) {
+    if (this.subject && this.subjectAvailability === "active") {
       this.guidedFlowService.ensure(this.subject.id);
       this.consumeInitialTestQuestPayload();
       this.progressService.ensureCurrent(this.subject.id);
@@ -184,9 +196,9 @@ export class StudyStackApp {
     });
 
     this.shell.initialize(this.preferences);
-    this.shell.setMissingContextMode(!this.context.valid);
+    this.shell.setMissingContextMode(this.subjectAvailability !== "active");
     this.shell.setSubjectContext(this.subject ?? this.context);
-    this.shell.setNewRecordEnabled(Boolean(this.context.valid && this.subject));
+    this.shell.setNewRecordEnabled(this.subjectAvailability === "active");
     this.updateShellState();
     this.shell.onNavigate((sectionId) => this.router.navigate(sectionId));
     this.shell.onReturn(() => this.returnToConceptCompass());
@@ -208,9 +220,113 @@ export class StudyStackApp {
         this.initialTestQuestNotice.type,
       );
     }
-    if (this.subject) {
+    if (this.subject && this.subjectAvailability === "active") {
       this.window.setTimeout(() => this.showGuidedFlowNotice(), 120);
     }
+  }
+
+  synchronizeConceptCompassSnapshot(snapshot) {
+    if (
+      !snapshot ||
+      !this.context?.valid ||
+      snapshot.subjectId !== this.context.subjectId
+    ) {
+      return false;
+    }
+
+    const nextContext = this.#createContextFromSnapshot(snapshot);
+    this.context = nextContext;
+    const nextSubject = this.subjectService.synchronize(nextContext);
+
+    if (!nextSubject) {
+      this.markSubjectDeleted({
+        subjectId: snapshot.subjectId,
+        subjectName: snapshot.subjectName,
+      });
+      return false;
+    }
+
+    const wasBlocked = this.subjectAvailability !== "active";
+    this.subject = nextSubject;
+    this.subjectAvailability = nextSubject.sourceArchived
+      ? "archived"
+      : "active";
+
+    if (this.subjectAvailability === "active") {
+      this.guidedFlowService.ensure(this.subject.id);
+      this.progressService.ensureCurrent(this.subject.id);
+      this.subject = this.repository.getEntity("subjects", this.subject.id);
+    } else {
+      this.#closeOpenDialogs();
+    }
+
+    this.#refreshSourcePresentation();
+
+    if (wasBlocked && this.subjectAvailability === "active") {
+      this.shell.showToast("Assunto restaurado no Concept Compass.");
+    }
+
+    return true;
+  }
+
+  markSubjectDeleted({ subjectId = null, subjectName = null } = {}) {
+    const activeSubjectId = this.context?.subjectId ?? this.subject?.id ?? null;
+    if (subjectId && activeSubjectId && subjectId !== activeSubjectId) {
+      return false;
+    }
+
+    if (subjectName && this.context?.valid) {
+      this.context = Object.freeze({
+        ...this.context,
+        subjectName,
+      });
+    }
+
+    this.subject = null;
+    this.subjectAvailability = "deleted";
+    this.#closeOpenDialogs();
+    this.#refreshSourcePresentation();
+    return true;
+  }
+
+  ensureSubjectWritable() {
+    if (!this.context?.valid) {
+      return false;
+    }
+
+    const rawConceptData = this.window.localStorage.getItem(
+      CONCEPT_COMPASS_DATA_STORAGE_KEY,
+    );
+
+    if (rawConceptData !== null) {
+      const snapshot = readConceptCompassSubjectSnapshot(
+        rawConceptData,
+        this.context.subjectId,
+      );
+
+      if (snapshot?.status === "missing") {
+        this.markSubjectDeleted({
+          subjectId: this.context.subjectId,
+          subjectName: this.context.subjectName,
+        });
+        return false;
+      }
+
+      if (snapshot && !this.#snapshotMatchesCurrentContext(snapshot)) {
+        this.synchronizeConceptCompassSnapshot(snapshot);
+      }
+    }
+
+    if (
+      this.subjectAvailability !== "active" ||
+      !this.subject ||
+      this.subject.sourceArchived
+    ) {
+      this.#refreshSourcePresentation();
+      return false;
+    }
+
+    return true;
   }
 
   updatePreferences(partial) {
@@ -244,14 +360,40 @@ export class StudyStackApp {
 
   renderSection(sectionId) {
     const container = this.shell.getContentContainer();
+    const conceptCompassReturnUrl = ConceptCompassAdapter.getReturnUrl(
+      this.context,
+      APP_CONFIG,
+    );
 
-    if (!this.context.valid || !this.subject) {
+    if (!this.context.valid) {
       this.document.title = APP_CONFIG.appName;
       renderMissingContextState({
         document: this.document,
         container,
-        conceptCompassUrl:
-          APP_CONFIG.integration.conceptCompassFallbackUrl,
+        conceptCompassUrl: conceptCompassReturnUrl,
+      });
+      this.shell.focusContent();
+      return;
+    }
+
+    if (
+      this.subjectAvailability === "archived" ||
+      this.subjectAvailability === "deleted" ||
+      !this.subject
+    ) {
+      this.document.title = APP_CONFIG.appName;
+      renderSourceSubjectState({
+        document: this.document,
+        container,
+        status:
+          this.subjectAvailability === "archived"
+            ? "archived"
+            : "deleted",
+        subjectName: this.subject?.subjectName ?? this.context.subjectName,
+        archiveSource: this.subject?.sourceArchived
+          ? this.#getCurrentArchiveSource()
+          : null,
+        conceptCompassUrl: conceptCompassReturnUrl,
       });
       this.shell.focusContent();
       return;
@@ -438,6 +580,7 @@ export class StudyStackApp {
   }
 
   openTestQuestImport() {
+    if (!this.ensureSubjectWritable()) return;
     openTestQuestImportModal({
       document: this.document,
       subject: this.subject,
@@ -464,6 +607,7 @@ export class StudyStackApp {
   }
 
   openExerciseSession(view) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const current = this.exerciseService.getView(view.session.id);
       openExerciseSessionModal({
@@ -484,6 +628,7 @@ export class StudyStackApp {
   }
 
   createErrorsFromQuestions(questionIds) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const result = this.errorService.createFromQuestions(questionIds);
       const createdCount = result.created.length;
@@ -501,6 +646,7 @@ export class StudyStackApp {
   }
 
   openErrorEditor(view) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const current = this.errorService.getView(view.errorRecord.id);
       const storedDraft = this.draftService.get(
@@ -562,6 +708,7 @@ export class StudyStackApp {
   }
 
   toggleErrorReviewed(view) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const updated = this.errorService.toggleReviewed(view.errorRecord.id);
       this.afterRecordMutation(
@@ -575,6 +722,7 @@ export class StudyStackApp {
   }
 
   openErrorRecurrence(view) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const current = this.errorService.getView(view.errorRecord.id);
       openErrorEvidenceModal({
@@ -597,6 +745,7 @@ export class StudyStackApp {
   }
 
   openErrorEvidence(view) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const current = this.errorService.getView(view.errorRecord.id);
       openErrorEvidenceModal({
@@ -626,6 +775,7 @@ export class StudyStackApp {
   }
 
   makeGuidedStageCurrent(stage) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const view = this.guidedFlowService.setCurrentStage(this.subject.id, stage);
       this.subject = this.repository.getEntity("subjects", this.subject.id);
@@ -647,6 +797,7 @@ export class StudyStackApp {
   }
 
   executeGuidedAction(action) {
+    if (!this.ensureSubjectWritable()) return;
     if (!action?.type) {
       return;
     }
@@ -730,6 +881,7 @@ export class StudyStackApp {
   }
 
   openMetacognitiveReview() {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const view = this.guidedFlowService.getMetacognitiveView(this.subject.id);
       openMetacognitiveReviewModal({
@@ -767,6 +919,7 @@ export class StudyStackApp {
   }
 
   openConsolidation() {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const flowView = this.guidedFlowService.getView(this.subject.id);
       openConsolidationModal({
@@ -787,7 +940,12 @@ export class StudyStackApp {
   }
 
   showGuidedFlowNotice() {
-    if (!this.subject || !this.guidedFlowService || !this.shell) {
+    if (
+      !this.subject ||
+      this.subjectAvailability !== "active" ||
+      !this.guidedFlowService ||
+      !this.shell
+    ) {
       return;
     }
     try {
@@ -805,6 +963,7 @@ export class StudyStackApp {
   }
 
   openOverviewEditor() {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const { subject } = this.overviewService.getView(this.subject.id);
 
@@ -827,6 +986,7 @@ export class StudyStackApp {
   }
 
   openCreateRecord(preferredType = null) {
+    if (!this.ensureSubjectWritable()) return;
     if (!this.subject) {
       this.shell.showToast("Abra um assunto válido para criar registros.", "warning");
       return;
@@ -858,6 +1018,7 @@ export class StudyStackApp {
   }
 
   openEditRecord(record) {
+    if (!this.ensureSubjectWritable()) return;
     if (record.type === "summary") {
       this.openSummaryEditor(record);
       return;
@@ -893,6 +1054,7 @@ export class StudyStackApp {
 
 
   openSummaryEditor(record) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const view = this.summaryService.getView(record.id);
       const storedDraft = this.draftService.get("summary", record.id);
@@ -940,6 +1102,7 @@ export class StudyStackApp {
   }
 
   openQuickDetail() {
+    if (!this.ensureSubjectWritable()) return;
     if (!this.subject) {
       this.shell.showToast("Abra um assunto válido para criar Anotações.", "warning");
       return;
@@ -960,6 +1123,7 @@ export class StudyStackApp {
   }
 
   openNoteEditor(record) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       let view = this.noteService.getView(record.id);
 
@@ -1017,6 +1181,7 @@ export class StudyStackApp {
   }
 
   toggleSummaryStudied(record) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const view = this.summaryService.toggleStudied(record.id);
       this.afterRecordMutation(
@@ -1030,6 +1195,7 @@ export class StudyStackApp {
   }
 
   changeRecordStatus(record, status) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       this.recordService.changeStatus(record.id, status);
       this.afterRecordMutation(
@@ -1043,6 +1209,7 @@ export class StudyStackApp {
   }
 
   toggleRecordImportant(record) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       const updated = this.recordService.toggleImportant(record.id);
       this.afterRecordMutation(
@@ -1056,6 +1223,7 @@ export class StudyStackApp {
   }
 
   confirmArchiveRecord(record) {
+    if (!this.ensureSubjectWritable()) return;
     openConfirmationModal({
       document: this.document,
       title: "Arquivar registro?",
@@ -1079,6 +1247,7 @@ export class StudyStackApp {
   }
 
   restoreRecord(record) {
+    if (!this.ensureSubjectWritable()) return;
     try {
       this.recordService.restore(record.id);
       this.afterRecordMutation("Registro restaurado para sua data original.");
@@ -1088,6 +1257,7 @@ export class StudyStackApp {
   }
 
   afterRecordMutation(message) {
+    if (!this.ensureSubjectWritable()) return;
     this.progressService.ensureCurrent(this.subject.id);
     this.subject = this.repository.getEntity("subjects", this.subject.id);
     this.shell.setSubjectContext(this.subject);
@@ -1104,7 +1274,7 @@ export class StudyStackApp {
       saved: true,
     });
 
-    if (this.subject) {
+    if (this.subject && this.subjectAvailability === "active") {
       this.shell.updateCounters(this.recordService.getCounts(this.subject.id));
       this.shell.setProgress(
         this.repository.getEntity(
@@ -1270,6 +1440,110 @@ export class StudyStackApp {
     });
   }
 
+  #createContextFromSnapshot(snapshot) {
+    const returnUrl = this.#buildReturnUrl(snapshot);
+
+    return Object.freeze({
+      ...this.context,
+      valid: true,
+      sentAt: this.clock(),
+      sourceApp: "concept_compass",
+      matterId: snapshot.matterId,
+      matterName: snapshot.matterName,
+      themeId: snapshot.themeId,
+      themeName: snapshot.themeName,
+      subjectId: snapshot.subjectId,
+      subjectName: snapshot.subjectName,
+      sourceArchived: snapshot.sourceArchived,
+      returnUrl,
+      navigationContext: {
+        route: "materia",
+        materiaId: snapshot.matterId,
+        temaId: snapshot.themeId,
+        assuntoId: snapshot.subjectId,
+      },
+      source: "concept-compass-storage",
+      errors: Object.freeze([]),
+    });
+  }
+
+  #buildReturnUrl(snapshot) {
+    const fallback = ConceptCompassAdapter.getReturnUrl(
+      this.context,
+      APP_CONFIG,
+    );
+
+    try {
+      const url = new URL(
+        fallback || APP_CONFIG.integration.conceptCompassFallbackUrl,
+        this.window.location.href,
+      );
+      url.hash =
+        `#/materias/${encodeURIComponent(snapshot.matterId)}` +
+        `?tema=${encodeURIComponent(snapshot.themeId)}` +
+        `&assunto=${encodeURIComponent(snapshot.subjectId)}`;
+      return url.href;
+    } catch {
+      return fallback || APP_CONFIG.integration.conceptCompassFallbackUrl;
+    }
+  }
+
+  #snapshotMatchesCurrentContext(snapshot) {
+    return Boolean(
+      this.context?.valid &&
+        this.context.subjectId === snapshot.subjectId &&
+        this.context.subjectName === snapshot.subjectName &&
+        this.context.themeId === snapshot.themeId &&
+        this.context.themeName === snapshot.themeName &&
+        this.context.matterId === snapshot.matterId &&
+        this.context.matterName === snapshot.matterName &&
+        this.context.sourceArchived === snapshot.sourceArchived,
+    );
+  }
+
+  #getCurrentArchiveSource() {
+    const raw = this.window.localStorage.getItem(
+      CONCEPT_COMPASS_DATA_STORAGE_KEY,
+    );
+    const snapshot = readConceptCompassSubjectSnapshot(
+      raw,
+      this.context?.subjectId,
+    );
+    return snapshot?.archiveSource ?? null;
+  }
+
+  #closeOpenDialogs() {
+    const dialogs = this.document.querySelectorAll?.("dialog[open]") ?? [];
+
+    for (const dialog of dialogs) {
+      try {
+        dialog.close?.("source-state-change");
+      } catch {
+        dialog.removeAttribute?.("open");
+      }
+    }
+
+    this.shell?.syncToastLayer();
+  }
+
+  #refreshSourcePresentation() {
+    if (!this.shell) return;
+
+    const active =
+      this.subjectAvailability === "active" &&
+      Boolean(this.subject) &&
+      !this.subject.sourceArchived;
+
+    this.shell.setMissingContextMode(!active);
+    this.shell.setNewRecordEnabled(active);
+    this.shell.setSubjectContext(this.subject ?? this.context);
+    this.updateShellState();
+
+    if (this.router) {
+      this.renderSection(this.router.getCurrentSection());
+    }
+  }
+
   returnToConceptCompass() {
     const returnUrl = ConceptCompassAdapter.getReturnUrl(this.context, APP_CONFIG);
 
@@ -1286,6 +1560,6 @@ export class StudyStackApp {
       return;
     }
 
-    this.window.location.assign(returnUrl);
+    this.window.open(returnUrl, "_blank", "noopener,noreferrer");
   }
 }

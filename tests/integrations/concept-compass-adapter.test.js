@@ -49,6 +49,35 @@ test("remove returnUrl de origem não permitida", () => {
   assert.equal(context.returnUrl, "");
 });
 
+test("preserva o retorno profundo ao Assunto de origem", () => {
+  const returnUrl =
+    "https://viniciusidney.github.io/concept-compass/#/materias/matter-biology?tema=theme-ecology&assunto=subject-food-webs";
+  const envelope = {
+    ...APP_CONFIG.developmentSubject,
+    returnUrl,
+  };
+  const params = new URLSearchParams({
+    subjectContext: JSON.stringify(envelope),
+  });
+  const context = ConceptCompassAdapter.resolveSubjectContext(
+    locationFrom(`https://viniciusidney.github.io/study-stack/?${params}`),
+    APP_CONFIG,
+  );
+
+  assert.equal(context.returnUrl, returnUrl);
+  assert.equal(
+    ConceptCompassAdapter.getReturnUrl(context, APP_CONFIG),
+    returnUrl,
+  );
+});
+
+test("usa o endereço público do Concept Compass quando não há vínculo", () => {
+  assert.equal(
+    ConceptCompassAdapter.getReturnUrl(null, APP_CONFIG),
+    APP_CONFIG.integration.conceptCompassFallbackUrl,
+  );
+});
+
 test("contexto inválido permanece inválido fora do ambiente local", () => {
   const context = ConceptCompassAdapter.resolveSubjectContext(
     locationFrom("https://viniciusidney.github.io/study-stack/"),

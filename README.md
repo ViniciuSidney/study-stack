@@ -2,7 +2,7 @@
 
 O **Study Stack** é um caderno conectado para organizar o que foi estudado por assunto, registrar evidências de aprendizagem e orientar o estudante até a consolidação final.
 
-> Versão estável atual: **v0.1.1**
+> Versão candidata atual: **v0.2.0**
 
 ## Principais recursos
 
@@ -91,6 +91,17 @@ http://127.0.0.1:4173/?strictContext=1
 
 Quando a URL pública é aberta diretamente, o Study Stack apresenta uma tela de orientação com acesso ao Concept Compass. Isso é intencional: a aplicação organiza dados dentro de um assunto recebido pela integração e não cria assuntos isolados.
 
+### Sincronização ativa com o Concept Compass
+
+Quando as duas aplicações estão na mesma origem, a aba já aberta do Study Stack acompanha o registro estrutural do Concept Compass:
+
+- renomear ou mover um Assunto atualiza o cabeçalho e o retorno profundo sem F5;
+- arquivar o Assunto, Tema ou Matéria bloqueia criação, edição e mudança de etapa e mostra um aviso dedicado;
+- restaurar o conteúdo libera a mesma aba automaticamente;
+- excluir permanentemente o Assunto mostra **Assunto não disponível** e o protocolo de exclusão remove os dados vinculados.
+
+A reconciliação ocorre por eventos de armazenamento e também ao recuperar foco/visibilidade.
+
 ## Verificação técnica
 
 ```bash
@@ -102,7 +113,7 @@ O comando executa:
 1. verificação sintática dos arquivos JavaScript;
 2. suíte automatizada com o test runner nativo do Node.js.
 
-A candidata `v0.1.1` foi fechada com **168 testes automatizados aprovados**. Ela preserva a validação funcional da v0.1.0 e adiciona testes específicos para a entrada pública sem contexto e para a nova identidade visual.
+A candidata `v0.2.0` foi fechada com **188 testes automatizados aprovados**. Além das fundações da v0.1.1, ela consolida a integração ativa com o Concept Compass, incluindo arquivamento, restauração, renomeação, movimentação, exclusão vinculada e retorno seguro em nova aba.
 
 ## Armazenamento e segurança
 
@@ -121,7 +132,7 @@ study-stack:v1:state
 
 Antes de atualizações importantes, crie um backup em **Configurações → Criar backup**.
 
-## Limitações conhecidas da v0.1.1
+## Limitações conhecidas da v0.2.0
 
 - dados ainda não são sincronizados entre dispositivos ou contas;
 - a integração funcional com o Flashcore permanece futura;
@@ -135,7 +146,7 @@ Essas limitações não envolvem perda ou corrupção conhecida de dados.
 
 - `dev`: desenvolvimento e candidata aprovada;
 - `main`: versão publicada;
-- tag prevista para o patch público: `v0.1.1`.
+- tag prevista para a integração estável: `v0.2.0`.
 
 A publicação deve manter `main`, tag, GitHub Release e GitHub Pages no mesmo commit.
 
@@ -143,6 +154,7 @@ A publicação deve manter `main`, tag, GitHub Release e GitHub Pages no mesmo c
 
 - [CHANGELOG.md](CHANGELOG.md)
 - [Notas da versão](RELEASE_NOTES.md)
+- [Registro de qualidade da v0.2.0](docs/qa-v0.2.0.md)
 - [Registro de qualidade da v0.1.1](docs/qa-v0.1.1.md)
 - [Registro de qualidade da v0.1.0](docs/qa-v0.1.0.md)
 - [Histórico das fundações](docs/README.md)

@@ -62,6 +62,10 @@ export function renderMissingContextState({
     text: "Abrir Concept Compass",
     attributes: {
       href: conceptCompassUrl,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      title: "Abrir o Concept Compass e escolher um Assunto",
+      "data-return-state": "missing",
       "aria-label": "Abrir o Concept Compass para escolher um assunto",
     },
   });

@@ -29,9 +29,9 @@ Documentos locais de implementação e lançamento:
 - [`foundation-08.md`](foundation-08.md) — ciclo completo dos Registros de Erro.
 - [`foundation-09.md`](foundation-09.md) — backup, restauração, diagnóstico e pendências.
 - [`foundation-10.md`](foundation-10.md) — Fluxo Guiado de Consolidação.
+- [`qa-v0.2.0.md`](qa-v0.2.0.md) — validação da integração ativa com o Concept Compass.
 - [`qa-v0.1.1.md`](qa-v0.1.1.md) — validação do patch de entrada pública e identidade visual.
 - [`qa-v0.1.0.md`](qa-v0.1.0.md) — registro da execução e aprovação da candidata v0.1.0.
 
 O Wireframe 07 é a referência estrutural. Ele não deve ser copiado como base
 de produção porque contém dados fictícios, simulações e código experimental.
-

@@ -250,6 +250,14 @@
   font-size: 0.84rem;
 }
 
+.source-subject-state--archived {
+  border-color: color-mix(in srgb, var(--warning) 48%, var(--line));
+}
+
+.source-subject-state--deleted {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--line));
+}
+
 .status-list {
   display: grid;
   gap: 10px;

@@ -127,7 +127,7 @@ export class ConceptCompassAdapter {
 
   static getReturnUrl(context, config) {
     return (
-      context.returnUrl || config.integration.conceptCompassFallbackUrl || ""
+      context?.returnUrl || config.integration.conceptCompassFallbackUrl || ""
     );
   }
 }

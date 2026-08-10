@@ -1,6 +1,7 @@
 import { StudyStackApp } from "./app.js";
 import { ActiveSubjectStateWatcher } from "./integrations/active-subject-state-watcher.js";
 import { ConceptCompassDeletionConsumer } from "./integrations/concept-compass-deletion-consumer.js";
+import { ConceptCompassSubjectWatcher } from "./integrations/concept-compass-subject-watcher.js";
 import { ConceptCompassSummaryPublisher } from "./integrations/concept-compass-summary-publisher.js";
 
 const app = new StudyStackApp({
@@ -26,23 +27,36 @@ try {
     window,
     repository: app.repository,
     onSubjectsDeleted({ subjectIds }) {
-      if (app.subject?.id && subjectIds.includes(app.subject.id)) {
-        window.location.reload();
+      const activeSubjectId = app.context?.subjectId ?? app.subject?.id ?? null;
+      if (activeSubjectId && subjectIds.includes(activeSubjectId)) {
+        app.markSubjectDeleted({ subjectId: activeSubjectId });
       }
     },
   });
   const activeSubjectStateWatcher = new ActiveSubjectStateWatcher({
     window,
-    getSubjectId: () => app.subject?.id ?? null,
+    getSubjectId: () => app.context?.subjectId ?? app.subject?.id ?? null,
     onUnavailable({ subjectId }) {
-      if (app.subject?.id === subjectId) {
-        window.location.reload();
-      }
+      app.markSubjectDeleted({ subjectId });
+    },
+  });
+  const conceptCompassSubjectWatcher = new ConceptCompassSubjectWatcher({
+    window,
+    getSubjectId: () => app.context?.subjectId ?? null,
+    onSnapshot(snapshot) {
+      app.synchronizeConceptCompassSnapshot(snapshot);
+    },
+    onMissing({ subjectId }) {
+      app.markSubjectDeleted({
+        subjectId,
+        subjectName: app.context?.subjectName ?? null,
+      });
     },
   });
 
   liveDeletionConsumer.install();
   activeSubjectStateWatcher.install().check();
+  conceptCompassSubjectWatcher.install().check();
   conceptCompassSummaryPublisher.install().publish();
 } catch (error) {
   console.error("Falha ao iniciar o Study Stack.", error);
