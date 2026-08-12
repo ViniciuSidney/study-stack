@@ -23,10 +23,10 @@ test("menu de utilidades apresenta as ferramentas e a versão estável", async (
   assert.match(html, /data-utility="backup"/);
   assert.match(html, /data-utility="restore"/);
   assert.match(html, /data-utility="diagnostics"/);
-  assert.match(html, /Study Stack · v0\.2\.0/);
-  assert.equal(pkg.version, "0.2.0");
-  assert.equal(lock.version, "0.2.0");
-  assert.match(config, /appVersion: "0\.2\.0"/);
+  assert.match(html, /Study Stack · v0\.3\.0/);
+  assert.equal(pkg.version, "0.3.0");
+  assert.equal(lock.version, "0.3.0");
+  assert.match(config, /appVersion: "0\.3\.0"/);
 });
 
 test("modais de manutenção mantêm corpo rolável e rodapé separado", async () => {

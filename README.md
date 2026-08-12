@@ -2,7 +2,7 @@
 
 O **Study Stack** é um caderno conectado para organizar o que foi estudado por assunto, registrar evidências de aprendizagem e orientar o estudante até a consolidação final.
 
-> Versão candidata atual: **v0.2.0**
+> Versão candidata atual: **v0.3.0**
 
 ## Principais recursos
 
@@ -11,6 +11,8 @@ O **Study Stack** é um caderno conectado para organizar o que foi estudado por 
 - conteúdo rico sanitizado, busca, filtros e registros importantes;
 - autosave recuperável e rascunhos persistentes;
 - importação de sessões e questões do Test Quest;
+- criação de listas no Test Quest com vínculo, nome sugerido e sequência estável;
+- retorno automático ao card recém-importado, com consumo único do resultado;
 - tratamento seguro de duplicidades, divergências e pendências;
 - Registros de Erro com análise, revisão, reincidência e superação;
 - caminho metacognitivo para práticas sem erros;
@@ -113,7 +115,7 @@ O comando executa:
 1. verificação sintática dos arquivos JavaScript;
 2. suíte automatizada com o test runner nativo do Node.js.
 
-A candidata `v0.2.0` foi fechada com **188 testes automatizados aprovados**. Além das fundações da v0.1.1, ela consolida a integração ativa com o Concept Compass, incluindo arquivamento, restauração, renomeação, movimentação, exclusão vinculada e retorno seguro em nova aba.
+A candidata `v0.3.0` foi fechada com **207 testes automatizados aprovados** e **123 arquivos JavaScript verificados**. Ela completa o fluxo orientado com o Test Quest, preserva a integração ativa com o Concept Compass e mantém o schema persistente em `1.0.0`.
 
 ## Armazenamento e segurança
 
@@ -132,7 +134,7 @@ study-stack:v1:state
 
 Antes de atualizações importantes, crie um backup em **Configurações → Criar backup**.
 
-## Limitações conhecidas da v0.2.0
+## Limitações conhecidas da v0.3.0
 
 - dados ainda não são sincronizados entre dispositivos ou contas;
 - a integração funcional com o Flashcore permanece futura;
@@ -146,7 +148,7 @@ Essas limitações não envolvem perda ou corrupção conhecida de dados.
 
 - `dev`: desenvolvimento e candidata aprovada;
 - `main`: versão publicada;
-- tag prevista para a integração estável: `v0.2.0`.
+- tag prevista para a integração estável: `v0.3.0`.
 
 A publicação deve manter `main`, tag, GitHub Release e GitHub Pages no mesmo commit.
 
@@ -154,6 +156,7 @@ A publicação deve manter `main`, tag, GitHub Release e GitHub Pages no mesmo c
 
 - [CHANGELOG.md](CHANGELOG.md)
 - [Notas da versão](RELEASE_NOTES.md)
+- [Validação da integração com o Test Quest](docs/qa-test-quest-integration.md)
 - [Registro de qualidade da v0.2.0](docs/qa-v0.2.0.md)
 - [Registro de qualidade da v0.1.1](docs/qa-v0.1.1.md)
 - [Registro de qualidade da v0.1.0](docs/qa-v0.1.0.md)

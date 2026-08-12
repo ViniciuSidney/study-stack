@@ -4,6 +4,8 @@ Todas as mudanças relevantes do Study Stack serão registradas neste arquivo.
 
 ## [Não lançado]
 
+## [0.3.0] — 2026-08-12
+
 ### Integração
 
 - criação de listas no Test Quest com contexto do Assunto, entrada direta na
