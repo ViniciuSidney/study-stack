@@ -16,6 +16,10 @@ const modalUrl = new URL(
   import.meta.url,
 );
 const cssUrl = new URL("../../styles/components.css", import.meta.url);
+const responsiveCssUrl = new URL(
+  "../../styles/responsive.css",
+  import.meta.url,
+);
 
 test("rota Exercícios usa a seção funcional em vez do placeholder", async () => {
   const app = await readFile(fileURLToPath(appUrl), "utf8");
@@ -65,6 +69,22 @@ test("card importado possui identidade estável e destaque orientado", async () 
   assert.match(app, /scrollIntoView/);
   assert.match(app, /Resultado salvo no Study Stack\./);
   assert.match(css, /@keyframes imported-session-highlight/);
+});
+
+test("cards usam uma coluna na faixa intermediária de desktop", async () => {
+  const responsiveCss = await readFile(
+    fileURLToPath(responsiveCssUrl),
+    "utf8",
+  );
+
+  assert.match(
+    responsiveCss,
+    /@media \(max-width: 1300px\)\s*{\s*\.exercise-session-grid\s*{\s*grid-template-columns: 1fr;/,
+  );
+  assert.match(
+    responsiveCss,
+    /@media \(max-width: 1100px\)\s*{\s*\.exercise-metrics-grid/,
+  );
 });
 
 test("modal detalhado separa respostas e cria erros somente após seleção", async () => {
