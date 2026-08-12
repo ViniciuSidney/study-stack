@@ -58,12 +58,34 @@ test("usa somente o padrão legado no final do título como fallback", () => {
   );
 });
 
-test("aceita views do serviço e prioriza metadado sobre o título", () => {
+test("aceita views do serviço e preserva a sequência estruturada da sessão", () => {
   const views = [
     { session: session({ sourceListSequence: 5, sessionTitle: "Ecologia — Lista 99" }) },
   ];
 
-  assert.equal(getNextTestQuestListSequence(views, SUBJECT.id), 6);
+  assert.equal(getTestQuestListSequence(views[0]), 5);
+});
+
+test("reserva também o número canônico do título para evitar nomes duplicados", () => {
+  const sessions = [
+    session({
+      sourceListSequence: 1,
+      sessionTitle: "Cadeias e Teias Alimentares — Lista 2",
+    }),
+  ];
+
+  assert.equal(getNextTestQuestListSequence(sessions, SUBJECT.id), 3);
+});
+
+test("não reserva números mencionados em títulos personalizados", () => {
+  const sessions = [
+    session({
+      sourceListSequence: 1,
+      sessionTitle: "Revisão especial da lista 200 para a prova",
+    }),
+  ];
+
+  assert.equal(getNextTestQuestListSequence(sessions, SUBJECT.id), 2);
 });
 
 test("monta um único contexto com entrada, nome e sequência sugeridos", () => {

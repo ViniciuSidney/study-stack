@@ -12,6 +12,17 @@ function unwrapSession(candidate) {
   return candidate?.session ?? candidate ?? null;
 }
 
+function getTestQuestTitleSequence(candidate) {
+  const session = unwrapSession(candidate);
+
+  if (!session) return null;
+
+  const title = String(session.sessionTitle ?? "").trim();
+  const match = title.match(LEGACY_LIST_SEQUENCE_PATTERN);
+
+  return match ? normalizePositiveInteger(match[1]) : null;
+}
+
 export function getTestQuestListSequence(candidate) {
   const session = unwrapSession(candidate);
 
@@ -23,23 +34,28 @@ export function getTestQuestListSequence(candidate) {
 
   if (structuredSequence) return structuredSequence;
 
-  const title = String(session.sessionTitle ?? "").trim();
-  const match = title.match(LEGACY_LIST_SEQUENCE_PATTERN);
-
-  return match ? normalizePositiveInteger(match[1]) : null;
+  return getTestQuestTitleSequence(session);
 }
 
 export function getNextTestQuestListSequence(candidates, subjectId) {
   const normalizedSubjectId = String(subjectId ?? "").trim();
-  const sequences = (Array.isArray(candidates) ? candidates : [])
+  const sessions = (Array.isArray(candidates) ? candidates : [])
     .map(unwrapSession)
     .filter(
       (session) =>
         session &&
         (!normalizedSubjectId || session.subjectId === normalizedSubjectId),
-    )
-    .map(getTestQuestListSequence)
-    .filter((sequence) => sequence !== null);
+    );
+  const sequences = sessions.flatMap((session) => {
+    const structuredSequence = normalizePositiveInteger(
+      session.sourceListSequence ?? session.originalSnapshot?.session?.sequence,
+    );
+    const titleSequence = getTestQuestTitleSequence(session);
+
+    return [structuredSequence, titleSequence].filter(
+      (sequence) => sequence !== null,
+    );
+  });
 
   return sequences.length ? Math.max(...sequences) + 1 : 1;
 }
