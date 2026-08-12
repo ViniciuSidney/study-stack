@@ -358,7 +358,7 @@ export function openExerciseSessionModal({
   if (sourceUrl) {
     const sourceLink = createElement(document, "a", {
       className: "button button-secondary",
-      text: "Abrir origem",
+      text: "Abrir Test Quest",
       attributes: {
         href: sourceUrl,
         target: "_blank",

@@ -97,6 +97,8 @@ test("modal detalhado separa respostas e cria erros somente após seleção", as
   assert.match(modal, /Selecionar para criar Registro de Erro/);
   assert.match(modal, /Criar Registros de Erro/);
   assert.match(modal, /onCreateErrors\(questionIds\)/);
+  assert.match(modal, /Abrir Test Quest/);
+  assert.doesNotMatch(modal, /Abrir origem/);
   assert.doesNotMatch(modal, /createErrorRecord/);
 });
 
