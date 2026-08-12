@@ -27,6 +27,7 @@ Documentos locais de implementação e lançamento:
 - [`foundation-06.md`](foundation-06.md) — Visão Geral e progresso por evidências.
 - [`foundation-07.md`](foundation-07.md) — Exercícios importados do Test Quest.
 - [`test-quest-contract-v1.1.md`](test-quest-contract-v1.1.md) — contrato compatível com respostas parciais.
+- [`qa-test-quest-integration.md`](qa-test-quest-integration.md) — validação do fluxo orientado de ida e volta.
 - [`foundation-08.md`](foundation-08.md) — ciclo completo dos Registros de Erro.
 - [`foundation-09.md`](foundation-09.md) — backup, restauração, diagnóstico e pendências.
 - [`foundation-10.md`](foundation-10.md) — Fluxo Guiado de Consolidação.

@@ -4,6 +4,31 @@ Todas as mudanças relevantes do Study Stack serão registradas neste arquivo.
 
 ## [Não lançado]
 
+### Integração
+
+- criação de listas no Test Quest com contexto do Assunto, entrada direta na
+  importação, nome sugerido editável e sequência estruturada;
+- retorno orientado para Exercícios com rolagem, foco, destaque temporário e
+  confirmação do resultado salvo;
+- deduplicação por sessão de origem e preservação segura do handoff quando o
+  Assunto está indisponível;
+- numeração híbrida que evita colisões entre sequência estruturada e títulos
+  canônicos `Assunto — Lista N`.
+
+### Interface
+
+- ação de origem renomeada para **Abrir Test Quest**;
+- cards de listas usam uma coluna até `1300px` para preservar a leitura em
+  larguras intermediárias.
+
+### Qualidade
+
+- 207 testes automatizados aprovados;
+- 123 arquivos JavaScript verificados;
+- validação manual conjunta registrada em
+  `docs/qa-test-quest-integration.md`.
+
+
 ## [0.2.0] — 2026-08-09
 
 ### Corrigido
