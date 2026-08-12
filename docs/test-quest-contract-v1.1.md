@@ -19,6 +19,8 @@ persistir e exportar suas sessões nativas.
 - `sessionId`: identificador único da tentativa concluída;
 - `subjectContext.subjectId`: identificador recebido do Study Stack;
 - `session.title`: título visível da lista;
+- `session.sequence`: inteiro positivo opcional com a sequência sugerida pelo
+  Study Stack; o título continua editável e não substitui esse metadado;
 - `session.date`: data e hora ISO 8601 da sessão;
 - `questions`: ao menos uma questão concluída.
 

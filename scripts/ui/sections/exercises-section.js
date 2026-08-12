@@ -32,6 +32,11 @@ function createStat(document, label, value, className = "") {
   return stat;
 }
 
+export function formatPracticeValidationStatus(answered, threshold = 15) {
+  const missing = Math.max(0, threshold - Number(answered ?? 0));
+  return `Responda mais ${missing} ${missing === 1 ? "questão" : "questões"} para validar`;
+}
+
 function createSessionCard({ document, view, onOpen, onArchive }) {
   const { record, session } = view;
   const card = createElement(document, "article", {
@@ -76,7 +81,10 @@ function createSessionCard({ document, view, onOpen, onArchive }) {
         : "record-badge practice-pending-badge",
       text: session.stats.validForPractice
         ? "+1 ponto de prática"
-        : `${Math.max(0, 15 - session.stats.answered)} respostas até validar`,
+        : formatPracticeValidationStatus(session.stats.answered),
+      attributes: session.stats.validForPractice
+        ? {}
+        : { title: "A lista é validada após 15 questões respondidas." },
     }),
   );
   header.append(titleGroup, badges);
@@ -187,6 +195,7 @@ export function renderExercisesSection({
   views,
   aggregate,
   pendingImports = [],
+  onCreateList,
   onImport,
   onOpenPending,
   onOpen,
@@ -210,13 +219,26 @@ export function renderExercisesSection({
         "Consulte listas concluídas no Test Quest, respostas, correções e desempenho. O snapshot original permanece separado das suas observações.",
     }),
   );
-  const importButton = createElement(document, "button", {
+  const headerActions = createElement(document, "div", {
+    className: "section-header-actions",
+  });
+  const createListButton = createElement(document, "button", {
     className: "button button-primary",
+    text: "Criar lista no Test Quest",
+    attributes: { type: "button" },
+  });
+  createListButton.addEventListener("click", onCreateList);
+  const importButton = createElement(document, "button", {
+    className: "button button-secondary",
     text: "Importar resultado",
     attributes: { type: "button" },
   });
   importButton.addEventListener("click", onImport);
-  header.append(copy, importButton);
+  if (views.length) {
+    headerActions.append(createListButton);
+  }
+  headerActions.append(importButton);
+  header.append(copy, headerActions);
   inner.append(header);
 
   if (pendingImports.length) {
@@ -264,10 +286,10 @@ export function renderExercisesSection({
     );
     const action = createElement(document, "button", {
       className: "button button-primary",
-      text: "Importar primeira lista",
+      text: "Criar lista no Test Quest",
       attributes: { type: "button" },
     });
-    action.addEventListener("click", onImport);
+    action.addEventListener("click", onCreateList);
     empty.append(action);
     inner.append(empty);
     container.append(inner);

@@ -28,10 +28,9 @@ test("ações externas preservam o Study Stack e enviam o contexto ao Test Quest
   const app = await read("../../scripts/app.js");
 
   assert.match(app, /openTestQuestForSubject/);
-  assert.match(app, /url\.searchParams\.set\("subjectId"/);
-  assert.match(app, /url\.searchParams\.set\("matterId"/);
-  assert.match(app, /url\.searchParams\.set\("themeId"/);
-  assert.match(app, /url\.searchParams\.set\("returnUrl"/);
+  assert.match(app, /buildTestQuestLaunchContext/);
+  assert.match(app, /createTestQuestLaunchUrl/);
+  assert.match(app, /listViewsBySubject\(this\.subject\.id\)/);
   assert.match(app, /anchor\.target = "_blank"/);
   assert.match(app, /anchor\.rel = "noopener noreferrer"/);
   assert.match(app, /anchor\.click\(\)/);

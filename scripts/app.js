@@ -5,6 +5,10 @@ import {
   readConceptCompassSubjectSnapshot,
 } from "./integrations/concept-compass-subject-watcher.js";
 import { TestQuestAdapter } from "./integrations/testquest-adapter.js";
+import {
+  buildTestQuestLaunchContext,
+  createTestQuestLaunchUrl,
+} from "./integrations/testquest-launch.js";
 import { BackupService } from "./services/backup-service.js";
 import { DiagnosticService } from "./services/diagnostic-service.js";
 import { DraftService } from "./services/draft-service.js";
@@ -456,6 +460,7 @@ export class StudyStackApp {
         views: this.exerciseService.listViewsBySubject(this.subject.id),
         aggregate: this.exerciseService.getAggregate(this.subject.id),
         pendingImports: this.exerciseService.listPending(),
+        onCreateList: () => this.openTestQuestForSubject(),
         onImport: () => this.openTestQuestImport(),
         onOpenPending: () => this.openPendingImports(),
         onOpen: (view) => this.openExerciseSession(view),
@@ -854,18 +859,20 @@ export class StudyStackApp {
   }
 
   openTestQuestForSubject() {
+    if (!this.ensureSubjectWritable()) return;
+
     try {
-      const url = new URL(APP_CONFIG.integration.testQuestUrl);
-      url.searchParams.set("contractVersion", "1.0.0");
-      url.searchParams.set("sentAt", this.clock());
-      url.searchParams.set("sourceApp", "study_stack");
-      url.searchParams.set("matterId", this.subject.matterId);
-      url.searchParams.set("matterName", this.subject.matterName);
-      url.searchParams.set("themeId", this.subject.themeId);
-      url.searchParams.set("themeName", this.subject.themeName);
-      url.searchParams.set("subjectId", this.subject.id);
-      url.searchParams.set("subjectName", this.subject.subjectName);
-      url.searchParams.set("returnUrl", this.window.location.href);
+      const context = buildTestQuestLaunchContext({
+        subject: this.subject,
+        sessions: this.exerciseService.listViewsBySubject(this.subject.id),
+        sentAt: this.clock(),
+        returnUrl: this.window.location.href,
+        contractVersion: APP_CONFIG.integration.testQuestContextContractVersion,
+      });
+      const url = createTestQuestLaunchUrl(
+        APP_CONFIG.integration.testQuestUrl,
+        context,
+      );
       const anchor = this.document.createElement("a");
       anchor.href = url.toString();
       anchor.target = "_blank";

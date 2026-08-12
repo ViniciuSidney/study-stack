@@ -45,6 +45,18 @@ function normalizeEnum(value, allowed, fallback) {
   return allowed.has(normalized) ? normalized : fallback;
 }
 
+function normalizeOptionalPositiveInteger(value, fieldName) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new TypeError(`${fieldName} deve ser um inteiro positivo.`);
+  }
+
+  return value;
+}
+
 function isPlainObject(value) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return false;
@@ -244,6 +256,10 @@ export function normalizeTestQuestPayload(payload, now) {
   const sessionTitle =
     normalizeString(session.title ?? session.name ?? payload.title) ||
     `Lista de exercícios de ${sessionDate.slice(0, 10)}`;
+  const sourceListSequence = normalizeOptionalPositiveInteger(
+    session.sequence,
+    "session.sequence",
+  );
 
   const normalizedQuestions = questions.map((question, index) => {
     if (!isPlainObject(question)) {
@@ -324,6 +340,7 @@ export function normalizeTestQuestPayload(payload, now) {
     sessionId,
     subjectId,
     sessionTitle,
+    ...(sourceListSequence ? { sourceListSequence } : {}),
     sessionDate,
     questions: normalizedQuestions.map((question) => ({
       sourceQuestionId: question.sourceQuestionId,
@@ -346,6 +363,7 @@ export function normalizeTestQuestPayload(payload, now) {
     subjectId,
     subjectContext: structuredClone(subjectContext),
     sessionTitle,
+    sourceListSequence,
     sessionDate,
     sourceUrl: normalizeString(payload.resultUrl ?? session.resultUrl) || null,
     questions: normalizedQuestions,
@@ -405,6 +423,7 @@ export function createImportedSession({
     sourceContractVersion: normalizedPayload.contractVersion,
     sourceUrl: normalizedPayload.sourceUrl,
     sessionTitle: normalizedPayload.sessionTitle,
+    sourceListSequence: normalizedPayload.sourceListSequence,
     sessionDate: normalizedPayload.sessionDate,
     importedAt,
     importStatus: "valid",
@@ -495,6 +514,14 @@ export function validateImportedSession(session) {
   }
   if (!TEST_QUEST_CONTRACT_VERSIONS.includes(session.sourceContractVersion)) {
     errors.push("sourceContractVersion incompatível.");
+  }
+  if (
+    session.sourceListSequence !== undefined &&
+    session.sourceListSequence !== null &&
+    (!Number.isInteger(session.sourceListSequence) ||
+      session.sourceListSequence <= 0)
+  ) {
+    errors.push("sourceListSequence inválido.");
   }
   if (!IMPORT_STATUS_SET.has(session.importStatus)) {
     errors.push("importStatus inválido.");

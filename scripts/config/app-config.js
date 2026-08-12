@@ -13,6 +13,7 @@ export const APP_CONFIG = Object.freeze({
       "https://viniciusidney.github.io/concept-compass/#/",
     conceptCompassContractVersions: Object.freeze(["1.0.0"]),
     testQuestContractVersions: Object.freeze(["1.0.0", "1.1.0"]),
+    testQuestContextContractVersion: "1.0.0",
     testQuestUrl: "https://viniciusidney.github.io/test-quest/",
     testQuestHandoffKey: "study-stack:handoff:test-quest:v1",
     allowedReturnOrigins: Object.freeze([

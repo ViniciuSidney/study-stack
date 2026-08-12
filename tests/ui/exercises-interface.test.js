@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+  formatPracticeValidationStatus,
+} from "../../scripts/ui/sections/exercises-section.js";
 
 const appUrl = new URL("../../scripts/app.js", import.meta.url);
 const sectionUrl = new URL(
@@ -33,6 +36,20 @@ test("seção oferece importação, métricas, busca e filtros", async () => {
   assert.match(section, /Respostas parciais/);
   assert.match(section, /Ver importações pendentes/);
   assert.match(section, /preservada\(s\) como pendência/);
+  assert.match(section, /Criar lista no Test Quest/);
+  assert.match(section, /onCreateList/);
+  assert.match(section, /section-header-actions/);
+});
+
+test("meta de validação usa singular e plural corretos", () => {
+  assert.equal(
+    formatPracticeValidationStatus(3),
+    "Responda mais 12 questões para validar",
+  );
+  assert.equal(
+    formatPracticeValidationStatus(14),
+    "Responda mais 1 questão para validar",
+  );
 });
 
 test("modal detalhado separa respostas e cria erros somente após seleção", async () => {

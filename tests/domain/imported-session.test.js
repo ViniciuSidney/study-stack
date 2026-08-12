@@ -46,6 +46,35 @@ test("aceita contrato 1.1.0 e pondera respostas parciais em 50%", () => {
   assert.equal(normalized.questions[13].scorePercentage, 50);
 });
 
+test("preserva a sequência estruturada opcional da lista", () => {
+  const normalized = normalizeTestQuestPayload(
+    createTestQuestResultV11({ session: { sequence: 4 } }),
+    NOW,
+  );
+  const imported = createImportedSession({
+    id: "session-sequence-4",
+    recordId: "record-sequence-4",
+    normalizedPayload: normalized,
+    questionIds: normalized.questions.map((_, index) => `question-${index + 1}`),
+    importedAt: NOW,
+  });
+
+  assert.equal(normalized.sourceListSequence, 4);
+  assert.equal(imported.sourceListSequence, 4);
+  assert.equal(validateImportedSession(imported).valid, true);
+});
+
+test("rejeita sequência estruturada inválida", () => {
+  assert.throws(
+    () =>
+      normalizeTestQuestPayload(
+        createTestQuestResultV11({ session: { sequence: 0 } }),
+        NOW,
+      ),
+    /session\.sequence deve ser um inteiro positivo/,
+  );
+});
+
 test("rejeita pontuação ausente ou incompatível no contrato 1.1.0", () => {
   const missingScore = createTestQuestResultV11();
   delete missingScore.questions[0].scorePercentage;
