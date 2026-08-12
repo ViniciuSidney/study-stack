@@ -1773,6 +1773,24 @@
   gap: 16px;
   min-width: 0;
   padding: 18px;
+  scroll-margin-block: 24px;
+}
+
+.exercise-session-card.is-newly-imported {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 36%, var(--surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  animation: imported-session-highlight 900ms ease-in-out 2 alternate;
+}
+
+@keyframes imported-session-highlight {
+  from {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  to {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 8%, transparent);
+  }
 }
 
 .exercise-session-header {

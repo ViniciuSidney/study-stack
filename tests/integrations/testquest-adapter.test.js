@@ -37,6 +37,20 @@ test("lê e remove handoff compartilhado pelo localStorage", () => {
   assert.equal(storage.getItem(TestQuestAdapter.handoffKey), null);
 });
 
+test("leitura do handoff não o remove antes da confirmação de importação", () => {
+  const storage = new MemoryStorage();
+  const payload = createTestQuestResult();
+  storage.setItem(TestQuestAdapter.handoffKey, JSON.stringify(payload));
+
+  const result = TestQuestAdapter.consumeAvailable({
+    location: { href: "https://example.com/study-stack/#/exercises" },
+    storage,
+  });
+
+  assert.equal(result.valid, true);
+  assert.ok(storage.getItem(TestQuestAdapter.handoffKey));
+});
+
 test("mantém erro explícito para JSON manual inválido", () => {
   const result = TestQuestAdapter.parseManualText("{ inválido }");
 

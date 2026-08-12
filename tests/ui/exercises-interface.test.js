@@ -52,6 +52,21 @@ test("meta de validação usa singular e plural corretos", () => {
   );
 });
 
+test("card importado possui identidade estável e destaque orientado", async () => {
+  const [app, section, css] = await Promise.all([
+    readFile(fileURLToPath(appUrl), "utf8"),
+    readFile(fileURLToPath(sectionUrl), "utf8"),
+    readFile(fileURLToPath(cssUrl), "utf8"),
+  ]);
+
+  assert.match(section, /data-session-id/);
+  assert.match(section, /is-newly-imported/);
+  assert.match(app, /orientInitialTestQuestReturn/);
+  assert.match(app, /scrollIntoView/);
+  assert.match(app, /Resultado salvo no Study Stack\./);
+  assert.match(css, /@keyframes imported-session-highlight/);
+});
+
 test("modal detalhado separa respostas e cria erros somente após seleção", async () => {
   const modal = await readFile(fileURLToPath(modalUrl), "utf8");
 

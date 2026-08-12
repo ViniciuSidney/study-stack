@@ -80,6 +80,7 @@ export class StudyStackApp {
     this.errorService = null;
     this.guidedFlowService = null;
     this.initialTestQuestNotice = null;
+    this.initialTestQuestReturn = null;
     this.clock = () => new Date().toISOString();
   }
 
@@ -190,6 +191,8 @@ export class StudyStackApp {
       this.consumeInitialTestQuestPayload();
       this.progressService.ensureCurrent(this.subject.id);
       this.subject = this.repository.getEntity("subjects", this.subject.id);
+    } else {
+      this.preserveUnavailableTestQuestPayload();
     }
 
     this.shell = new AppShell({
@@ -217,6 +220,13 @@ export class StudyStackApp {
     );
     this.router.onChange((sectionId) => this.renderSection(sectionId));
     this.router.start();
+
+    if (
+      this.initialTestQuestReturn &&
+      this.router.getCurrentSection() !== "exercises"
+    ) {
+      this.router.navigate("exercises", { replace: true });
+    }
 
     if (this.initialTestQuestNotice) {
       this.shell.showToast(
@@ -465,7 +475,11 @@ export class StudyStackApp {
         onOpenPending: () => this.openPendingImports(),
         onOpen: (view) => this.openExerciseSession(view),
         onArchive: (record) => this.confirmArchiveRecord(record),
+        highlightSessionId: this.initialTestQuestReturn?.highlighted
+          ? null
+          : this.initialTestQuestReturn?.sessionId,
       });
+      this.orientInitialTestQuestReturn(container);
     } else if (sectionId === "errors") {
       renderErrorsSection({
         document: this.document,
@@ -569,9 +583,18 @@ export class StudyStackApp {
         this.window.history.replaceState({}, "", url);
       }
 
+      if (successful && result.session?.session?.id) {
+        this.initialTestQuestReturn = {
+          sessionId: result.session.session.id,
+          highlighted: false,
+        };
+      }
+
       this.initialTestQuestNotice = {
-        message: result.message,
-        type: successful ? "success" : "warning",
+        message: result.status === "imported"
+          ? "Resultado salvo no Study Stack."
+          : result.message,
+        type: result.status === "imported" ? "success" : "warning",
       };
     } catch (error) {
       this.initialTestQuestNotice = {
@@ -582,6 +605,45 @@ export class StudyStackApp {
         type: "warning",
       };
     }
+  }
+
+  preserveUnavailableTestQuestPayload() {
+    const available = TestQuestAdapter.consumeAvailable({
+      location: this.window.location,
+      storage: this.window.localStorage,
+    });
+
+    if (!available.found) return;
+
+    this.initialTestQuestNotice = {
+      message:
+        "O resultado do Test Quest foi preservado. Restaure o assunto de origem para concluir a importação.",
+      type: "warning",
+    };
+  }
+
+  orientInitialTestQuestReturn(container) {
+    const returned = this.initialTestQuestReturn;
+    if (!returned || returned.highlighted) return;
+
+    const card = [...container.querySelectorAll("[data-session-id]")].find(
+      (candidate) => candidate.dataset.sessionId === returned.sessionId,
+    );
+    if (!card) return;
+
+    returned.highlighted = true;
+    this.window.setTimeout(() => {
+      const reducedMotion =
+        this.document.documentElement.dataset.reducedMotion === "true";
+      card.scrollIntoView?.({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "center",
+      });
+      card.focus?.({ preventScroll: true });
+      this.window.setTimeout(() => {
+        card.classList.remove("is-newly-imported");
+      }, 3600);
+    }, 0);
   }
 
   openTestQuestImport() {

@@ -37,14 +37,23 @@ export function formatPracticeValidationStatus(answered, threshold = 15) {
   return `Responda mais ${missing} ${missing === 1 ? "questão" : "questões"} para validar`;
 }
 
-function createSessionCard({ document, view, onOpen, onArchive }) {
+function createSessionCard({
+  document,
+  view,
+  onOpen,
+  onArchive,
+  highlightSessionId,
+}) {
   const { record, session } = view;
+  const highlighted = session.id === highlightSessionId;
   const card = createElement(document, "article", {
-    className: "exercise-session-card panel",
+    className: `exercise-session-card panel${highlighted ? " is-newly-imported" : ""}`,
     attributes: {
       "data-session-search": record.searchPlainText,
+      "data-session-id": session.id,
       "data-practice-valid": String(session.stats.validForPractice),
       "data-has-errors": String(session.stats.incorrect > 0),
+      tabindex: "-1",
     },
   });
   const header = createElement(document, "header", {
@@ -200,6 +209,7 @@ export function renderExercisesSection({
   onOpenPending,
   onOpen,
   onArchive,
+  highlightSessionId = null,
 }) {
   clearElement(container);
   const inner = createElement(document, "div", { className: "content-inner" });
@@ -361,7 +371,13 @@ export function renderExercisesSection({
     className: "exercise-session-grid",
   });
   views.forEach((view) =>
-    grid.append(createSessionCard({ document, view, onOpen, onArchive })),
+    grid.append(createSessionCard({
+      document,
+      view,
+      onOpen,
+      onArchive,
+      highlightSessionId,
+    })),
   );
   const filterEmpty = createElement(document, "p", {
     className: "filter-empty panel",
