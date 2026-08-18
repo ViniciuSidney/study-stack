@@ -27,5 +27,9 @@ export function createElement(document, tagName, options = {}) {
     element.setAttribute(name, String(value));
   }
 
+  if (Array.isArray(options.children)) {
+    element.append(...options.children.filter(Boolean));
+  }
+
   return element;
 }
