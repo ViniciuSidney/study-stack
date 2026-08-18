@@ -47,6 +47,25 @@ function createBadge(document, text, className = "") {
   });
 }
 
+function getErrorCardTitle(record, primaryQuestion) {
+  const title = String(record?.title ?? "").trim();
+  const statement = String(primaryQuestion?.statement?.plainText ?? "").trim();
+  const automaticPrefix = "Erro:";
+
+  if (title.startsWith(automaticPrefix)) {
+    const generatedText = title.slice(automaticPrefix.length).trim();
+    const conciseStatement = statement.length > 82
+      ? `${statement.slice(0, 79).trim()}…`
+      : statement;
+
+    if (!generatedText || generatedText === conciseStatement || generatedText === statement) {
+      return `Registro de Erro da questão ${primaryQuestion.order}`;
+    }
+  }
+
+  return title || `Registro de Erro da questão ${primaryQuestion.order}`;
+}
+
 function getPrimaryState(errorRecord) {
   if (errorRecord.masteryStatus === "overcome") {
     return {
@@ -178,7 +197,7 @@ function createErrorCard({
     }),
     createElement(document, "h3", {
       className: "record-title-line",
-      text: record.title,
+      text: getErrorCardTitle(record, primaryQuestion),
     }),
     createElement(document, "p", {
       className: "record-meta",
