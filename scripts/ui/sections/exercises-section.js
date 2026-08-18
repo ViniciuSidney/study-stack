@@ -90,6 +90,23 @@ function createSessionMoreActions({ document, record, onArchive }) {
   return menu;
 }
 
+function openErrorAnalysis(document, view, onOpen) {
+  onOpen(view);
+  window.setTimeout(() => {
+    const dialog = document.querySelector(".exercise-session-modal[open]");
+    if (!dialog) return;
+
+    const incorrectFilter = dialog.querySelector('[data-question-filter="incorrect"]');
+    incorrectFilter?.click();
+
+    const preparation = dialog.querySelector(".error-creation-panel");
+    preparation?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    const selectAll = preparation?.querySelector("[data-select-all-errors]");
+    selectAll?.focus({ preventScroll: true });
+  }, 0);
+}
+
 function createSessionCard({
   document,
   view,
@@ -231,15 +248,26 @@ function createSessionCard({
   const primaryActions = createElement(document, "div", {
     className: "record-primary-actions",
   });
-  const openButton = createElement(document, "button", {
+  const consultButton = createElement(document, "button", {
     className: "button button-primary button-small",
-    text: view.errorCandidateCount > 0
-      ? `Analisar ${view.errorCandidateCount} ${view.errorCandidateCount === 1 ? "erro" : "erros"}`
-      : "Abrir lista",
+    text: "Consultar lista",
     attributes: { type: "button" },
   });
-  openButton.addEventListener("click", () => onOpen(view));
-  primaryActions.append(openButton);
+  consultButton.addEventListener("click", () => onOpen(view));
+  primaryActions.append(consultButton);
+
+  if (view.errorCandidateCount > 0) {
+    const analyzeButton = createElement(document, "button", {
+      className: "button button-secondary button-small",
+      text: `Analisar ${view.errorCandidateCount} ${view.errorCandidateCount === 1 ? "erro" : "erros"}`,
+      attributes: { type: "button" },
+    });
+    analyzeButton.addEventListener("click", () =>
+      openErrorAnalysis(document, view, onOpen),
+    );
+    primaryActions.append(analyzeButton);
+  }
+
   actions.append(
     primaryActions,
     createSessionMoreActions({ document, record, onArchive }),
