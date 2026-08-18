@@ -1,5 +1,14 @@
+.summary-editor-body {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .summary-editor-tabs {
   display: flex;
+  flex: 0 0 auto;
+  min-height: 58px;
   gap: 0.5rem;
   padding: 0.35rem;
   border: 1px solid var(--line);
@@ -44,6 +53,7 @@
 
 .summary-editor-tab-panel {
   display: grid;
+  flex: 0 0 auto;
   align-content: start;
   grid-auto-rows: max-content;
   gap: 1rem;
