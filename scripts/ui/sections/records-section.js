@@ -45,9 +45,15 @@ function createTagList(document, tags) {
 }
 
 function nextStatusAction(record) {
-  if (record.status === "draft") return { status: "in_progress", label: "Iniciar" };
-  if (record.status === "completed") return { status: "in_progress", label: "Reabrir" };
-  return { status: "draft", label: "Voltar a rascunho" };
+  if (record.status === "draft") {
+    return { status: "in_progress", label: "Iniciar anotação" };
+  }
+
+  if (record.status === "in_progress") {
+    return { status: "completed", label: "Concluir anotação" };
+  }
+
+  return { status: "in_progress", label: "Reabrir anotação" };
 }
 
 function createBadge(document, text, className = "") {
