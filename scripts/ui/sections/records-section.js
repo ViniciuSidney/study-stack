@@ -6,20 +6,18 @@ const TYPE_CONFIG = Object.freeze({
     title: "Resumos",
     singular: "Resumo",
     icon: "▤",
-    description:
-      "Construa a base teórica com conteúdo formatado, campos opcionais, fontes e referências. A marca Estudado permanece separada da conclusão.",
+    description: "Crie e organize a base teórica deste assunto.",
     empty:
-      "Nenhum Resumo foi criado para este assunto. Crie o primeiro e desenvolva a teoria conforme o estudo avançar.",
+      "Nenhum Resumo foi criado para este assunto. Crie o primeiro para começar a construir a base teórica.",
   },
   note: {
     eyebrow: "Registro livre",
     title: "Anotações",
     singular: "Anotação",
     icon: "✎",
-    description:
-      "Registre ideias, dúvidas e conexões com texto formatado, checklists textuais e vínculos entre registros do mesmo assunto.",
+    description: "Registre ideias, dúvidas, relações e lembretes deste assunto.",
     empty:
-      "Nenhuma Anotação foi criada para este assunto. Abra o editor completo ou capture rapidamente Apenas um detalhe.",
+      "Nenhuma Anotação foi criada para este assunto. Crie uma ou capture rapidamente Apenas um detalhe.",
   },
 });
 
@@ -61,6 +59,63 @@ function createBadge(document, text, className = "") {
     className: `record-badge${className ? ` ${className}` : ""}`,
     text,
   });
+}
+
+function createMoreActions({
+  document,
+  record,
+  type,
+  detail,
+  onChangeStatus,
+  onToggleImportant,
+  onToggleStudied,
+  onArchive,
+}) {
+  const menu = createElement(document, "details", {
+    className: "record-more-actions",
+  });
+  const trigger = createElement(document, "summary", {
+    text: "⋯",
+    attributes: { "aria-label": "Mais ações" },
+  });
+  const panel = createElement(document, "div", {
+    className: "record-more-actions-menu",
+  });
+
+  if (type === "summary" && detail?.summary?.isStudied) {
+    const unstudyButton = createElement(document, "button", {
+      text: "Desmarcar estudo",
+      attributes: { type: "button" },
+    });
+    unstudyButton.addEventListener("click", () => onToggleStudied(record));
+    panel.append(unstudyButton);
+  }
+
+  if (type === "note" && record.status === "completed") {
+    const reopenButton = createElement(document, "button", {
+      text: "Reabrir anotação",
+      attributes: { type: "button" },
+    });
+    reopenButton.addEventListener("click", () => onChangeStatus(record, "in_progress"));
+    panel.append(reopenButton);
+  }
+
+  const importantButton = createElement(document, "button", {
+    text: record.isImportant ? "Desmarcar importante" : "Marcar importante",
+    attributes: { type: "button" },
+  });
+  importantButton.addEventListener("click", () => onToggleImportant(record));
+
+  const archiveButton = createElement(document, "button", {
+    className: "record-more-danger",
+    text: "Arquivar",
+    attributes: { type: "button" },
+  });
+  archiveButton.addEventListener("click", () => onArchive(record));
+
+  panel.append(importantButton, archiveButton);
+  menu.append(trigger, panel);
+  return menu;
 }
 
 function createRecordCard({
@@ -114,53 +169,67 @@ function createRecordCard({
   card.append(createElement(document, "p", {
     className: `record-preview${preview ? "" : " record-preview-empty"}`,
     text: preview || (type === "summary"
-      ? "Conteúdo principal ainda não iniciado."
-      : "Conteúdo da Anotação ainda não iniciado."),
+      ? "Adicione o conteúdo principal para desenvolver este Resumo."
+      : "Adicione conteúdo para desenvolver esta Anotação."),
   }));
 
-  card.append(createElement(document, "p", {
-    className: `summary-readiness ${detail?.completionReady ? "ready" : "pending"}`,
-    text: detail?.completionReady
-      ? "Título e conteúdo válidos para conclusão."
-      : `Preencha título e conteúdo ${type === "summary" ? "principal" : "da Anotação"} para concluir.`,
-  }));
+  if (!detail?.completionReady && preview) {
+    card.append(createElement(document, "p", {
+      className: "record-guidance",
+      text: type === "summary"
+        ? "Complete o título e o conteúdo principal para concluir."
+        : "Complete o título e o conteúdo para concluir.",
+    }));
+  }
 
   if (type === "note") {
-    const facts = createElement(document, "div", { className: "note-card-facts" });
     const checklist = detail?.checklist ?? { total: 0, completed: 0 };
-    facts.append(
-      createElement(document, "span", {
-        text: checklist.total
-          ? `☑ ${checklist.completed}/${checklist.total} itens`
-          : "☐ Sem checklist",
-      }),
-      createElement(document, "span", {
-        text: `🔗 ${detail?.note?.linkedRecordIds?.length ?? 0} vínculo(s)`,
-      }),
-    );
-    card.append(facts);
+    const linkedCount = detail?.note?.linkedRecordIds?.length ?? 0;
+
+    if (checklist.total > 0 || linkedCount > 0) {
+      const facts = createElement(document, "div", { className: "note-card-facts" });
+
+      if (checklist.total > 0) {
+        facts.append(createElement(document, "span", {
+          text: `☑ ${checklist.completed}/${checklist.total} itens`,
+        }));
+      }
+
+      if (linkedCount > 0) {
+        facts.append(createElement(document, "span", {
+          text: `🔗 ${linkedCount} ${linkedCount === 1 ? "vínculo" : "vínculos"}`,
+        }));
+      }
+
+      card.append(facts);
+    }
   }
 
   if (record.tags.length) card.append(createTagList(document, record.tags));
 
   const actions = createElement(document, "div", { className: "record-actions" });
+  const primaryActions = createElement(document, "div", {
+    className: "record-primary-actions",
+  });
   const openButton = createElement(document, "button", {
     className: "button button-primary button-small",
     text: type === "summary" ? "Abrir Resumo" : "Abrir Anotação",
     attributes: { type: "button" },
   });
   openButton.addEventListener("click", () => onOpen(record));
-  actions.append(openButton);
+  primaryActions.append(openButton);
 
   if (type === "summary") {
-    const studiedButton = createElement(document, "button", {
-      className: "button button-secondary button-small",
-      text: detail?.summary?.isStudied ? "Desmarcar estudo" : "Marcar estudado",
-      attributes: { type: "button" },
-    });
-    studiedButton.addEventListener("click", () => onToggleStudied(record));
-    actions.append(studiedButton);
-  } else {
+    if (detail?.completionReady && !detail?.summary?.isStudied) {
+      const studiedButton = createElement(document, "button", {
+        className: "button button-secondary button-small",
+        text: "Marcar estudado",
+        attributes: { type: "button" },
+      });
+      studiedButton.addEventListener("click", () => onToggleStudied(record));
+      primaryActions.append(studiedButton);
+    }
+  } else if (record.status !== "completed") {
     const statusAction = nextStatusAction(record);
     const statusButton = createElement(document, "button", {
       className: "button button-secondary button-small",
@@ -168,22 +237,22 @@ function createRecordCard({
       attributes: { type: "button" },
     });
     statusButton.addEventListener("click", () => onChangeStatus(record, statusAction.status));
-    actions.append(statusButton);
+    primaryActions.append(statusButton);
   }
 
-  const importantButton = createElement(document, "button", {
-    className: "button button-secondary button-small",
-    text: record.isImportant ? "Desmarcar importante" : "Marcar importante",
-    attributes: { type: "button" },
-  });
-  importantButton.addEventListener("click", () => onToggleImportant(record));
-  const archiveButton = createElement(document, "button", {
-    className: "button button-quiet-danger button-small",
-    text: "Arquivar",
-    attributes: { type: "button" },
-  });
-  archiveButton.addEventListener("click", () => onArchive(record));
-  actions.append(importantButton, archiveButton);
+  actions.append(
+    primaryActions,
+    createMoreActions({
+      document,
+      record,
+      type,
+      detail,
+      onChangeStatus,
+      onToggleImportant,
+      onToggleStudied,
+      onArchive,
+    }),
+  );
   card.append(actions);
   return card;
 }
