@@ -58,6 +58,20 @@ function createToggle(document, labelText, description, checked) {
   return { row, input };
 }
 
+function createDetails(document, label) {
+  const details = createElement(document, "details", {
+    className: "settings-details",
+  });
+  const summary = createElement(document, "summary", {
+    text: label,
+  });
+  const content = createElement(document, "div", {
+    className: "settings-details-content",
+  });
+  details.append(summary, content);
+  return { details, content };
+}
+
 export function renderSettingsSection({
   document,
   container,
@@ -90,8 +104,7 @@ export function renderSettingsSection({
     createElement(document, "p", {
       className: "section-description",
       text:
-        "Preferências globais ficam na coleção settings do estado v1, " +
-        "separadas dos registros de cada assunto.",
+        "Ajuste a aparência, a navegação e cuide dos dados salvos neste navegador.",
     }),
   );
   header.append(headerCopy);
@@ -178,19 +191,103 @@ export function renderSettingsSection({
     countersToggle.row,
   );
 
+  const maintenancePanel = createElement(document, "article", {
+    className: "panel settings-panel settings-maintenance-panel",
+  });
+  maintenancePanel.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Segurança dos dados",
+    }),
+    createElement(document, "h3", { text: "Backup e manutenção" }),
+    createElement(document, "p", {
+      text:
+        "Crie uma cópia dos seus dados ou restaure um backup quando precisar recuperar informações.",
+    }),
+  );
+
+  const maintenanceSummary = createElement(document, "div", {
+    className: "maintenance-summary",
+  });
+  maintenanceSummary.append(
+    createElement(document, "span", {
+      text: maintenanceInfo.lastBackupAt
+        ? `Último backup: ${new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          }).format(new Date(maintenanceInfo.lastBackupAt))}`
+        : "Você ainda não criou um backup manual.",
+    }),
+  );
+  if (maintenanceInfo.pendingImportCount > 0) {
+    maintenanceSummary.append(
+      createElement(document, "span", {
+        text: `${maintenanceInfo.pendingImportCount} importação(ões) aguardando sua atenção.`,
+      }),
+    );
+  }
+
+  const maintenanceActions = createElement(document, "div", {
+    className: "maintenance-actions",
+  });
+  const backupButton = createElement(document, "button", {
+    className: "button button-primary",
+    text: "Criar backup",
+    attributes: { type: "button" },
+  });
+  const restoreButton = createElement(document, "button", {
+    className: "button button-secondary",
+    text: "Restaurar backup",
+    attributes: { type: "button" },
+  });
+  backupButton.addEventListener("click", onBackup);
+  restoreButton.addEventListener("click", onRestore);
+  maintenanceActions.append(backupButton, restoreButton);
+
+  const maintenanceTools = createDetails(document, "Ferramentas de manutenção");
+  maintenanceTools.content.append(
+    createElement(document, "p", {
+      text:
+        "Use estas opções quando precisar verificar o armazenamento ou revisar resultados de importação que não foram aplicados.",
+    }),
+  );
+  const maintenanceToolsActions = createElement(document, "div", {
+    className: "action-row",
+  });
+  const diagnosticButton = createElement(document, "button", {
+    className: "button button-secondary",
+    text: "Verificar armazenamento",
+    attributes: { type: "button" },
+  });
+  const pendingButton = createElement(document, "button", {
+    className: "button button-secondary",
+    text: "Ver importações pendentes",
+    attributes: { type: "button" },
+  });
+  pendingButton.disabled = maintenanceInfo.pendingImportCount === 0;
+  diagnosticButton.addEventListener("click", onDiagnostics);
+  pendingButton.addEventListener("click", onPendingImports);
+  maintenanceToolsActions.append(diagnosticButton, pendingButton);
+  maintenanceTools.content.append(maintenanceToolsActions);
+
+  maintenancePanel.append(
+    maintenanceSummary,
+    maintenanceActions,
+    maintenanceTools.details,
+  );
+
   const resetPanel = createElement(document, "article", {
     className: "panel settings-panel",
   });
   resetPanel.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Manutenção",
+      text: "Preferências",
     }),
-    createElement(document, "h3", { text: "Restaurar preferências" }),
+    createElement(document, "h3", { text: "Restaurar configurações padrão" }),
     createElement(document, "p", {
       text:
-        "Restaura somente as preferências visuais e de navegação. O Subject " +
-        "persistido e as demais coleções permanecem intactos.",
+        "Restaura apenas aparência e navegação. Seus Resumos, Anotações, Exercícios e demais dados de estudo não serão apagados.",
     }),
   );
   const resetButton = createElement(document, "button", {
@@ -205,90 +302,32 @@ export function renderSettingsSection({
   resetActions.append(resetButton);
   resetPanel.append(resetActions);
 
-
-  const maintenancePanel = createElement(document, "article", {
-    className: "panel settings-panel settings-maintenance-panel",
-  });
-  maintenancePanel.append(
-    createElement(document, "p", {
-      className: "eyebrow",
-      text: "Segurança e manutenção",
-    }),
-    createElement(document, "h3", { text: "Dados locais" }),
-    createElement(document, "p", {
-      text:
-        "Exporte uma cópia completa, restaure arquivos validados e confira a saúde do armazenamento.",
-    }),
-  );
-  const maintenanceSummary = createElement(document, "div", {
-    className: "maintenance-summary",
-  });
-  maintenanceSummary.append(
-    createElement(document, "span", {
-      text: maintenanceInfo.lastBackupAt
-        ? `Último backup: ${new Intl.DateTimeFormat("pt-BR", {
-            dateStyle: "short",
-            timeStyle: "short",
-          }).format(new Date(maintenanceInfo.lastBackupAt))}`
-        : "Nenhum backup manual registrado",
-    }),
-    createElement(document, "span", {
-      text: `${maintenanceInfo.pendingImportCount} pendência(s) de importação`,
-    }),
-  );
-  const maintenanceActions = createElement(document, "div", {
-    className: "maintenance-actions",
-  });
-  const backupButton = createElement(document, "button", {
-    className: "button button-primary",
-    text: "Criar backup",
-    attributes: { type: "button" },
-  });
-  const restoreButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Restaurar backup",
-    attributes: { type: "button" },
-  });
-  const diagnosticButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Executar diagnóstico",
-    attributes: { type: "button" },
-  });
-  const pendingButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Ver importações pendentes",
-    attributes: { type: "button" },
-  });
-  pendingButton.disabled = maintenanceInfo.pendingImportCount === 0;
-  backupButton.addEventListener("click", onBackup);
-  restoreButton.addEventListener("click", onRestore);
-  diagnosticButton.addEventListener("click", onDiagnostics);
-  pendingButton.addEventListener("click", onPendingImports);
-  maintenanceActions.append(
-    backupButton,
-    restoreButton,
-    diagnosticButton,
-    pendingButton,
-  );
-  maintenancePanel.append(maintenanceSummary, maintenanceActions);
-
   const storagePanel = createElement(document, "article", {
-    className: "panel settings-panel",
+    className: "panel settings-panel settings-technical-panel",
   });
   storagePanel.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Persistência",
+      text: "Informações da aplicação",
     }),
-    createElement(document, "h3", { text: "Estado versionado" }),
+    createElement(document, "h3", { text: "Dados técnicos" }),
     createElement(document, "p", {
-      text: `Schema ${storageInfo.schemaVersion} · ${storageInfo.subjectCount} assunto(s) persistido(s).`,
+      text:
+        "Estas informações ajudam em diagnóstico e suporte, mas não são necessárias no uso normal do Study Stack.",
+    }),
+  );
+
+  const technicalDetails = createDetails(document, "Mostrar detalhes técnicos");
+  technicalDetails.content.append(
+    createElement(document, "p", {
+      text: `Versão dos dados: ${storageInfo.schemaVersion} · ${storageInfo.subjectCount} assunto(s) armazenado(s) · ${storageInfo.recordCount} registro(s).`,
     }),
     createElement(document, "div", {
       className: "code-block",
       text: storageInfo.storageKey,
     }),
   );
+  storagePanel.append(technicalDetails.details);
 
   themeField.select.addEventListener("change", (event) => {
     onUpdate({ theme: event.target.value });
@@ -310,8 +349,8 @@ export function renderSettingsSection({
     appearancePanel,
     navigationPanel,
     maintenancePanel,
-    storagePanel,
     resetPanel,
+    storagePanel,
   );
   inner.append(header, grid);
   container.append(inner);
