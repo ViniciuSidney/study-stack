@@ -77,6 +77,18 @@ test("salva conteúdo específico e inclui texto no índice de busca", () => {
   );
 });
 
+test("infere conclusão quando título e conteúdo principal estão válidos", () => {
+  const { record, service } = setup();
+  const completed = service.save(record.id, {
+    record: { title: "Resumo completo" },
+    summary: { mainContent: "Conteúdo principal válido." },
+    status: "draft",
+  });
+
+  assert.equal(completed.record.status, "completed");
+  assert.ok(completed.record.completedAt);
+});
+
 test("bloqueia conclusão sem título e conteúdo principal", () => {
   const { record, service } = setup();
 
