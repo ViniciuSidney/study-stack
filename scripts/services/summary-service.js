@@ -83,7 +83,18 @@ export class SummaryService {
     }
 
     const completionReady = isSummaryCompletionReady(nextSummary, nextRecord);
-    const targetStatus = input.status ?? nextRecord.status;
+    const explicitlyRequestedDifferentStatus =
+      Object.hasOwn(input ?? {}, "status") &&
+      input.status &&
+      input.status !== currentRecord.status;
+    const inferredStatus = completionReady
+      ? "completed"
+      : currentRecord.status === "completed"
+        ? "in_progress"
+        : currentRecord.status;
+    const targetStatus = explicitlyRequestedDifferentStatus
+      ? input.status
+      : inferredStatus;
     const statusChanged = targetStatus !== currentRecord.status;
 
     if (targetStatus === "completed" && !completionReady) {
