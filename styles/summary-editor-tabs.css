@@ -44,12 +44,18 @@
 
 .summary-editor-tab-panel {
   display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
   gap: 1rem;
-  min-height: 0;
+  min-height: auto;
 }
 
 .summary-editor-tab-panel[hidden] {
   display: none;
+}
+
+.summary-editor-tab-panel > .summary-optional-group {
+  min-height: max-content;
 }
 
 .summary-editor-content-flags {
