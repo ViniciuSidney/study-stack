@@ -231,12 +231,27 @@ function createRecordCard({
     }
   } else if (record.status !== "completed") {
     const statusAction = nextStatusAction(record);
+    const completionUnavailable =
+      statusAction.status === "completed" && !detail?.completionReady;
     const statusButton = createElement(document, "button", {
       className: "button button-secondary button-small",
       text: statusAction.label,
-      attributes: { type: "button" },
+      attributes: {
+        type: "button",
+        ...(completionUnavailable
+          ? {
+              disabled: "",
+              "aria-disabled": "true",
+              title: "Adicione título e conteúdo para concluir a anotação.",
+            }
+          : {}),
+      },
     });
-    statusButton.addEventListener("click", () => onChangeStatus(record, statusAction.status));
+    if (!completionUnavailable) {
+      statusButton.addEventListener("click", () =>
+        onChangeStatus(record, statusAction.status),
+      );
+    }
     primaryActions.append(statusButton);
   }
 
