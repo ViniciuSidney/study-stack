@@ -1,5 +1,8 @@
 import { clearElement, createElement } from "../../utils/dom.js";
 
+const ERROR_LIFECYCLE_EVENT = "study-stack:error-lifecycle";
+const lifecycleHandlers = new WeakMap();
+
 const GROUP_COPY = Object.freeze({
   recurrent: {
     title: "Reincidentes",
@@ -104,6 +107,40 @@ function getPrimaryState(errorRecord) {
     action: "evidence",
     actionLabel: `Registrar acerto (${errorRecord.currentCorrectStreak}/2)`,
   };
+}
+
+function setupLifecycleBridge({
+  document,
+  views,
+  onToggleReviewed,
+  onRecurrence,
+  onEvidence,
+}) {
+  const previous = lifecycleHandlers.get(document);
+  if (previous) {
+    document.removeEventListener(ERROR_LIFECYCLE_EVENT, previous);
+  }
+
+  const viewsByRecordId = new Map(
+    views.map((view) => [view.record.id, view]),
+  );
+  const handler = (event) => {
+    const recordId = event.detail?.recordId;
+    const action = event.detail?.action;
+    const view = viewsByRecordId.get(recordId);
+    if (!view) return;
+
+    if (action === "review") {
+      onToggleReviewed(view);
+    } else if (action === "recurrence") {
+      onRecurrence(view);
+    } else if (action === "evidence") {
+      onEvidence(view);
+    }
+  };
+
+  document.addEventListener(ERROR_LIFECYCLE_EVENT, handler);
+  lifecycleHandlers.set(document, handler);
 }
 
 function createMoreActions({
@@ -351,6 +388,14 @@ export function renderErrorsSection({
   onOpenExercises,
 }) {
   clearElement(container);
+  setupLifecycleBridge({
+    document,
+    views,
+    onToggleReviewed,
+    onRecurrence,
+    onEvidence,
+  });
+
   const inner = createElement(document, "div", {
     className: "content-inner errors-content",
   });
