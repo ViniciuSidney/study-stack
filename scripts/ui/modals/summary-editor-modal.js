@@ -12,12 +12,6 @@ const SOURCE_LABELS = Object.freeze({
   other: "Outra fonte",
 });
 
-const STATUS_OPTIONS = Object.freeze([
-  ["draft", "Rascunho"],
-  ["in_progress", "Em andamento"],
-  ["completed", "Concluído"],
-]);
-
 function createField(document, labelText, input, { wide = false, hint = "" } = {}) {
   const field = createElement(document, "label", {
     className: `field${wide ? " field-wide" : ""}`,
@@ -70,6 +64,77 @@ function createSwitch(document, label, checked) {
   input.checked = checked;
   wrapper.append(input, createElement(document, "span", { text: label }));
   return { wrapper, input };
+}
+
+function createTabSystem(document, tabs) {
+  const tabList = createElement(document, "div", {
+    className: "summary-editor-tabs",
+    attributes: { role: "tablist", "aria-label": "Seções do Editor de Resumo" },
+  });
+  const panels = new Map();
+  const buttons = new Map();
+
+  for (const [id, label] of tabs) {
+    const button = createElement(document, "button", {
+      className: "summary-editor-tab",
+      text: label,
+      attributes: {
+        type: "button",
+        role: "tab",
+        id: `summary-tab-${id}`,
+        "aria-controls": `summary-panel-${id}`,
+        "aria-selected": "false",
+        tabindex: "-1",
+      },
+    });
+    const panel = createElement(document, "section", {
+      className: "summary-editor-tab-panel",
+      attributes: {
+        role: "tabpanel",
+        id: `summary-panel-${id}`,
+        "aria-labelledby": `summary-tab-${id}`,
+        tabindex: "0",
+      },
+    });
+    panel.hidden = true;
+    tabList.append(button);
+    panels.set(id, panel);
+    buttons.set(id, button);
+  }
+
+  function activate(id, { focus = false } = {}) {
+    for (const [tabId, button] of buttons) {
+      const active = tabId === id;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+      panels.get(tabId).hidden = !active;
+    }
+    if (focus) {
+      buttons.get(id)?.focus();
+    }
+  }
+
+  for (const [id, button] of buttons) {
+    button.addEventListener("click", () => activate(id));
+    button.addEventListener("keydown", (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      const ids = [...buttons.keys()];
+      const currentIndex = ids.indexOf(id);
+      let targetIndex = currentIndex;
+      if (event.key === "ArrowLeft") targetIndex = (currentIndex - 1 + ids.length) % ids.length;
+      if (event.key === "ArrowRight") targetIndex = (currentIndex + 1) % ids.length;
+      if (event.key === "Home") targetIndex = 0;
+      if (event.key === "End") targetIndex = ids.length - 1;
+      activate(ids[targetIndex], { focus: true });
+    });
+  }
+
+  activate(tabs[0][0]);
+  return { tabList, panels, activate };
 }
 
 export function openSummaryEditorModal({
@@ -126,18 +191,15 @@ export function openSummaryEditorModal({
     className: "modal-header summary-editor-header",
   });
   const headerCopy = createElement(document, "div");
+  const headerTitle = createElement(document, "h2", {
+    text: initialState.record.title || "Resumo sem título",
+  });
   headerCopy.append(
-    createElement(document, "p", {
-      className: "eyebrow",
-      text: "Editor de Resumo",
-    }),
-    createElement(document, "h2", {
-      text: record.title || "Resumo sem título",
-    }),
+    createElement(document, "p", { className: "eyebrow", text: "Editor de Resumo" }),
+    headerTitle,
     createElement(document, "p", {
       className: "modal-description",
-      text:
-        "Título e conteúdo principal são obrigatórios apenas para concluir. O autosave preserva um rascunho de recuperação; use Salvar Resumo para aplicar status, seleções e demais alterações ao registro.",
+      text: "Edite o conteúdo principal e use as demais abas quando precisar.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -171,18 +233,41 @@ export function openSummaryEditorModal({
     body.append(recovery);
   }
 
-  const metadataPanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
+  const tabs = createTabSystem(document, [
+    ["content", "Conteúdo"],
+    ["identification", "Identificação"],
+    ["deepening", "Aprofundamento"],
+    ["sources", "Fontes"],
+  ]);
+  body.append(tabs.tabList);
+
+  const editors = {};
+
+  const contentPanel = tabs.panels.get("content");
+  editors.mainContent = createRichTextEditor({
+    document,
+    label: "Conteúdo do Resumo",
+    value: initialState.summary.mainContent,
+    placeholder: "Construa aqui a base teórica do assunto...",
+    required: true,
+    onInput: scheduleAutosave,
   });
-  metadataPanel.append(
+  const studiedSwitch = createSwitch(
+    document,
+    "Confirmar este Resumo como estudado",
+    initialState.isStudied,
+  );
+  contentPanel.append(
+    createElement(document, "p", {
+      className: "summary-section-help",
+      text: "Construa a base teórica deste assunto. O conteúdo principal é obrigatório apenas para concluir o Resumo.",
+    }),
+    editors.mainContent.root,
     createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Identificação do registro",
+      className: "summary-editor-flags summary-editor-content-flags",
+      children: [studiedSwitch.wrapper],
     }),
   );
-  const metadataGrid = createElement(document, "div", {
-    className: "summary-metadata-grid",
-  });
 
   const titleInput = createElement(document, "input", {
     attributes: {
@@ -194,19 +279,21 @@ export function openSummaryEditorModal({
   });
   titleInput.value = initialState.record.title ?? "";
 
+  const typeInput = createElement(document, "input", {
+    attributes: { type: "text", value: "Resumo", disabled: "", "aria-label": "Tipo do registro" },
+  });
+
   const dateInput = createElement(document, "input", {
     attributes: { type: "date", required: "" },
   });
   dateInput.value = initialState.record.studyDate;
-
-  const statusSelect = createSelect(document, STATUS_OPTIONS, initialState.status);
 
   const tagsInput = createElement(document, "input", {
     attributes: {
       type: "text",
       maxlength: "240",
       autocomplete: "off",
-      placeholder: "ecologia, base teórica, revisão",
+      placeholder: "Ex.: ecologia, base teórica, revisão",
     },
   });
   tagsInput.value = (initialState.record.tags ?? []).join(", ");
@@ -215,74 +302,46 @@ export function openSummaryEditorModal({
     attributes: {
       rows: "3",
       maxlength: "2000",
-      placeholder: "Observações pessoais sobre o registro...",
+      placeholder: "Observações sobre este registro...",
     },
   });
   personalNotesInput.value = initialState.record.personalNotes ?? "";
 
-  metadataGrid.append(
-    createField(document, "Título", titleInput, {
-      wide: true,
-      hint: "Obrigatório para concluir o Resumo.",
-    }),
-    createField(document, "Data de estudo", dateInput),
-    createField(document, "Status", statusSelect),
-    createField(document, "Tags separadas por vírgula", tagsInput, { wide: true }),
-    createField(document, "Observações pessoais", personalNotesInput, { wide: true }),
-  );
-
-  const flags = createElement(document, "div", {
-    className: "summary-editor-flags",
-  });
   const importantSwitch = createSwitch(
     document,
-    "Manter no atalho de Importantes",
+    "Marcar como importante",
     initialState.record.isImportant,
   );
-  const studiedSwitch = createSwitch(
-    document,
-    "Marcar este Resumo como estudado",
-    initialState.isStudied,
-  );
-  flags.append(importantSwitch.wrapper, studiedSwitch.wrapper);
-  metadataPanel.append(metadataGrid, flags);
-  body.append(metadataPanel);
 
-  const editors = {};
-  const contentPanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
+  const identificationPanel = tabs.panels.get("identification");
+  const metadataGrid = createElement(document, "div", {
+    className: "summary-metadata-grid",
   });
-  contentPanel.append(
+  metadataGrid.append(
+    createField(document, "Título", titleInput, { wide: true }),
+    createField(document, "Tipo", typeInput),
+    createField(document, "Data de estudo", dateInput),
+    createField(document, "Tags", tagsInput, {
+      wide: true,
+      hint: "Separe as tags por vírgulas.",
+    }),
+    createField(document, "Observações", personalNotesInput, { wide: true }),
+  );
+  identificationPanel.append(
+    metadataGrid,
     createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Conteúdo principal",
+      className: "summary-editor-flags",
+      children: [importantSwitch.wrapper],
     }),
   );
-  editors.mainContent = createRichTextEditor({
-    document,
-    label: "Conteúdo do Resumo",
-    value: initialState.summary.mainContent,
-    placeholder: "Construa aqui a base teórica do assunto...",
-    required: true,
-    onInput: scheduleAutosave,
-  });
-  contentPanel.append(editors.mainContent.root);
-  body.append(contentPanel);
 
-  const optionalPanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
-  });
-  optionalPanel.append(
-    createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Campos de aprofundamento",
-    }),
+  const deepeningPanel = tabs.panels.get("deepening");
+  deepeningPanel.append(
     createElement(document, "p", {
       className: "summary-section-help",
-      text: "Abra somente os blocos úteis para este estudo. Nenhum deles é obrigatório.",
+      text: "Use apenas os complementos que ajudarem neste estudo. Todos são opcionais.",
     }),
   );
-
   const optionalFields = [
     ["studyObjective", "Objetivo do estudo", "O que este Resumo deve esclarecer?"],
     ["keyConcepts", "Conceitos principais", "Liste e diferencie os conceitos centrais..."],
@@ -290,7 +349,6 @@ export function openSummaryEditorModal({
     ["remainingQuestions", "Dúvidas restantes", "O que ainda precisa ser investigado?"],
     ["synthesis", "Síntese final", "Resuma a ideia central com suas próprias palavras..."],
   ];
-
   for (const [key, label, placeholder] of optionalFields) {
     const details = createElement(document, "details", {
       className: "summary-optional-group",
@@ -305,19 +363,10 @@ export function openSummaryEditorModal({
       onInput: scheduleAutosave,
     });
     details.append(detailsSummary, editors[key].root);
-    optionalPanel.append(details);
+    deepeningPanel.append(details);
   }
-  body.append(optionalPanel);
 
-  const sourcePanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
-  });
-  sourcePanel.append(
-    createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Fonte e referências",
-    }),
-  );
+  const sourcesPanel = tabs.panels.get("sources");
   const sourceGrid = createElement(document, "div", {
     className: "summary-metadata-grid",
   });
@@ -333,7 +382,7 @@ export function openSummaryEditorModal({
     attributes: {
       type: "text",
       maxlength: "500",
-      placeholder: "Ex.: Aula de Biologia ou material gerado para revisão",
+      placeholder: "Ex.: Aula de Biologia ou material de revisão",
     },
   });
   sourceDescriptionInput.value = initialState.summary.sourceDescription ?? "";
@@ -353,8 +402,11 @@ export function openSummaryEditorModal({
       hint: "Podem ser links ou referências textuais.",
     }),
   );
-  sourcePanel.append(sourceGrid);
-  body.append(sourcePanel);
+  sourcesPanel.append(sourceGrid);
+
+  for (const panel of tabs.panels.values()) {
+    body.append(panel);
+  }
 
   const errorMessage = createElement(document, "p", {
     className: "form-error summary-editor-error",
@@ -368,7 +420,7 @@ export function openSummaryEditorModal({
   });
   const autosaveStatus = createElement(document, "span", {
     className: "summary-autosave-status",
-    text: recoveredDraft ? "Rascunho recuperado" : "Nenhuma alteração pendente",
+    text: recoveredDraft ? "Rascunho recuperado" : "Salvo",
     attributes: { "aria-live": "polite" },
   });
   const footerActions = createElement(document, "div", {
@@ -379,17 +431,12 @@ export function openSummaryEditorModal({
     text: "Descartar alterações",
     attributes: { type: "button" },
   });
-  const closeFooterButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Fechar",
-    attributes: { type: "button" },
-  });
   const saveButton = createElement(document, "button", {
     className: "button button-primary",
     text: "Salvar Resumo",
     attributes: { type: "submit" },
   });
-  footerActions.append(discardButton, closeFooterButton, saveButton);
+  footerActions.append(discardButton, saveButton);
   footer.append(autosaveStatus, footerActions);
 
   form.append(header, body, footer);
@@ -399,7 +446,6 @@ export function openSummaryEditorModal({
   const watchedInputs = [
     titleInput,
     dateInput,
-    statusSelect,
     tagsInput,
     personalNotesInput,
     importantSwitch.input,
@@ -410,6 +456,9 @@ export function openSummaryEditorModal({
   ];
   watchedInputs.forEach((input) => input.addEventListener("input", scheduleAutosave));
   watchedInputs.forEach((input) => input.addEventListener("change", scheduleAutosave));
+  titleInput.addEventListener("input", () => {
+    headerTitle.textContent = titleInput.value.trim() || "Resumo sem título";
+  });
 
   function getWorkingState() {
     return {
@@ -431,14 +480,14 @@ export function openSummaryEditorModal({
         sourceDescription: sourceDescriptionInput.value,
         references: normalizeReferences(referencesInput.value),
       },
-      status: statusSelect.value,
+      status: initialState.status,
       isStudied: studiedSwitch.input.checked,
     };
   }
 
   function scheduleAutosave() {
     dirty = true;
-    autosaveStatus.textContent = "Salvamento automático pendente...";
+    autosaveStatus.textContent = "Alterações não salvas";
     autosaveStatus.classList.remove("save-error");
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(saveDraftNow, autosaveDelayMs);
@@ -452,19 +501,16 @@ export function openSummaryEditorModal({
     }
 
     try {
-      const buffer = onAutosave({
+      onAutosave({
         modalInstanceId,
         originalState,
         workingState: getWorkingState(),
       });
-      autosaveStatus.textContent = `Rascunho salvo às ${new Intl.DateTimeFormat(
-        "pt-BR",
-        { hour: "2-digit", minute: "2-digit", second: "2-digit" },
-      ).format(new Date(buffer.lastSavedAt))}`;
+      autosaveStatus.textContent = "Salvo";
       autosaveStatus.classList.remove("save-error");
     } catch (error) {
       console.error(error);
-      autosaveStatus.textContent = "Falha ao salvar o rascunho";
+      autosaveStatus.textContent = "Falha ao salvar";
       autosaveStatus.classList.add("save-error");
     }
   }
@@ -480,7 +526,6 @@ export function openSummaryEditorModal({
   }
 
   closeButton.addEventListener("click", () => close());
-  closeFooterButton.addEventListener("click", () => close());
   discardButton.addEventListener("click", () => {
     clearTimeout(autosaveTimer);
     discarded = true;
@@ -522,6 +567,7 @@ export function openSummaryEditorModal({
   });
 
   dialog.showModal();
-  titleInput.focus();
+  const contentEditable = editors.mainContent.root.querySelector("[contenteditable='true']");
+  contentEditable?.focus();
   return dialog;
 }
