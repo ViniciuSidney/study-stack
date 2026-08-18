@@ -78,6 +78,38 @@
   color: var(--danger);
 }
 
+.error-editor-tab-panel[data-error-tab-panel="analysis"] textarea {
+  min-height: 88px;
+  height: 88px;
+  resize: vertical;
+}
+
+.error-editor-tab-panel[data-error-tab-panel="organization"] .error-metadata-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.error-editor-tab-panel[data-error-tab-panel="organization"] .error-important-toggle {
+  grid-column: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+@media (max-width: 720px) {
+  .error-editor-tab-panel[data-error-tab-panel="organization"] .error-metadata-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .error-editor-tab-panel[data-error-tab-panel="organization"] .field-wide,
+  .error-editor-tab-panel[data-error-tab-panel="organization"] .error-important-toggle {
+    grid-column: 1;
+  }
+}
+
 @media (max-width: 560px) {
   .record-actions {
     align-items: stretch;
