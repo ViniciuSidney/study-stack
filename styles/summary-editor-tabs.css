@@ -2,9 +2,9 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.35rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.9rem;
-  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
   overflow-x: auto;
 }
 
@@ -12,29 +12,33 @@
   flex: 1 0 auto;
   min-width: max-content;
   border: 0;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-sm);
   padding: 0.7rem 1rem;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-soft);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .summary-editor-tab:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
+  background: var(--surface-strong);
+  color: var(--text);
 }
 
 .summary-editor-tab.active,
 .summary-editor-tab[aria-selected="true"] {
-  background: var(--surface-raised);
-  color: var(--text-primary);
-  box-shadow: inset 0 0 0 1px var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
 .summary-editor-tab:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
