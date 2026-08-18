@@ -1,0 +1,64 @@
+.practice-criteria-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 22%, var(--surface));
+}
+
+.practice-criteria-panel > p {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.practice-criteria-details {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.practice-criteria-details > summary {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: var(--accent-hover);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.practice-criteria-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice-criteria-details > summary::before {
+  content: "▸";
+  flex: 0 0 auto;
+  color: var(--text-subtle);
+  transition: transform var(--transition-fast);
+}
+
+.practice-criteria-details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.practice-criteria-details > summary:hover {
+  background: var(--surface-soft);
+}
+
+.practice-criteria-details[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.practice-criteria-details > p {
+  padding: 12px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
