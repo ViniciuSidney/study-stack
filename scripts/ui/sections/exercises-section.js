@@ -68,6 +68,28 @@ function createPracticeCriteria(document) {
   return panel;
 }
 
+function createSessionMoreActions({ document, record, onArchive }) {
+  const menu = createElement(document, "details", {
+    className: "record-more-actions",
+  });
+  const trigger = createElement(document, "summary", {
+    text: "⋯",
+    attributes: { "aria-label": "Mais ações da lista" },
+  });
+  const panel = createElement(document, "div", {
+    className: "record-more-actions-menu",
+  });
+  const archiveButton = createElement(document, "button", {
+    className: "record-more-danger",
+    text: "Arquivar",
+    attributes: { type: "button" },
+  });
+  archiveButton.addEventListener("click", () => onArchive(record));
+  panel.append(archiveButton);
+  menu.append(trigger, panel);
+  return menu;
+}
+
 function createSessionCard({
   document,
   view,
@@ -176,6 +198,13 @@ function createSessionCard({
   }
   stats.append(createStat(document, "Respondidas", session.stats.answered));
 
+  const practiceHint = session.stats.validForPractice
+    ? null
+    : createElement(document, "p", {
+        className: "record-guidance",
+        text: `${formatPracticeValidationStatus(session.stats.answered)} para esta lista contar como prática.`,
+      });
+
   let noteText = session.sessionNotes?.plainText || "";
   if (!noteText) {
     if (view.errorCandidateCount > 0) {
@@ -186,8 +215,6 @@ function createSessionCard({
       noteText = view.existingErrorCount === 1
         ? "1 erro desta lista já possui Registro de Erro."
         : `${view.existingErrorCount} erros desta lista já possuem Registros de Erro.`;
-    } else if (!session.stats.validForPractice) {
-      noteText = `${formatPracticeValidationStatus(session.stats.answered)} para esta lista contar como prática.`;
     } else {
       noteText = "Nenhum erro identificado nesta lista.";
     }
@@ -201,6 +228,9 @@ function createSessionCard({
   const actions = createElement(document, "div", {
     className: "record-actions",
   });
+  const primaryActions = createElement(document, "div", {
+    className: "record-primary-actions",
+  });
   const openButton = createElement(document, "button", {
     className: "button button-primary button-small",
     text: view.errorCandidateCount > 0
@@ -209,15 +239,15 @@ function createSessionCard({
     attributes: { type: "button" },
   });
   openButton.addEventListener("click", () => onOpen(view));
-  const archiveButton = createElement(document, "button", {
-    className: "button button-quiet-danger button-small",
-    text: "Arquivar",
-    attributes: { type: "button" },
-  });
-  archiveButton.addEventListener("click", () => onArchive(record));
-  actions.append(openButton, archiveButton);
+  primaryActions.append(openButton);
+  actions.append(
+    primaryActions,
+    createSessionMoreActions({ document, record, onArchive }),
+  );
 
-  card.append(header, performance, stats, note, actions);
+  card.append(header, performance, stats);
+  if (practiceHint) card.append(practiceHint);
+  card.append(note, actions);
   return card;
 }
 
