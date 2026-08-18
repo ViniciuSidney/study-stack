@@ -1,0 +1,62 @@
+.settings-details {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-details > summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 750;
+  list-style: none;
+}
+
+.settings-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-details > summary::after {
+  content: "⌄";
+  color: var(--text-subtle);
+  font-size: 1rem;
+  transition: transform var(--transition-fast);
+}
+
+.settings-details[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.settings-details > summary:hover {
+  color: var(--text);
+}
+
+.settings-details-content {
+  display: grid;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+
+.settings-details-content > p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.settings-details-content .action-row {
+  margin-top: 0;
+}
+
+.settings-maintenance-panel .maintenance-actions {
+  margin-top: 18px;
+}
+
+.settings-technical-panel .code-block {
+  margin-top: 0;
+}
