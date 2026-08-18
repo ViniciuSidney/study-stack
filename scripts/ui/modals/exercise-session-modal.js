@@ -309,15 +309,27 @@ export function openExerciseSessionModal({
   const errorCopy = errorPreparation.lastElementChild;
   errorCopy.append(
     createElement(document, "strong", {
-      text: `${availableCount} questão(ões) disponível(is) para análise`,
+      text: "Erros para analisar",
     }),
     createElement(document, "p", {
       text:
-        registeredCount > 0
-          ? `${registeredCount} erro(s) desta lista já possui(em) registro. Selecione apenas os restantes.`
-          : "Marque as questões incorretas que merecem uma análise própria. Nenhum erro é criado sem sua seleção.",
+        availableCount === 0
+          ? registeredCount > 0
+            ? "Todos os erros desta lista já possuem Registro de Erro."
+            : "Nenhuma questão incorreta está disponível para análise."
+          : registeredCount > 0
+            ? `${availableCount} erro(s) ainda pode(m) gerar Registro de Erro. ${registeredCount} já possui(em) registro.`
+            : `${availableCount} erro(s) pode(m) gerar Registro de Erro. Selecione os que deseja analisar.`,
     }),
   );
+
+  const selectAllButton = createElement(document, "button", {
+    className: "button button-secondary button-small",
+    text: "Selecionar todas",
+    attributes: { type: "button", "data-select-all-errors": "true" },
+  });
+  selectAllButton.disabled = availableCount === 0;
+
   const selectedCounter = createElement(document, "span", {
     className: "error-selection-counter",
     text: "0 selecionadas",
@@ -328,7 +340,7 @@ export function openExerciseSessionModal({
     attributes: { type: "button" },
   });
   createErrorsButton.disabled = true;
-  errorCopy.append(selectedCounter, createErrorsButton);
+  errorCopy.append(selectAllButton, selectedCounter, createErrorsButton);
   body.append(errorPreparation);
 
   const noteField = createElement(document, "label", {
@@ -394,13 +406,27 @@ export function openExerciseSessionModal({
 
   function updateSelectedCount() {
     const selected = selectedInputs.filter((input) => input.checked).length;
-    selectedCounter.textContent = `${selected} selecionada(s)`;
+    selectedCounter.textContent = `${selected} ${selected === 1 ? "selecionada" : "selecionadas"}`;
+    createErrorsButton.textContent = selected === 1
+      ? "Criar 1 Registro de Erro"
+      : `Criar ${selected} Registros de Erro`;
     createErrorsButton.disabled = selected === 0;
+
+    const allSelected = selectedInputs.length > 0 && selected === selectedInputs.length;
+    selectAllButton.textContent = allSelected ? "Limpar seleção" : "Selecionar todas";
   }
 
   selectedInputs.forEach((input) =>
     input.addEventListener("change", updateSelectedCount),
   );
+
+  selectAllButton.addEventListener("click", () => {
+    const shouldSelectAll = selectedInputs.some((input) => !input.checked);
+    selectedInputs.forEach((input) => {
+      input.checked = shouldSelectAll;
+    });
+    updateSelectedCount();
+  });
 
   createErrorsButton.addEventListener("click", () => {
     const questionIds = selectedInputs
