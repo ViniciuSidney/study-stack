@@ -1,12 +1,5 @@
 import { clearElement, createElement } from "../../utils/dom.js";
 
-const CATEGORY_LABELS = Object.freeze({
-  pending: "Pendente",
-  recurrent: "Reincidente",
-  reviewed: "Revisado",
-  overcome: "Superado",
-});
-
 const GROUP_COPY = Object.freeze({
   recurrent: {
     title: "Reincidentes",
@@ -54,6 +47,104 @@ function createBadge(document, text, className = "") {
   });
 }
 
+function getPrimaryState(errorRecord) {
+  if (errorRecord.masteryStatus === "overcome") {
+    return {
+      key: "overcome",
+      label: "Superado",
+      badgeClass: "error-badge-overcome",
+      action: "open",
+      actionLabel: "Consultar análise",
+    };
+  }
+
+  if (!errorRecord.analysis.isComplete) {
+    return {
+      key: "analysis_pending",
+      label: "Análise pendente",
+      badgeClass: "error-analysis-pending",
+      action: "open",
+      actionLabel: "Analisar erro",
+    };
+  }
+
+  if (errorRecord.reviewStatus !== "reviewed") {
+    return {
+      key: "review_pending",
+      label: "Revisão pendente",
+      badgeClass: "error-badge-pending",
+      action: "review",
+      actionLabel: "Marcar revisado",
+    };
+  }
+
+  return {
+    key: "tracking",
+    label: "Em acompanhamento",
+    badgeClass: "error-badge-reviewed",
+    action: "evidence",
+    actionLabel: `Registrar acerto (${errorRecord.currentCorrectStreak}/2)`,
+  };
+}
+
+function createMoreActions({
+  document,
+  view,
+  state,
+  onOpen,
+  onToggleReviewed,
+  onRecurrence,
+  onArchive,
+}) {
+  const { record, errorRecord } = view;
+  const menu = createElement(document, "details", {
+    className: "record-more-actions",
+  });
+  const trigger = createElement(document, "summary", {
+    text: "⋯",
+    attributes: { "aria-label": "Mais ações do Registro de Erro" },
+  });
+  const panel = createElement(document, "div", {
+    className: "record-more-actions-menu",
+  });
+
+  if (state.action !== "open") {
+    const openButton = createElement(document, "button", {
+      text: "Abrir análise",
+      attributes: { type: "button" },
+    });
+    openButton.addEventListener("click", () => onOpen(view));
+    panel.append(openButton);
+  }
+
+  if (errorRecord.reviewStatus === "reviewed") {
+    const reopenReviewButton = createElement(document, "button", {
+      text: "Reabrir revisão",
+      attributes: { type: "button" },
+    });
+    reopenReviewButton.addEventListener("click", () => onToggleReviewed(view));
+    panel.append(reopenReviewButton);
+  }
+
+  const recurrenceButton = createElement(document, "button", {
+    text: "Errei de novo",
+    attributes: { type: "button" },
+  });
+  recurrenceButton.addEventListener("click", () => onRecurrence(view));
+  panel.append(recurrenceButton);
+
+  const archiveButton = createElement(document, "button", {
+    className: "record-more-danger",
+    text: "Arquivar",
+    attributes: { type: "button" },
+  });
+  archiveButton.addEventListener("click", () => onArchive(record));
+  panel.append(archiveButton);
+
+  menu.append(trigger, panel);
+  return menu;
+}
+
 function createErrorCard({
   document,
   view,
@@ -64,11 +155,13 @@ function createErrorCard({
   onArchive,
 }) {
   const { record, errorRecord, primaryQuestion, linkedRecords, category } = view;
+  const state = getPrimaryState(errorRecord);
   const card = createElement(document, "article", {
     className: `panel error-card error-card-${category}`,
     attributes: {
       "data-error-category": category,
       "data-error-search": record.searchPlainText,
+      "data-error-state": state.key,
     },
   });
 
@@ -93,16 +186,7 @@ function createErrorCard({
     }),
   );
   const badges = createElement(document, "div", { className: "record-badges" });
-  badges.append(
-    createBadge(document, CATEGORY_LABELS[category], `error-badge-${category}`),
-    createBadge(
-      document,
-      errorRecord.analysis.isComplete ? "Análise completa" : "Análise pendente",
-      errorRecord.analysis.isComplete
-        ? "error-analysis-complete"
-        : "error-analysis-pending",
-    ),
-  );
+  badges.append(createBadge(document, state.label, state.badgeClass));
   if (record.isImportant) {
     badges.append(createBadge(document, "Importante", "important-badge"));
   }
@@ -116,21 +200,29 @@ function createErrorCard({
   const facts = createElement(document, "div", { className: "error-facts" });
   facts.append(
     createElement(document, "span", {
-      text: `${errorRecord.recurrenceCount} reincidência(s)`,
-    }),
-    createElement(document, "span", {
-      text: `${errorRecord.reviewCount} revisão(ões)`,
-    }),
-    createElement(document, "span", {
-      text: `${errorRecord.currentCorrectStreak}/2 acertos consecutivos`,
+      text: `${errorRecord.currentCorrectStreak}/2 acertos para superar`,
     }),
   );
+  if (errorRecord.recurrenceCount > 0) {
+    facts.append(
+      createElement(document, "span", {
+        text: `${errorRecord.recurrenceCount} ${errorRecord.recurrenceCount === 1 ? "reincidência" : "reincidências"}`,
+      }),
+    );
+  }
+  if (errorRecord.reviewCount > 0) {
+    facts.append(
+      createElement(document, "span", {
+        text: `${errorRecord.reviewCount} ${errorRecord.reviewCount === 1 ? "revisão" : "revisões"}`,
+      }),
+    );
+  }
 
   const progress = createElement(document, "div", {
     className: "error-streak",
     attributes: {
       role: "progressbar",
-      "aria-label": "Sequência correta para superar o erro",
+      "aria-label": "Acertos necessários para superar o erro",
       "aria-valuemin": "0",
       "aria-valuemax": "2",
       "aria-valuenow": String(errorRecord.currentCorrectStreak),
@@ -143,6 +235,8 @@ function createErrorCard({
       },
     }),
   );
+
+  card.append(header, question, facts, progress);
 
   if (errorRecord.errorTags.length || linkedRecords.length) {
     const tags = createElement(document, "div", { className: "tag-list" });
@@ -157,71 +251,39 @@ function createErrorCard({
         }),
       ),
     );
-    card.append(header, question, facts, progress, tags);
-  } else {
-    card.append(header, question, facts, progress);
+    card.append(tags);
   }
 
   const actions = createElement(document, "div", { className: "record-actions" });
-  const openButton = createElement(document, "button", {
+  const primaryActions = createElement(document, "div", {
+    className: "record-primary-actions",
+  });
+  const primaryButton = createElement(document, "button", {
     className: "button button-primary button-small",
-    text: errorRecord.analysis.isComplete ? "Abrir análise" : "Analisar erro",
+    text: state.actionLabel,
     attributes: { type: "button" },
   });
-  openButton.addEventListener("click", () => onOpen(view));
 
-  const reviewButton = createElement(document, "button", {
-    className: "button button-secondary button-small",
-    text: errorRecord.reviewStatus === "reviewed" ? "Reabrir revisão" : "Marcar revisado",
-    attributes: {
-      type: "button",
-      title:
-        !errorRecord.analysis.isComplete && errorRecord.reviewStatus !== "reviewed"
-          ? "Conclua a análise antes de marcar como revisado."
-          : "",
-    },
-  });
-  reviewButton.disabled =
-    !errorRecord.analysis.isComplete && errorRecord.reviewStatus !== "reviewed";
-  reviewButton.addEventListener("click", () => onToggleReviewed(view));
+  if (state.action === "review") {
+    primaryButton.addEventListener("click", () => onToggleReviewed(view));
+  } else if (state.action === "evidence") {
+    primaryButton.addEventListener("click", () => onEvidence(view));
+  } else {
+    primaryButton.addEventListener("click", () => onOpen(view));
+  }
 
-  const recurrenceButton = createElement(document, "button", {
-    className: "button button-secondary button-small",
-    text: "Errei de novo",
-    attributes: { type: "button" },
-  });
-  recurrenceButton.addEventListener("click", () => onRecurrence(view));
-
-  const evidenceButton = createElement(document, "button", {
-    className: "button button-secondary button-small",
-    text:
-      errorRecord.masteryStatus === "overcome"
-        ? "Erro superado"
-        : `Registrar acerto (${errorRecord.currentCorrectStreak}/2)`,
-    attributes: {
-      type: "button",
-      title:
-        errorRecord.masteryStatus === "overcome"
-          ? "Uma nova sequência começa somente após uma reincidência."
-          : "",
-    },
-  });
-  evidenceButton.disabled = errorRecord.masteryStatus === "overcome";
-  evidenceButton.addEventListener("click", () => onEvidence(view));
-
-  const archiveButton = createElement(document, "button", {
-    className: "button button-quiet-danger button-small",
-    text: "Arquivar",
-    attributes: { type: "button" },
-  });
-  archiveButton.addEventListener("click", () => onArchive(record));
-
+  primaryActions.append(primaryButton);
   actions.append(
-    openButton,
-    reviewButton,
-    recurrenceButton,
-    evidenceButton,
-    archiveButton,
+    primaryActions,
+    createMoreActions({
+      document,
+      view,
+      state,
+      onOpen,
+      onToggleReviewed,
+      onRecurrence,
+      onArchive,
+    }),
   );
   card.append(actions);
   return card;
@@ -281,7 +343,7 @@ export function renderErrorsSection({
     createElement(document, "p", {
       className: "section-description",
       text:
-        "Analise a causa, registre a regra correta, revise e acompanhe duas respostas corretas consecutivas até superar cada erro.",
+        "Analise o erro, revise o que aprendeu e acompanhe sua superação com novas respostas corretas.",
     }),
   );
   const exerciseButton = createElement(document, "button", {
