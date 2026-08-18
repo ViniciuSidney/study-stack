@@ -7,8 +7,8 @@ import {
   updateRecord,
   validateRecord,
 } from "../domain/record.js";
-import { createEmptyNote } from "../domain/note.js";
-import { createEmptySummary } from "../domain/summary.js";
+import { createEmptyNote, isNoteCompletionReady } from "../domain/note.js";
+import { createEmptySummary, isSummaryCompletionReady } from "../domain/summary.js";
 import { createId } from "../utils/id.js";
 
 const TYPE_LABELS = Object.freeze({
@@ -23,7 +23,6 @@ const STATUS_LABELS = Object.freeze({
   in_progress: "Em andamento",
   completed: "Concluído",
 });
-
 
 function createSpecificEntity(record, now) {
   if (record.type === "summary") {
@@ -112,7 +111,26 @@ export class RecordService {
   changeStatus(recordId, status, options = {}) {
     const current = this.#getRequired(recordId);
     const now = this.clock();
-    const next = changeRecordStatus(current, status, now, options);
+    let completionReady = options.completionReady;
+
+    if (status === "completed" && !Object.hasOwn(options, "completionReady")) {
+      if (current.type === "note") {
+        completionReady = isNoteCompletionReady(
+          this.repository.getEntity("notes", recordId),
+          current,
+        );
+      } else if (current.type === "summary") {
+        completionReady = isSummaryCompletionReady(
+          this.repository.getEntity("summaries", recordId),
+          current,
+        );
+      }
+    }
+
+    const next = changeRecordStatus(current, status, now, {
+      ...options,
+      completionReady: Boolean(completionReady),
+    });
 
     this.repository.transaction((draft) => {
       draft.collections.records[recordId] = next;
