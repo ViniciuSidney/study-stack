@@ -1,0 +1,93 @@
+.record-guidance {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+}
+
+.record-actions {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.record-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.record-more-actions {
+  position: relative;
+  margin-left: auto;
+}
+
+.record-more-actions > summary {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.record-more-actions > summary::-webkit-details-marker {
+  display: none;
+}
+
+.record-more-actions > summary:hover,
+.record-more-actions[open] > summary {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.record-more-actions-menu {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: grid;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.record-more-actions-menu button {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.record-more-actions-menu button:hover {
+  background: var(--surface-soft);
+}
+
+.record-more-actions-menu .record-more-danger {
+  color: var(--danger);
+}
+
+@media (max-width: 560px) {
+  .record-actions {
+    align-items: stretch;
+  }
+
+  .record-primary-actions {
+    flex: 1 1 auto;
+  }
+
+  .record-primary-actions .button {
+    flex: 1 1 auto;
+  }
+}
