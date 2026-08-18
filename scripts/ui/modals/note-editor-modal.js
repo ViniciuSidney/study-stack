@@ -2,12 +2,6 @@ import { getChecklistStats } from "../../domain/note.js";
 import { createElement } from "../../utils/dom.js";
 import { createRichTextEditor } from "../components/rich-text-editor.js";
 
-const STATUS_OPTIONS = Object.freeze([
-  ["draft", "Rascunho"],
-  ["in_progress", "Em andamento"],
-  ["completed", "Concluída"],
-]);
-
 const TYPE_LABELS = Object.freeze({
   summary: "Resumo",
   note: "Anotação",
@@ -28,21 +22,6 @@ function createField(document, labelText, input, { wide = false, hint = "" } = {
   return field;
 }
 
-function createSelect(document, options, value) {
-  const select = createElement(document, "select");
-
-  for (const [optionValue, label] of options) {
-    const option = createElement(document, "option", {
-      text: label,
-      attributes: { value: optionValue },
-    });
-    option.selected = optionValue === value;
-    select.append(option);
-  }
-
-  return select;
-}
-
 function normalizeTags(value) {
   return String(value ?? "")
     .split(/[;,]/u)
@@ -60,6 +39,89 @@ function createSwitch(document, label, checked) {
   input.checked = checked;
   wrapper.append(input, createElement(document, "span", { text: label }));
   return { wrapper, input };
+}
+
+function createTabSystem(document, tabs) {
+  const tabList = createElement(document, "div", {
+    className: "summary-editor-tabs",
+    attributes: { role: "tablist", "aria-label": "Seções do Editor de Anotação" },
+  });
+  const panels = new Map();
+  const buttons = new Map();
+
+  for (const [id, label] of tabs) {
+    const button = createElement(document, "button", {
+      className: "summary-editor-tab",
+      text: label,
+      attributes: {
+        type: "button",
+        role: "tab",
+        id: `note-tab-${id}`,
+        "aria-controls": `note-panel-${id}`,
+        "aria-selected": "false",
+        tabindex: "-1",
+      },
+    });
+    const panel = createElement(document, "section", {
+      className: "summary-editor-tab-panel",
+      attributes: {
+        role: "tabpanel",
+        id: `note-panel-${id}`,
+        "aria-labelledby": `note-tab-${id}`,
+        tabindex: "0",
+      },
+    });
+    panel.hidden = true;
+    tabList.append(button);
+    buttons.set(id, button);
+    panels.set(id, panel);
+  }
+
+  function activate(id, { focus = false } = {}) {
+    for (const [tabId, button] of buttons) {
+      const active = tabId === id;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+      panels.get(tabId).hidden = !active;
+    }
+
+    if (focus) {
+      buttons.get(id)?.focus();
+    }
+  }
+
+  for (const [id, button] of buttons) {
+    button.addEventListener("click", () => activate(id));
+    button.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
+      const ids = [...buttons.keys()];
+      const currentIndex = ids.indexOf(id);
+      let targetIndex = currentIndex;
+
+      if (event.key === "ArrowLeft") {
+        targetIndex = (currentIndex - 1 + ids.length) % ids.length;
+      }
+      if (event.key === "ArrowRight") {
+        targetIndex = (currentIndex + 1) % ids.length;
+      }
+      if (event.key === "Home") {
+        targetIndex = 0;
+      }
+      if (event.key === "End") {
+        targetIndex = ids.length - 1;
+      }
+
+      activate(ids[targetIndex], { focus: true });
+    });
+  }
+
+  activate(tabs[0][0]);
+  return { tabList, panels };
 }
 
 function createLinkPicker({ document, options, selectedIds, onInput }) {
@@ -185,19 +247,20 @@ export function openNoteEditorModal({
     className: "modal-card summary-editor-card note-editor-card",
     attributes: { method: "dialog" },
   });
+
   const header = createElement(document, "header", {
     className: "modal-header summary-editor-header",
   });
   const headerCopy = createElement(document, "div");
+  const headerTitle = createElement(document, "h2", {
+    text: initialState.record.title || "Anotação sem título",
+  });
   headerCopy.append(
     createElement(document, "p", { className: "eyebrow", text: "Editor de Anotação" }),
-    createElement(document, "h2", {
-      text: record.title || "Anotação sem título",
-    }),
+    headerTitle,
     createElement(document, "p", {
       className: "modal-description",
-      text:
-        "Escreva livremente, use marca-texto, checklists textuais e vínculos com registros do mesmo assunto.",
+      text: "Registre ideias, dúvidas, relações, explicações ou lembretes.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -231,6 +294,15 @@ export function openNoteEditorModal({
     body.append(recovery);
   }
 
+  const tabs = createTabSystem(document, [
+    ["content", "Conteúdo"],
+    ["identification", "Identificação"],
+    ["links", "Vínculos"],
+  ]);
+  body.append(tabs.tabList);
+
+  const contentPanel = tabs.panels.get("content");
+
   if (note.createdFromQuickDetail) {
     const originBanner = createElement(document, "section", {
       className: "quick-detail-origin-banner",
@@ -243,91 +315,12 @@ export function openNoteEditorModal({
           : "Esta é a primeira abertura no editor completo.",
       }),
     );
-    body.append(originBanner);
+    contentPanel.append(originBanner);
   }
 
-  const metadataPanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
-  });
-  metadataPanel.append(
-    createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Identificação do registro",
-    }),
-  );
-  const metadataGrid = createElement(document, "div", {
-    className: "summary-metadata-grid",
-  });
-  const titleInput = createElement(document, "input", {
-    attributes: {
-      type: "text",
-      maxlength: "160",
-      autocomplete: "off",
-      placeholder: "Ex.: Diferença entre cadeia e teia alimentar",
-    },
-  });
-  titleInput.value = initialState.record.title ?? "";
-  const dateInput = createElement(document, "input", {
-    attributes: { type: "date", required: "" },
-  });
-  dateInput.value = initialState.record.studyDate;
-  const statusSelect = createSelect(document, STATUS_OPTIONS, initialState.status);
-  const tagsInput = createElement(document, "input", {
-    attributes: {
-      type: "text",
-      maxlength: "240",
-      autocomplete: "off",
-      placeholder: "dúvida, conexão, revisão",
-    },
-  });
-  tagsInput.value = (initialState.record.tags ?? []).join(", ");
-  const personalNotesInput = createElement(document, "textarea", {
-    attributes: {
-      rows: "3",
-      maxlength: "2000",
-      placeholder: "Observações gerais sobre este registro...",
-    },
-  });
-  personalNotesInput.value = initialState.record.personalNotes ?? "";
-  metadataGrid.append(
-    createField(document, "Título", titleInput, {
-      wide: true,
-      hint: "Obrigatório para concluir a Anotação.",
-    }),
-    createField(document, "Data de estudo", dateInput),
-    createField(document, "Status", statusSelect),
-    createField(document, "Tags separadas por vírgula", tagsInput, { wide: true }),
-    createField(document, "Observações pessoais", personalNotesInput, { wide: true }),
-  );
-  const flags = createElement(document, "div", {
-    className: "summary-editor-flags note-editor-flags",
-  });
-  const importantSwitch = createSwitch(
-    document,
-    "Manter no atalho de Importantes",
-    initialState.record.isImportant,
-  );
-  flags.append(importantSwitch.wrapper);
-  metadataPanel.append(metadataGrid, flags);
-  body.append(metadataPanel);
-
-  const contentPanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
-  });
-  contentPanel.append(
-    createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Conteúdo da Anotação",
-    }),
-    createElement(document, "p", {
-      className: "summary-section-help",
-      text:
-        "Checklists permanecem como texto: escreva [ ] item pendente e [x] item concluído.",
-    }),
-  );
   const editor = createRichTextEditor({
     document,
-    label: "Conteúdo livre",
+    label: "Conteúdo da Anotação",
     value: initialState.note.content,
     placeholder: "Registre ideias, dúvidas, relações, explicações ou lembretes...",
     required: true,
@@ -340,21 +333,92 @@ export function openNoteEditorModal({
     className: "note-checklist-live",
     attributes: { "aria-live": "polite" },
   });
-  contentPanel.append(editor.root, checklistStatus);
-  body.append(contentPanel);
-
-  const linksPanel = createElement(document, "section", {
-    className: "summary-editor-section panel",
+  const checklistHelp = createElement(document, "details", {
+    className: "note-checklist-help",
   });
-  linksPanel.append(
-    createElement(document, "div", {
-      className: "summary-editor-section-heading",
-      text: "Registros vinculados",
-    }),
+  checklistHelp.append(
+    createElement(document, "summary", { text: "Como usar checklists" }),
     createElement(document, "p", {
       className: "summary-section-help",
-      text:
-        "Vincule Resumos ou outras Anotações deste mesmo assunto. Arquivar um registro não rompe o vínculo.",
+      text: "Escreva [ ] antes de um item pendente e [x] antes de um item concluído.",
+    }),
+  );
+  contentPanel.append(editor.root, checklistStatus, checklistHelp);
+
+  const titleInput = createElement(document, "input", {
+    attributes: {
+      type: "text",
+      maxlength: "160",
+      autocomplete: "off",
+      placeholder: "Ex.: Diferença entre cadeia e teia alimentar",
+    },
+  });
+  titleInput.value = initialState.record.title ?? "";
+
+  const typeInput = createElement(document, "input", {
+    attributes: {
+      type: "text",
+      value: "Anotação",
+      disabled: "",
+      "aria-label": "Tipo do registro",
+    },
+  });
+
+  const dateInput = createElement(document, "input", {
+    attributes: { type: "date", required: "" },
+  });
+  dateInput.value = initialState.record.studyDate;
+
+  const tagsInput = createElement(document, "input", {
+    attributes: {
+      type: "text",
+      maxlength: "240",
+      autocomplete: "off",
+      placeholder: "Ex.: dúvida, conexão, revisão",
+    },
+  });
+  tagsInput.value = (initialState.record.tags ?? []).join(", ");
+
+  const personalNotesInput = createElement(document, "textarea", {
+    attributes: {
+      rows: "3",
+      maxlength: "2000",
+      placeholder: "Observações sobre este registro...",
+    },
+  });
+  personalNotesInput.value = initialState.record.personalNotes ?? "";
+
+  const importantSwitch = createSwitch(
+    document,
+    "Marcar como importante",
+    initialState.record.isImportant,
+  );
+
+  const identificationPanel = tabs.panels.get("identification");
+  const metadataGrid = createElement(document, "div", {
+    className: "summary-metadata-grid",
+  });
+  metadataGrid.append(
+    createField(document, "Título", titleInput, { wide: true }),
+    createField(document, "Tipo", typeInput),
+    createField(document, "Data de estudo", dateInput),
+    createField(document, "Tags", tagsInput, {
+      wide: true,
+      hint: "Separe as tags por vírgulas.",
+    }),
+    createField(document, "Observações", personalNotesInput, { wide: true }),
+  );
+  const flags = createElement(document, "div", {
+    className: "summary-editor-flags note-editor-flags",
+  });
+  flags.append(importantSwitch.wrapper);
+  identificationPanel.append(metadataGrid, flags);
+
+  const linksPanel = tabs.panels.get("links");
+  linksPanel.append(
+    createElement(document, "p", {
+      className: "summary-section-help",
+      text: "Vincule Resumos ou outras Anotações deste mesmo assunto. Arquivar um registro não rompe o vínculo.",
     }),
   );
   const linkPicker = createLinkPicker({
@@ -364,7 +428,10 @@ export function openNoteEditorModal({
     onInput: scheduleAutosave,
   });
   linksPanel.append(linkPicker.root);
-  body.append(linksPanel);
+
+  for (const panel of tabs.panels.values()) {
+    body.append(panel);
+  }
 
   const errorMessage = createElement(document, "p", {
     className: "form-error summary-editor-error",
@@ -378,7 +445,7 @@ export function openNoteEditorModal({
   });
   const autosaveStatus = createElement(document, "span", {
     className: "summary-autosave-status",
-    text: recoveredDraft ? "Rascunho recuperado" : "Nenhuma alteração pendente",
+    text: recoveredDraft ? "Rascunho recuperado" : "Salvo",
     attributes: { "aria-live": "polite" },
   });
   const footerActions = createElement(document, "div", {
@@ -389,18 +456,14 @@ export function openNoteEditorModal({
     text: "Descartar alterações",
     attributes: { type: "button" },
   });
-  const closeFooterButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Fechar",
-    attributes: { type: "button" },
-  });
   const saveButton = createElement(document, "button", {
     className: "button button-primary",
     text: "Salvar Anotação",
     attributes: { type: "submit" },
   });
-  footerActions.append(discardButton, closeFooterButton, saveButton);
+  footerActions.append(discardButton, saveButton);
   footer.append(autosaveStatus, footerActions);
+
   form.append(header, body, footer);
   dialog.append(form);
   document.body.append(dialog);
@@ -408,13 +471,15 @@ export function openNoteEditorModal({
   const watchedInputs = [
     titleInput,
     dateInput,
-    statusSelect,
     tagsInput,
     personalNotesInput,
     importantSwitch.input,
   ];
   watchedInputs.forEach((input) => input.addEventListener("input", scheduleAutosave));
   watchedInputs.forEach((input) => input.addEventListener("change", scheduleAutosave));
+  titleInput.addEventListener("input", () => {
+    headerTitle.textContent = titleInput.value.trim() || "Anotação sem título";
+  });
 
   function getWorkingState() {
     return {
@@ -429,7 +494,7 @@ export function openNoteEditorModal({
         content: editor.getValue(),
         linkedRecordIds: linkPicker.getSelectedIds(),
       },
-      status: statusSelect.value,
+      status: initialState.status,
     };
   }
 
@@ -440,13 +505,13 @@ export function openNoteEditorModal({
       },
     });
     checklistStatus.textContent = stats.total
-      ? `${stats.completed} de ${stats.total} itens textuais marcados como concluídos.`
-      : "Nenhum checklist textual detectado.";
+      ? `${stats.completed} de ${stats.total} itens concluídos.`
+      : "Nenhum checklist detectado.";
   }
 
   function scheduleAutosave() {
     dirty = true;
-    autosaveStatus.textContent = "Salvamento automático pendente...";
+    autosaveStatus.textContent = "Alterações não salvas";
     autosaveStatus.classList.remove("save-error");
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(saveDraftNow, autosaveDelayMs);
@@ -465,14 +530,15 @@ export function openNoteEditorModal({
         originalState,
         workingState: getWorkingState(),
       });
-      autosaveStatus.textContent = `Rascunho salvo às ${new Intl.DateTimeFormat(
-        "pt-BR",
-        { hour: "2-digit", minute: "2-digit", second: "2-digit" },
-      ).format(new Date(buffer.lastSavedAt))}`;
+      autosaveStatus.textContent = `Salvo às ${new Intl.DateTimeFormat("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(new Date(buffer.lastSavedAt))}`;
       autosaveStatus.classList.remove("save-error");
     } catch (error) {
       console.error(error);
-      autosaveStatus.textContent = "Falha ao salvar o rascunho";
+      autosaveStatus.textContent = "Falha ao salvar";
       autosaveStatus.classList.add("save-error");
     }
   }
@@ -488,7 +554,6 @@ export function openNoteEditorModal({
   }
 
   closeButton.addEventListener("click", () => close());
-  closeFooterButton.addEventListener("click", () => close());
   discardButton.addEventListener("click", () => {
     clearTimeout(autosaveTimer);
     discarded = true;
@@ -530,6 +595,6 @@ export function openNoteEditorModal({
 
   updateChecklistStatus();
   dialog.showModal();
-  titleInput.focus();
+  editor.root.querySelector('[contenteditable="true"]')?.focus();
   return dialog;
 }
