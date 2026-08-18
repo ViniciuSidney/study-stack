@@ -1,5 +1,7 @@
 import { clearElement, createElement } from "../../utils/dom.js";
 
+const PRACTICE_MIN_ANSWERED = 15;
+
 function formatDate(value) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "medium",
@@ -32,9 +34,38 @@ function createStat(document, label, value, className = "") {
   return stat;
 }
 
-export function formatPracticeValidationStatus(answered, threshold = 15) {
+export function formatPracticeValidationStatus(
+  answered,
+  threshold = PRACTICE_MIN_ANSWERED,
+) {
   const missing = Math.max(0, threshold - Number(answered ?? 0));
-  return `Responda mais ${missing} ${missing === 1 ? "questão" : "questões"} para validar`;
+  return missing > 0
+    ? `Faltam ${missing} ${missing === 1 ? "questão respondida" : "questões respondidas"}`
+    : "Válida para prática";
+}
+
+function createPracticeCriteria(document) {
+  const panel = createElement(document, "section", {
+    className: "panel practice-criteria-panel",
+  });
+  panel.append(
+    createElement(document, "p", {
+      text:
+        "Uma lista válida é uma sessão do Test Quest que atende aos critérios mínimos exigidos para contar como prática.",
+    }),
+  );
+
+  const details = createElement(document, "details", {
+    className: "practice-criteria-details",
+  });
+  details.append(
+    createElement(document, "summary", { text: "Ver critérios" }),
+    createElement(document, "p", {
+      text: `No momento, a lista precisa ter pelo menos ${PRACTICE_MIN_ANSWERED} questões respondidas para contar como prática.`,
+    }),
+  );
+  panel.append(details);
+  return panel;
 }
 
 function createSessionCard({
@@ -65,7 +96,7 @@ function createSessionCard({
   titleGroup.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Lista importada · Test Quest",
+      text: "Test Quest",
     }),
     createElement(document, "h3", {
       className: "record-title-line",
@@ -81,19 +112,17 @@ function createSessionCard({
   });
   badges.append(
     createElement(document, "span", {
-      className: "record-badge status-completed",
-      text: "Importada",
-    }),
-    createElement(document, "span", {
       className: session.stats.validForPractice
         ? "record-badge practice-valid-badge"
         : "record-badge practice-pending-badge",
       text: session.stats.validForPractice
-        ? "+1 ponto de prática"
-        : formatPracticeValidationStatus(session.stats.answered),
+        ? "Válida para prática"
+        : "Ainda não válida",
       attributes: session.stats.validForPractice
-        ? {}
-        : { title: "A lista é validada após 15 questões respondidas." },
+        ? { title: "Esta lista conta como prática." }
+        : {
+            title: `${formatPracticeValidationStatus(session.stats.answered)} para esta lista contar como prática.`,
+          },
     }),
   );
   header.append(titleGroup, badges);
@@ -129,23 +158,44 @@ function createSessionCard({
   const stats = createElement(document, "div", {
     className: "session-stats-grid",
   });
-  stats.append(
-    createStat(document, "Acertos", session.stats.correct, "correct"),
-    createStat(document, "Parciais", session.stats.partial ?? 0, "partial"),
-    createStat(document, "Erros", session.stats.incorrect, "incorrect"),
-    createStat(document, "Em branco", session.stats.unanswered, "unanswered"),
-    createStat(document, "Respondidas", session.stats.answered),
-  );
+  stats.append(createStat(document, "Acertos", session.stats.correct, "correct"));
+  if ((session.stats.partial ?? 0) > 0) {
+    stats.append(
+      createStat(document, "Parciais", session.stats.partial, "partial"),
+    );
+  }
+  if (session.stats.incorrect > 0) {
+    stats.append(
+      createStat(document, "Erros", session.stats.incorrect, "incorrect"),
+    );
+  }
+  if (session.stats.unanswered > 0) {
+    stats.append(
+      createStat(document, "Em branco", session.stats.unanswered, "unanswered"),
+    );
+  }
+  stats.append(createStat(document, "Respondidas", session.stats.answered));
+
+  let noteText = session.sessionNotes?.plainText || "";
+  if (!noteText) {
+    if (view.errorCandidateCount > 0) {
+      noteText = view.errorCandidateCount === 1
+        ? "1 erro disponível para análise."
+        : `${view.errorCandidateCount} erros disponíveis para análise.`;
+    } else if (view.existingErrorCount > 0) {
+      noteText = view.existingErrorCount === 1
+        ? "1 erro desta lista já possui Registro de Erro."
+        : `${view.existingErrorCount} erros desta lista já possuem Registros de Erro.`;
+    } else if (!session.stats.validForPractice) {
+      noteText = `${formatPracticeValidationStatus(session.stats.answered)} para esta lista contar como prática.`;
+    } else {
+      noteText = "Nenhum erro identificado nesta lista.";
+    }
+  }
 
   const note = createElement(document, "p", {
     className: "exercise-session-note",
-    text: session.sessionNotes?.plainText
-      ? session.sessionNotes.plainText
-      : view.errorCandidateCount > 0
-        ? `${view.errorCandidateCount} questão(ões) incorreta(s) disponível(is) para criar Registros de Erro.`
-        : view.existingErrorCount > 0
-          ? `${view.existingErrorCount} questão(ões) incorreta(s) já possui(em) Registro de Erro.`
-          : "Nenhum erro registrado nesta sessão.",
+    text: noteText,
   });
 
   const actions = createElement(document, "div", {
@@ -153,7 +203,9 @@ function createSessionCard({
   });
   const openButton = createElement(document, "button", {
     className: "button button-primary button-small",
-    text: "Abrir lista",
+    text: view.errorCandidateCount > 0
+      ? `Analisar ${view.errorCandidateCount} ${view.errorCandidateCount === 1 ? "erro" : "erros"}`
+      : "Abrir lista",
     attributes: { type: "button" },
   });
   openButton.addEventListener("click", () => onOpen(view));
@@ -220,13 +272,13 @@ export function renderExercisesSection({
   copy.append(
     createElement(document, "p", {
       className: "eyebrow",
-      text: "Prática importada",
+      text: "Prática",
     }),
     createElement(document, "h2", { text: "Exercícios" }),
     createElement(document, "p", {
       className: "section-description",
       text:
-        "Consulte listas concluídas no Test Quest, respostas, correções e desempenho. O snapshot original permanece separado das suas observações.",
+        "Acompanhe as listas concluídas no Test Quest, seu desempenho e os erros que ainda precisam de análise.",
     }),
   );
   const headerActions = createElement(document, "div", {
@@ -260,16 +312,16 @@ export function renderExercisesSection({
     });
     warningCopy.append(
       createElement(document, "strong", {
-        text: `${pendingImports.length} importação(ões) preservada(s) como pendência`,
+        text: `${pendingImports.length} importação(ões) pendente(s)`,
       }),
       createElement(document, "p", {
         text:
-          "O Study Stack manteve os dados atuais e guardou o novo resultado sem aplicá-lo. Abra as pendências para conferir o motivo e decidir se deseja descartá-lo.",
+          "O resultado foi preservado sem alterar suas listas atuais. Abra as pendências para conferir o motivo.",
       }),
     );
     const reviewButton = createElement(document, "button", {
       className: "button button-secondary button-small",
-      text: "Ver importações pendentes",
+      text: "Ver pendências",
       attributes: { type: "button" },
     });
     reviewButton.addEventListener("click", onOpenPending);
@@ -291,7 +343,7 @@ export function renderExercisesSection({
       }),
       createElement(document, "p", {
         text:
-          "Conclua uma sessão no Test Quest e envie o resultado para este assunto. Para testar a fundação localmente, o importador oferece um payload demonstrativo.",
+          "Conclua uma lista no Test Quest e salve o resultado no Study Stack para acompanhar sua prática.",
       }),
     );
     const action = createElement(document, "button", {
@@ -314,29 +366,37 @@ export function renderExercisesSection({
       document,
       "Listas",
       aggregate.sessions,
-      `${aggregate.validSessions} válida(s) para prática`,
+      `${aggregate.validSessions} ${aggregate.validSessions === 1 ? "válida" : "válidas"} para prática`,
     ),
     createMetric(document, "Questões", aggregate.questions),
     createMetric(
       document,
       "Aproveitamento",
       `${aggregate.percentage}%`,
-      `${aggregate.correct} acerto(s)`,
-    ),
-    createMetric(
-      document,
-      "Respostas parciais",
-      aggregate.partial,
-      "Valem 50% no aproveitamento",
-    ),
-    createMetric(
-      document,
-      "Erros identificados",
-      aggregate.incorrect,
-      "Preparados para análise",
+      `${aggregate.correct} ${aggregate.correct === 1 ? "acerto" : "acertos"}`,
     ),
   );
-  inner.append(metrics);
+  if (aggregate.incorrect > 0) {
+    metrics.append(
+      createMetric(
+        document,
+        "Erros",
+        aggregate.incorrect,
+        "Disponíveis para análise",
+      ),
+    );
+  }
+  if (aggregate.partial > 0) {
+    metrics.append(
+      createMetric(
+        document,
+        "Parciais",
+        aggregate.partial,
+        "Valem 50% no aproveitamento",
+      ),
+    );
+  }
+  inner.append(metrics, createPracticeCriteria(document));
 
   const toolbar = createElement(document, "section", {
     className: "records-toolbar panel exercise-toolbar",
@@ -354,7 +414,7 @@ export function renderExercisesSection({
   [
     ["all", "Todas as listas"],
     ["valid", "Válidas para prática"],
-    ["pending", "Abaixo de 15 respostas"],
+    ["pending", "Ainda não válidas"],
     ["errors", "Com erros"],
   ].forEach(([value, label]) =>
     filterSelect.append(
