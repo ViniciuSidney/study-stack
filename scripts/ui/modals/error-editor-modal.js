@@ -6,6 +6,13 @@ const TYPE_LABELS = Object.freeze({
   note: "Anotação",
 });
 
+const TABS = Object.freeze([
+  ["analysis", "Análise"],
+  ["context", "Contexto"],
+  ["organization", "Organização"],
+  ["history", "Histórico"],
+]);
+
 function appendRichContent(document, container, value, emptyText) {
   if (!value?.plainText) {
     container.append(
@@ -52,6 +59,17 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function createTabPanel(document, id) {
+  return createElement(document, "section", {
+    className: "summary-editor-tab-panel error-editor-tab-panel",
+    attributes: {
+      role: "tabpanel",
+      "data-error-tab-panel": id,
+      "aria-labelledby": `error-tab-${id}`,
+    },
+  });
+}
+
 export function openErrorEditorModal({
   document,
   view,
@@ -83,6 +101,7 @@ export function openErrorEditorModal({
   let finalSaved = false;
   let discarded = false;
   let dirty = Boolean(recoveredDraft);
+
   const dialog = createElement(document, "dialog", {
     className: "modal error-editor-modal",
   });
@@ -96,44 +115,27 @@ export function openErrorEditorModal({
   });
   const copy = createElement(document, "div");
   copy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Análise metacognitiva" }),
-    createElement(document, "h2", { text: "Analisar Registro de Erro" }),
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: `Registro de Erro · Questão ${primaryQuestion.order}`,
+    }),
+    createElement(document, "h2", { text: "Analisar erro" }),
     createElement(document, "p", {
       className: "modal-description",
       text:
-        "A análise pode permanecer como rascunho. Ela fica completa quando causa, regra correta e prevenção estiverem preenchidas.",
+        "Entenda o que aconteceu, registre a regra correta e organize o que precisa ser retomado.",
     }),
   );
   const closeButton = createElement(document, "button", {
     className: "icon-button",
     text: "×",
-    attributes: { type: "button", "aria-label": "Fechar análise" },
+    attributes: { type: "button", "aria-label": "Fechar Registro de Erro" },
   });
   header.append(copy, closeButton);
 
   const body = createElement(document, "div", {
-    className: "modal-body error-editor-body",
+    className: "modal-body error-editor-body summary-editor-body",
   });
-
-  const statePanel = createElement(document, "section", {
-    className: `error-editor-state error-editor-state-${view.category}`,
-  });
-  statePanel.append(
-    createElement(document, "strong", {
-      text:
-        errorRecord.masteryStatus === "overcome"
-          ? "Erro superado"
-          : errorRecord.recurrenceCount > 0
-            ? "Erro reincidente"
-            : errorRecord.reviewStatus === "reviewed"
-              ? "Erro revisado"
-              : "Erro pendente",
-    }),
-    createElement(document, "span", {
-      text: `${errorRecord.recurrenceCount} reincidência(s) · ${errorRecord.reviewCount} revisão(ões) · ${errorRecord.currentCorrectStreak}/2 acertos consecutivos`,
-    }),
-  );
-  body.append(statePanel);
 
   if (recoveredDraft) {
     const recovery = createElement(document, "section", {
@@ -141,7 +143,7 @@ export function openErrorEditorModal({
       attributes: { role: "status" },
     });
     recovery.append(
-      createElement(document, "strong", { text: "Rascunho de análise recuperado" }),
+      createElement(document, "strong", { text: "Rascunho recuperado" }),
       createElement(document, "span", {
         text: `Salvo automaticamente em ${new Intl.DateTimeFormat("pt-BR", {
           dateStyle: "short",
@@ -152,6 +154,96 @@ export function openErrorEditorModal({
     body.append(recovery);
   }
 
+  const tabs = createElement(document, "div", {
+    className: "summary-editor-tabs error-editor-tabs",
+    attributes: { role: "tablist", "aria-label": "Seções do Registro de Erro" },
+  });
+  const panels = new Map();
+  const tabButtons = new Map();
+
+  TABS.forEach(([id, label], index) => {
+    const button = createElement(document, "button", {
+      className: `summary-editor-tab error-editor-tab${index === 0 ? " active" : ""}`,
+      text: label,
+      attributes: {
+        id: `error-tab-${id}`,
+        type: "button",
+        role: "tab",
+        "data-error-tab": id,
+        "aria-controls": `error-panel-${id}`,
+        "aria-selected": String(index === 0),
+      },
+    });
+    const panel = createTabPanel(document, id);
+    panel.id = `error-panel-${id}`;
+    panel.hidden = index !== 0;
+    tabButtons.set(id, button);
+    panels.set(id, panel);
+    tabs.append(button);
+  });
+  body.append(tabs);
+
+  const analysisPanel = panels.get("analysis");
+  const analysis = createElement(document, "section", {
+    className: "error-editor-section",
+  });
+  analysis.append(
+    createElement(document, "h3", { text: "Análise do erro" }),
+    createElement(document, "p", {
+      className: "section-helper",
+      text:
+        "Registre o padrão que causou o erro, a regra correta e uma forma concreta de evitar a repetição.",
+    }),
+  );
+  const why = createTextAreaField(
+    document,
+    "Por que o erro aconteceu?",
+    initialState.whyItHappened,
+    "Ex.: confundi nível trófico com posição fixa e ignorei que um organismo pode ocupar posições diferentes.",
+  );
+  const rule = createTextAreaField(
+    document,
+    "Qual é a regra ou o conceito correto?",
+    initialState.correctRule,
+    "Registre a regra correta, a condição em que se aplica e uma distinção importante.",
+  );
+  const avoid = createTextAreaField(
+    document,
+    "Como evitar o mesmo erro?",
+    initialState.howToAvoid,
+    "Ex.: antes de responder, identificar a cadeia analisada e verificar o alimento de cada organismo.",
+  );
+  analysis.append(why.field, rule.field, avoid.field);
+
+  const classification = createElement(document, "section", {
+    className: "error-editor-section",
+  });
+  classification.append(
+    createElement(document, "h3", { text: "Classificação" }),
+    createElement(document, "p", {
+      className: "section-helper",
+      text: "Marque somente as categorias que ajudam a reconhecer o padrão deste erro.",
+    }),
+  );
+  const tagPicker = createElement(document, "div", {
+    className: "error-tag-picker",
+    attributes: { role: "group", "aria-label": "Categorias do erro" },
+  });
+  const tagInputs = [];
+  ERROR_TAG_OPTIONS.forEach((tag) => {
+    const option = createElement(document, "label", { className: "error-tag-option" });
+    const input = createElement(document, "input", {
+      attributes: { type: "checkbox", value: tag },
+    });
+    input.checked = (initialState.errorTags ?? []).includes(tag);
+    tagInputs.push(input);
+    option.append(input, createElement(document, "span", { text: tag }));
+    tagPicker.append(option);
+  });
+  classification.append(tagPicker);
+  analysisPanel.append(analysis, classification);
+
+  const contextPanel = panels.get("context");
   const source = createElement(document, "section", {
     className: "error-editor-section error-question-source",
   });
@@ -166,7 +258,10 @@ export function openErrorEditorModal({
     createElement(document, "div"),
   );
   source.firstElementChild.lastElementChild.append(
-    createElement(document, "p", { className: "eyebrow", text: `Questão ${primaryQuestion.order}` }),
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: `Questão ${primaryQuestion.order} · Test Quest`,
+    }),
     createElement(document, "h3", { text: primaryQuestion.statement.plainText }),
   );
   const sourceGrid = createElement(document, "div", { className: "error-source-grid" });
@@ -195,12 +290,19 @@ export function openErrorEditorModal({
     );
   }
   source.append(sourceGrid);
-  body.append(source);
+  contextPanel.append(source);
 
+  const organizationPanel = panels.get("organization");
   const metadata = createElement(document, "section", {
     className: "error-editor-section",
   });
-  metadata.append(createElement(document, "h3", { text: "Identificação" }));
+  metadata.append(
+    createElement(document, "h3", { text: "Identificação" }),
+    createElement(document, "p", {
+      className: "section-helper",
+      text: "Ajuste apenas os dados usados para localizar e priorizar este registro.",
+    }),
+  );
   const metadataGrid = createElement(document, "div", {
     className: "error-metadata-grid",
   });
@@ -238,61 +340,6 @@ export function openErrorEditorModal({
   importantField.append(importantSwitch);
   metadataGrid.append(titleField, dateField, importantField);
   metadata.append(metadataGrid);
-  body.append(metadata);
-
-  const analysis = createElement(document, "section", {
-    className: "error-editor-section",
-  });
-  analysis.append(
-    createElement(document, "h3", { text: "Análise do erro" }),
-    createElement(document, "p", {
-      className: "section-helper",
-      text:
-        "Escreva com precisão suficiente para reconhecer o padrão no futuro, sem transformar o registro em um resumo inteiro.",
-    }),
-  );
-  const why = createTextAreaField(
-    document,
-    "Por que o erro aconteceu?",
-    initialState.whyItHappened,
-    "Ex.: confundi nível trófico com posição fixa e ignorei que um organismo pode ocupar posições diferentes.",
-  );
-  const rule = createTextAreaField(
-    document,
-    "Qual é a regra ou o conceito correto?",
-    initialState.correctRule,
-    "Registre a regra correta, a condição em que se aplica e uma distinção importante.",
-  );
-  const avoid = createTextAreaField(
-    document,
-    "Como evitar o mesmo erro?",
-    initialState.howToAvoid,
-    "Ex.: antes de responder, identificar a cadeia analisada e verificar o alimento de cada organismo.",
-  );
-  analysis.append(why.field, rule.field, avoid.field);
-  body.append(analysis);
-
-  const classification = createElement(document, "section", {
-    className: "error-editor-section",
-  });
-  classification.append(createElement(document, "h3", { text: "Classificação" }));
-  const tagPicker = createElement(document, "div", {
-    className: "error-tag-picker",
-    attributes: { role: "group", "aria-label": "Categorias do erro" },
-  });
-  const tagInputs = [];
-  ERROR_TAG_OPTIONS.forEach((tag) => {
-    const option = createElement(document, "label", { className: "error-tag-option" });
-    const input = createElement(document, "input", {
-      attributes: { type: "checkbox", value: tag },
-    });
-    input.checked = (initialState.errorTags ?? []).includes(tag);
-    tagInputs.push(input);
-    option.append(input, createElement(document, "span", { text: tag }));
-    tagPicker.append(option);
-  });
-  classification.append(tagPicker);
-  body.append(classification);
 
   const links = createElement(document, "section", {
     className: "error-editor-section",
@@ -321,9 +368,7 @@ export function openErrorEditorModal({
       const input = createElement(document, "input", {
         attributes: { type: "checkbox", value: linkedRecord.id },
       });
-      input.checked = (initialState.linkedRecordIds ?? []).includes(
-        linkedRecord.id,
-      );
+      input.checked = (initialState.linkedRecordIds ?? []).includes(linkedRecord.id);
       linkInputs.push(input);
       const text = createElement(document, "span");
       text.append(
@@ -337,7 +382,6 @@ export function openErrorEditorModal({
     });
   }
   links.append(linkList);
-  body.append(links);
 
   const notes = createTextAreaField(
     document,
@@ -350,28 +394,51 @@ export function openErrorEditorModal({
     className: "error-editor-section",
   });
   notesSection.append(notes.field);
-  body.append(notesSection);
+  organizationPanel.append(metadata, links, notesSection);
+
+  const historyPanel = panels.get("history");
+  const statePanel = createElement(document, "section", {
+    className: `error-editor-state error-editor-state-${view.category}`,
+  });
+  statePanel.append(
+    createElement(document, "strong", {
+      text:
+        errorRecord.masteryStatus === "overcome"
+          ? "Erro superado"
+          : errorRecord.recurrenceCount > 0
+            ? "Erro reincidente"
+            : errorRecord.reviewStatus === "reviewed"
+              ? "Erro revisado"
+              : errorRecord.analysis.isComplete
+                ? "Análise concluída"
+                : "Análise pendente",
+    }),
+    createElement(document, "span", {
+      text: `${errorRecord.recurrenceCount} reincidência(s) · ${errorRecord.reviewCount} revisão(ões) · ${errorRecord.currentCorrectStreak}/2 acertos para superar`,
+    }),
+  );
 
   const history = createElement(document, "section", {
-    className: "error-editor-history error-editor-section",
+    className: "error-editor-history error-editor-section open",
   });
-  const historyToggle = createElement(document, "button", {
-    className: "error-editor-history-toggle",
-    text: `Ocorrências e evidências · ${occurrences.length + evidences.length}`,
-    attributes: {
-      type: "button",
-      "aria-expanded": "false",
-    },
-  });
+  history.append(
+    createElement(document, "h3", { text: "Ocorrências e evidências" }),
+    createElement(document, "p", {
+      className: "section-helper",
+      text: "Linha do tempo das ocorrências do erro e das evidências corretas registradas depois delas.",
+    }),
+  );
   const timeline = createElement(document, "ol", {
     className: "error-mini-timeline",
-    attributes: { hidden: "" },
   });
   const items = [
     ...occurrences.map((occurrence) => ({
       at: occurrence.occurredAt,
       kind: occurrence.kind === "initial" ? "Ocorrência inicial" : "Reincidência",
-      text: occurrence.kind === "initial" ? "O erro foi registrado." : "O erro voltou a acontecer.",
+      text:
+        occurrence.kind === "initial"
+          ? "O erro foi registrado."
+          : "O erro voltou a acontecer.",
       className: "occurrence",
     })),
     ...evidences.map((evidence) => ({
@@ -383,38 +450,31 @@ export function openErrorEditorModal({
       className: evidence.invalidatedAt ? "invalidated" : "evidence",
     })),
   ].sort((a, b) => b.at.localeCompare(a.at));
-  items.forEach((item) => {
-    const entry = createElement(document, "li", {
-      className: `error-mini-event ${item.className}`,
-    });
-    entry.append(
-      createElement(document, "strong", { text: item.kind }),
-      createElement(document, "span", { text: item.text }),
-      createElement(document, "small", { text: formatDateTime(item.at) }),
-    );
-    timeline.append(entry);
-  });
-  historyToggle.addEventListener("click", () => {
-    const willOpen = timeline.hidden;
-    timeline.hidden = !willOpen;
-    history.classList.toggle("open", willOpen);
-    historyToggle.setAttribute("aria-expanded", String(willOpen));
 
-    if (willOpen) {
-      requestAnimationFrame(() => {
-        const bodyRect = body.getBoundingClientRect();
-        const historyRect = history.getBoundingClientRect();
-        const targetScrollTop =
-          body.scrollTop + historyRect.top - bodyRect.top - 12;
-        body.scrollTo({
-          top: Math.max(0, targetScrollTop),
-          behavior: "auto",
-        });
+  if (!items.length) {
+    timeline.append(
+      createElement(document, "li", {
+        className: "empty-inline",
+        text: "Nenhum evento registrado ainda.",
+      }),
+    );
+  } else {
+    items.forEach((item) => {
+      const entry = createElement(document, "li", {
+        className: `error-mini-event ${item.className}`,
       });
-    }
-  });
-  history.append(historyToggle, timeline);
-  body.append(history);
+      entry.append(
+        createElement(document, "strong", { text: item.kind }),
+        createElement(document, "span", { text: item.text }),
+        createElement(document, "small", { text: formatDateTime(item.at) }),
+      );
+      timeline.append(entry);
+    });
+  }
+  history.append(timeline);
+  historyPanel.append(statePanel, history);
+
+  panels.forEach((panel) => body.append(panel));
 
   const errorMessage = createElement(document, "p", {
     className: "form-error",
@@ -447,21 +507,40 @@ export function openErrorEditorModal({
     text: "Descartar alterações",
     attributes: { type: "button" },
   });
-  const closeFooterButton = createElement(document, "button", {
-    className: "button button-secondary",
-    text: "Fechar",
-    attributes: { type: "button" },
-  });
   const saveButton = createElement(document, "button", {
     className: "button button-primary",
-    text: "Salvar análise",
+    text: "Salvar Registro de Erro",
     attributes: { type: "submit" },
   });
-  actions.append(discardButton, closeFooterButton, saveButton);
+  actions.append(discardButton, saveButton);
   footer.append(footerStatus, actions);
   card.append(header, body, footer);
   dialog.append(card);
   document.body.append(dialog);
+
+  function activateTab(id, { focus = false } = {}) {
+    tabButtons.forEach((button, tabId) => {
+      const active = tabId === id;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+      panels.get(tabId).hidden = !active;
+    });
+    if (focus) tabButtons.get(id)?.focus();
+    body.scrollTop = 0;
+  }
+
+  tabButtons.forEach((button, id) => {
+    button.addEventListener("click", () => activateTab(id));
+    button.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      event.preventDefault();
+      const ids = TABS.map(([tabId]) => tabId);
+      const currentIndex = ids.indexOf(id);
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextIndex = (currentIndex + direction + ids.length) % ids.length;
+      activateTab(ids[nextIndex], { focus: true });
+    });
+  });
 
   function getWorkingState() {
     return {
@@ -483,9 +562,7 @@ export function openErrorEditorModal({
 
   function saveDraftNow() {
     clearTimeout(autosaveTimer);
-    if (!dirty || finalSaved || discarded) {
-      return;
-    }
+    if (!dirty || finalSaved || discarded) return;
 
     try {
       const buffer = onAutosave({
@@ -514,12 +591,8 @@ export function openErrorEditorModal({
   }
 
   function close({ preserveDraft = true } = {}) {
-    if (preserveDraft) {
-      saveDraftNow();
-    }
-    if (dialog.open) {
-      dialog.close();
-    }
+    if (preserveDraft) saveDraftNow();
+    if (dialog.open) dialog.close();
   }
 
   const watchedInputs = [
@@ -544,10 +617,12 @@ export function openErrorEditorModal({
     saveButton.disabled = true;
     const workingState = getWorkingState();
     const title = workingState.title.trim();
+
     if (!title) {
       errorMessage.textContent = "Informe um título para o Registro de Erro.";
       errorMessage.hidden = false;
       saveButton.disabled = false;
+      activateTab("organization");
       titleInput.focus();
       return;
     }
@@ -555,6 +630,7 @@ export function openErrorEditorModal({
       errorMessage.textContent = "Informe a data de estudo.";
       errorMessage.hidden = false;
       saveButton.disabled = false;
+      activateTab("organization");
       dateInput.focus();
       return;
     }
@@ -572,8 +648,8 @@ export function openErrorEditorModal({
       errorMessage.scrollIntoView({ block: "nearest" });
     }
   });
+
   closeButton.addEventListener("click", () => close());
-  closeFooterButton.addEventListener("click", () => close());
   discardButton.addEventListener("click", () => {
     clearTimeout(autosaveTimer);
     discarded = true;
@@ -595,6 +671,6 @@ export function openErrorEditorModal({
   });
 
   dialog.showModal();
-  titleInput.focus();
+  why.textarea.focus();
   return dialog;
 }
