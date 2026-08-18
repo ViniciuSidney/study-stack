@@ -74,7 +74,7 @@ export function openRecordModal({
       className: "modal-description",
       text: editing
         ? "O tipo e o assunto permanecem fixos para preservar os vínculos."
-        : "Nesta fundação, Resumos e Anotações começam pelo registro-base.",
+        : "Crie um Resumo ou uma Anotação para este assunto.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -119,72 +119,73 @@ export function openRecordModal({
   });
   dateInput.value = record?.studyDate ?? defaultStudyDate;
 
-  const statusOptions = [...STATUS_OPTIONS];
-  if (record?.status === "completed") {
-    statusOptions.push({ value: "completed", label: "Concluído" });
-  }
-  const statusSelect = createSelect(
-    document,
-    statusOptions,
-    record?.status ?? "draft",
-  );
-  statusSelect.name = "status";
-
-  const tagsInput = createElement(document, "input", {
-    attributes: {
-      type: "text",
-      name: "tags",
-      maxlength: "240",
-      placeholder: "ecologia, revisão, conceito",
-      autocomplete: "off",
-    },
-  });
-  tagsInput.value = record?.tags?.join(", ") ?? "";
-
-  const notesInput = createElement(document, "textarea", {
-    attributes: {
-      name: "personalNotes",
-      rows: "5",
-      maxlength: "2000",
-      placeholder: "Observações gerais sobre este registro...",
-    },
-  });
-  notesInput.value = record?.personalNotes?.plainText ?? "";
-
-  const importantLabel = createElement(document, "label", {
-    className: "check-row",
-  });
-  const importantInput = createElement(document, "input", {
-    attributes: { type: "checkbox", name: "isImportant" },
-  });
-  importantInput.checked = Boolean(record?.isImportant);
-  importantLabel.append(
-    importantInput,
-    createElement(document, "span", {
-      text: "Manter este registro no atalho de Importantes",
-    }),
-  );
-
   const typeField = createField(document, "Tipo", typeSelect);
-  const titleField = createField(document, "Título", titleInput);
   const dateField = createField(document, "Data de estudo", dateInput);
-  const statusField = createField(document, "Status", statusSelect);
-  const tagsField = createField(document, "Tags separadas por vírgula", tagsInput);
-  const notesField = createField(document, "Observações pessoais", notesInput);
+  const titleField = createField(document, "Título", titleInput);
   titleField.classList.add("field-wide");
-  tagsField.classList.add("field-wide");
-  notesField.classList.add("field-wide");
-  importantLabel.classList.add("field-wide");
 
-  body.append(
-    typeField,
-    statusField,
-    titleField,
-    dateField,
-    tagsField,
-    notesField,
-    importantLabel,
-  );
+  body.append(typeField, dateField, titleField);
+
+  let statusSelect = null;
+  let tagsInput = null;
+  let notesInput = null;
+  let importantInput = null;
+
+  if (editing) {
+    const statusOptions = [...STATUS_OPTIONS];
+    if (record?.status === "completed") {
+      statusOptions.push({ value: "completed", label: "Concluído" });
+    }
+    statusSelect = createSelect(
+      document,
+      statusOptions,
+      record?.status ?? "draft",
+    );
+    statusSelect.name = "status";
+
+    tagsInput = createElement(document, "input", {
+      attributes: {
+        type: "text",
+        name: "tags",
+        maxlength: "240",
+        placeholder: "ecologia, revisão, conceito",
+        autocomplete: "off",
+      },
+    });
+    tagsInput.value = record?.tags?.join(", ") ?? "";
+
+    notesInput = createElement(document, "textarea", {
+      attributes: {
+        name: "personalNotes",
+        rows: "5",
+        maxlength: "2000",
+        placeholder: "Observações gerais sobre este registro...",
+      },
+    });
+    notesInput.value = record?.personalNotes?.plainText ?? "";
+
+    const importantLabel = createElement(document, "label", {
+      className: "check-row field-wide",
+    });
+    importantInput = createElement(document, "input", {
+      attributes: { type: "checkbox", name: "isImportant" },
+    });
+    importantInput.checked = Boolean(record?.isImportant);
+    importantLabel.append(
+      importantInput,
+      createElement(document, "span", {
+        text: "Marcar como importante",
+      }),
+    );
+
+    const statusField = createField(document, "Status", statusSelect);
+    const tagsField = createField(document, "Tags", tagsInput);
+    const notesField = createField(document, "Observações", notesInput);
+    tagsField.classList.add("field-wide");
+    notesField.classList.add("field-wide");
+
+    body.append(statusField, tagsField, notesField, importantLabel);
+  }
 
   const errorMessage = createElement(document, "p", {
     className: "form-error",
@@ -242,10 +243,10 @@ export function openRecordModal({
         type: record?.type ?? typeSelect.value,
         title: titleInput.value,
         studyDate: dateInput.value,
-        status: statusSelect.value,
-        tags: normalizeTags(tagsInput.value),
-        personalNotes: notesInput.value,
-        isImportant: importantInput.checked,
+        status: editing ? statusSelect.value : "draft",
+        tags: editing ? normalizeTags(tagsInput.value) : [],
+        personalNotes: editing ? notesInput.value : "",
+        isImportant: editing ? importantInput.checked : false,
       });
       close();
     } catch (error) {
