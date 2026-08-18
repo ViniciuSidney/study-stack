@@ -13,6 +13,8 @@ const TABS = Object.freeze([
   ["history", "Histórico"],
 ]);
 
+const ERROR_LIFECYCLE_EVENT = "study-stack:error-lifecycle";
+
 function appendRichContent(document, container, value, emptyText) {
   if (!value?.plainText) {
     container.append(
@@ -418,6 +420,47 @@ export function openErrorEditorModal({
     }),
   );
 
+  const lifecycle = createElement(document, "section", {
+    className: "error-editor-section error-lifecycle-panel",
+  });
+  lifecycle.append(
+    createElement(document, "h3", { text: "Ações do acompanhamento" }),
+  );
+  const lifecycleNote = createElement(document, "p", {
+    className: "section-helper",
+  });
+  const lifecycleActions = createElement(document, "div", {
+    className: "action-row error-lifecycle-actions",
+  });
+
+  const reviewButton = createElement(document, "button", {
+    className: errorRecord.analysis.isComplete && errorRecord.reviewStatus !== "reviewed"
+      ? "button button-primary button-small"
+      : "button button-secondary button-small",
+    text: errorRecord.reviewStatus === "reviewed"
+      ? "Reabrir revisão"
+      : "Marcar revisado",
+    attributes: { type: "button" },
+  });
+  const recurrenceButton = createElement(document, "button", {
+    className: "button button-secondary button-small",
+    text: "Errei de novo",
+    attributes: { type: "button" },
+  });
+  const evidenceButton = createElement(document, "button", {
+    className:
+      errorRecord.reviewStatus === "reviewed" &&
+      errorRecord.masteryStatus !== "overcome"
+        ? "button button-primary button-small"
+        : "button button-secondary button-small",
+    text: errorRecord.masteryStatus === "overcome"
+      ? "Erro superado"
+      : `Registrar acerto (${errorRecord.currentCorrectStreak}/2)`,
+    attributes: { type: "button" },
+  });
+  lifecycleActions.append(reviewButton, recurrenceButton, evidenceButton);
+  lifecycle.append(lifecycleNote, lifecycleActions);
+
   const history = createElement(document, "section", {
     className: "error-editor-history error-editor-section open",
   });
@@ -472,7 +515,7 @@ export function openErrorEditorModal({
     });
   }
   history.append(timeline);
-  historyPanel.append(statePanel, history);
+  historyPanel.append(statePanel, lifecycle, history);
 
   panels.forEach((panel) => body.append(panel));
 
@@ -560,6 +603,62 @@ export function openErrorEditorModal({
     };
   }
 
+  function syncLifecycleActions() {
+    const blockedByDraft = dirty;
+    const reviewBlockedByState =
+      !errorRecord.analysis.isComplete && errorRecord.reviewStatus !== "reviewed";
+    const evidenceBlockedByState =
+      errorRecord.reviewStatus !== "reviewed" ||
+      errorRecord.masteryStatus === "overcome";
+
+    reviewButton.disabled = blockedByDraft || reviewBlockedByState;
+    recurrenceButton.disabled = blockedByDraft;
+    evidenceButton.disabled = blockedByDraft || evidenceBlockedByState;
+
+    if (blockedByDraft) {
+      lifecycleNote.textContent =
+        "Salve as alterações do Registro de Erro antes de executar ações de acompanhamento.";
+      reviewButton.title = "Salve as alterações antes de alterar a revisão.";
+      recurrenceButton.title = "Salve as alterações antes de registrar uma reincidência.";
+      evidenceButton.title = "Salve as alterações antes de registrar um acerto.";
+      return;
+    }
+
+    lifecycleNote.textContent =
+      "Use estas ações quando o estado do erro mudar depois da análise.";
+    reviewButton.title = reviewBlockedByState
+      ? "Conclua e salve a análise antes de marcar como revisado."
+      : "";
+    recurrenceButton.title = "Registre uma nova questão incorreta relacionada a este erro.";
+    evidenceButton.title = errorRecord.masteryStatus === "overcome"
+      ? "Uma nova sequência começa somente após uma reincidência."
+      : errorRecord.reviewStatus !== "reviewed"
+        ? "Marque o erro como revisado antes de registrar evidências de superação."
+        : "Registre uma nova questão correta como evidência de superação.";
+  }
+
+  function requestLifecycleAction(action) {
+    if (dirty) return;
+    close({ preserveDraft: false });
+    const EventCtor = document.defaultView?.CustomEvent;
+    if (!EventCtor) return;
+    document.defaultView.setTimeout(() => {
+      document.dispatchEvent(
+        new EventCtor(ERROR_LIFECYCLE_EVENT, {
+          detail: { recordId: record.id, action },
+        }),
+      );
+    }, 0);
+  }
+
+  reviewButton.addEventListener("click", () => requestLifecycleAction("review"));
+  recurrenceButton.addEventListener("click", () =>
+    requestLifecycleAction("recurrence"),
+  );
+  evidenceButton.addEventListener("click", () =>
+    requestLifecycleAction("evidence"),
+  );
+
   function saveDraftNow() {
     clearTimeout(autosaveTimer);
     if (!dirty || finalSaved || discarded) return;
@@ -586,6 +685,7 @@ export function openErrorEditorModal({
     dirty = true;
     autosaveStatus.textContent = "Salvamento automático pendente...";
     autosaveStatus.classList.remove("save-error");
+    syncLifecycleActions();
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(saveDraftNow, autosaveDelayMs);
   }
@@ -670,6 +770,7 @@ export function openErrorEditorModal({
     });
   });
 
+  syncLifecycleActions();
   dialog.showModal();
   why.textarea.focus();
   return dialog;
