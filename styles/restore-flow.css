@@ -47,9 +47,30 @@
   color: var(--text);
 }
 
-.restore-advanced-source > p,
+.restore-advanced-source > p {
+  margin: 12px 14px 0;
+}
+
 .restore-advanced-source > textarea {
-  margin: 12px 14px;
+  width: calc(100% - 28px);
+  min-height: 180px;
+  margin: 12px 14px 14px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.restore-advanced-source > textarea:focus {
+  border-color: var(--accent);
+  outline: 3px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  outline-offset: 1px;
 }
 
 .restore-mode-title-line {
@@ -109,32 +130,107 @@
 
 .restore-replace-confirmation {
   display: grid;
-  gap: 8px;
+  gap: 10px;
+  padding: 16px;
 }
 
 .restore-replace-confirmation p {
   color: var(--text-soft);
   font-size: 0.8rem;
   font-weight: 500;
+  line-height: 1.5;
 }
 
 .restore-confirmation-field {
-  margin-top: 4px;
+  display: grid;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.restore-confirmation-field > span {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 750;
 }
 
 .restore-confirmation-field input {
-  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.restore-confirmation-field input:focus {
+  border-color: var(--accent);
+  outline: 3px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  outline-offset: 1px;
 }
 
 .restore-footer {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 12px 16px;
+}
+
+.restore-footer > .button {
+  justify-self: start;
+  min-width: 220px;
 }
 
 .restore-requirement-hint {
-  flex: 1 1 auto;
+  min-width: 0;
   color: var(--text-subtle);
   font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.restore-footer-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.restore-footer-actions .button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.restore-footer-actions .button-danger {
+  min-width: 200px;
+}
+
+@media (max-width: 900px) {
+  .restore-footer {
+    grid-template-columns: 1fr auto;
+  }
+
+  .restore-footer > .button {
+    min-width: 0;
+  }
+
+  .restore-requirement-hint {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .restore-footer > .button {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .restore-footer-actions {
+    grid-column: 2;
+    grid-row: 2;
+  }
 }
 
 @media (max-width: 720px) {
@@ -143,17 +239,29 @@
   }
 
   .restore-footer {
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 
-  .restore-footer,
+  .restore-requirement-hint,
+  .restore-footer > .button,
   .restore-footer-actions {
-    flex-wrap: wrap;
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .restore-footer-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .restore-footer > .button,
-  .restore-footer-actions,
   .restore-footer-actions .button {
     width: 100%;
+    min-width: 0;
+  }
+
+  .restore-footer-actions .button-danger {
+    min-width: 0;
   }
 }
