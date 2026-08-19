@@ -1,0 +1,159 @@
+.restore-step-label {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.restore-primary-file-input {
+  border-style: solid;
+  background: var(--surface);
+}
+
+.restore-advanced-source {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.restore-advanced-source > summary {
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 750;
+  list-style: none;
+}
+
+.restore-advanced-source > summary::-webkit-details-marker {
+  display: none;
+}
+
+.restore-advanced-source > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform var(--transition-fast);
+}
+
+.restore-advanced-source[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.restore-advanced-source[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.restore-advanced-source > p,
+.restore-advanced-source > textarea {
+  margin: 12px 14px;
+}
+
+.restore-mode-title-line {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.restore-mode-badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 0.66rem !important;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.restore-mode-badge-merge {
+  background: var(--success-soft);
+  color: var(--success) !important;
+}
+
+.restore-mode-badge-replace {
+  background: var(--warning-soft);
+  color: var(--warning) !important;
+}
+
+.restore-mode-replace:has(input:checked) {
+  border-color: color-mix(in srgb, var(--warning) 48%, var(--line));
+  background: color-mix(in srgb, var(--warning-soft) 42%, var(--surface));
+}
+
+.restore-preview-success {
+  color: var(--success);
+}
+
+.restore-replace-preview-warning {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--line));
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+}
+
+.restore-replace-preview-warning strong {
+  color: var(--warning);
+}
+
+.restore-replace-preview-warning span {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.restore-replace-confirmation {
+  display: grid;
+  gap: 8px;
+}
+
+.restore-replace-confirmation p {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.restore-confirmation-field {
+  margin-top: 4px;
+}
+
+.restore-confirmation-field input {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+}
+
+.restore-footer {
+  align-items: center;
+  gap: 12px;
+}
+
+.restore-requirement-hint {
+  flex: 1 1 auto;
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 720px) {
+  .restore-mode-options {
+    grid-template-columns: 1fr;
+  }
+
+  .restore-footer {
+    align-items: stretch;
+  }
+
+  .restore-footer,
+  .restore-footer-actions {
+    flex-wrap: wrap;
+  }
+
+  .restore-footer > .button,
+  .restore-footer-actions,
+  .restore-footer-actions .button {
+    width: 100%;
+  }
+}
