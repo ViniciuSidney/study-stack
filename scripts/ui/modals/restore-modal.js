@@ -1,5 +1,7 @@
 import { createElement } from "../../utils/dom.js";
 
+const REPLACE_CONFIRMATION_TEXT = "SUBSTITUIR TUDO";
+
 function formatNumber(value) {
   return new Intl.NumberFormat("pt-BR").format(value ?? 0);
 }
@@ -34,11 +36,11 @@ export function openRestoreModal({
   const header = createElement(document, "header", { className: "modal-header" });
   const headerCopy = createElement(document, "div");
   headerCopy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Segurança local" }),
+    createElement(document, "p", { className: "eyebrow", text: "Backup e segurança" }),
     createElement(document, "h2", { text: "Restaurar backup" }),
     createElement(document, "p", {
       className: "modal-description",
-      text: "O arquivo é validado integralmente antes de qualquer alteração no estado atual.",
+      text: "Confira o arquivo e o efeito da restauração antes de alterar seus dados atuais.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -56,15 +58,34 @@ export function openRestoreModal({
     className: "restore-panel",
   });
   sourcePanel.append(
-    createElement(document, "h3", { text: "1. Selecionar arquivo" }),
+    createElement(document, "p", { className: "restore-step-label", text: "Etapa 1 de 3" }),
+    createElement(document, "h3", { text: "Escolha o backup" }),
     createElement(document, "p", {
       className: "section-helper",
-      text: "Escolha um backup JSON exportado pelo Study Stack ou cole o conteúdo abaixo.",
+      text: "Selecione um arquivo JSON criado pelo Study Stack. Ele será apenas lido e validado nesta etapa.",
     }),
   );
   const fileInput = createElement(document, "input", {
-    className: "file-input",
-    attributes: { type: "file", accept: ".json,application/json" },
+    className: "file-input restore-primary-file-input",
+    attributes: {
+      type: "file",
+      accept: ".json,application/json",
+      "aria-label": "Selecionar arquivo de backup do Study Stack",
+    },
+  });
+  sourcePanel.append(fileInput);
+
+  const advancedSource = createElement(document, "details", {
+    className: "restore-advanced-source",
+  });
+  advancedSource.append(
+    createElement(document, "summary", {
+      text: "Opções avançadas: colar JSON manualmente",
+    }),
+  );
+  const advancedCopy = createElement(document, "p", {
+    className: "section-helper",
+    text: "Use esta opção somente se você já tiver o conteúdo bruto de um backup.",
   });
   const textArea = createElement(document, "textarea", {
     className: "restore-json-input",
@@ -72,15 +93,22 @@ export function openRestoreModal({
       rows: "7",
       placeholder: "Cole aqui o conteúdo completo do backup JSON.",
       spellcheck: "false",
+      "aria-label": "Conteúdo JSON do backup",
     },
   });
-  sourcePanel.append(fileInput, textArea);
+  advancedSource.append(advancedCopy, textArea);
+  sourcePanel.append(advancedSource);
 
   const modePanel = createElement(document, "section", {
     className: "restore-panel",
   });
   modePanel.append(
-    createElement(document, "h3", { text: "2. Escolher estratégia" }),
+    createElement(document, "p", { className: "restore-step-label", text: "Etapa 2 de 3" }),
+    createElement(document, "h3", { text: "Escolha como restaurar" }),
+    createElement(document, "p", {
+      className: "section-helper",
+      text: "Na dúvida, use Adicionar ao que já existe. Seus dados atuais são preservados.",
+    }),
   );
   const modeOptions = createElement(document, "div", {
     className: "restore-mode-options",
@@ -88,26 +116,38 @@ export function openRestoreModal({
   const modes = [
     {
       value: "merge",
-      title: "Mesclar com o estado atual",
-      description: "Adiciona entidades novas e preserva conflitos sem sobrescrever.",
+      title: "Adicionar ao que já existe",
+      description: "Inclui dados novos do backup e mantém os dados atuais. Conflitos são preservados para evitar sobrescritas.",
+      badge: "Recomendado",
     },
     {
       value: "replace",
-      title: "Substituir todo o estado",
-      description: "Troca os dados atuais pelo backup após criar um ponto de recuperação.",
+      title: "Substituir todos os dados",
+      description: "Troca o conteúdo atual pelo backup. Antes disso, o Study Stack cria um ponto de recuperação.",
+      badge: "Atenção",
     },
   ];
   const modeInputs = [];
   modes.forEach((mode, index) => {
-    const option = createElement(document, "label", { className: "restore-mode" });
+    const option = createElement(document, "label", {
+      className: `restore-mode restore-mode-${mode.value}`,
+    });
     const input = createElement(document, "input", {
       attributes: { type: "radio", name: "restoreMode", value: mode.value },
     });
     input.checked = index === 0;
     modeInputs.push(input);
-    const copy = createElement(document, "span");
-    copy.append(
+    const copy = createElement(document, "span", { className: "restore-mode-copy" });
+    const titleLine = createElement(document, "span", { className: "restore-mode-title-line" });
+    titleLine.append(
       createElement(document, "strong", { text: mode.title }),
+      createElement(document, "small", {
+        className: `restore-mode-badge restore-mode-badge-${mode.value}`,
+        text: mode.badge,
+      }),
+    );
+    copy.append(
+      titleLine,
       createElement(document, "small", { text: mode.description }),
     );
     option.append(input, copy);
@@ -119,7 +159,8 @@ export function openRestoreModal({
     className: "restore-panel restore-preview-panel",
   });
   previewPanel.append(
-    createElement(document, "h3", { text: "3. Prévia da restauração" }),
+    createElement(document, "p", { className: "restore-step-label", text: "Etapa 3 de 3" }),
+    createElement(document, "h3", { text: "Confira antes de restaurar" }),
   );
   const previewContent = createElement(document, "div", {
     className: "restore-preview-content",
@@ -127,25 +168,41 @@ export function openRestoreModal({
   previewContent.append(
     createElement(document, "p", {
       className: "muted",
-      text: "Carregue o arquivo para conferir conteúdo, conflitos e integridade.",
+      text: "Selecione um backup e use Pré-visualizar restauração para conferir o que será aplicado.",
     }),
   );
   previewPanel.append(previewContent);
 
-  const replaceConfirmation = createElement(document, "label", {
+  const replaceConfirmation = createElement(document, "section", {
     className: "restore-replace-confirmation",
   });
-  const replaceCheck = createElement(document, "input", {
-    attributes: { type: "checkbox" },
-  });
+  replaceConfirmation.hidden = true;
   replaceConfirmation.append(
-    replaceCheck,
-    createElement(document, "span", {
-      text: "Entendo que o modo Substituir trocará todos os dados atuais.",
+    createElement(document, "strong", { text: "Confirmação necessária" }),
+    createElement(document, "p", {
+      text: "Esta opção substituirá todos os dados atuais pelos dados do backup. Um ponto de recuperação será criado automaticamente antes da alteração.",
+    }),
+    createElement(document, "label", {
+      className: "field restore-confirmation-field",
     }),
   );
-  replaceConfirmation.hidden = true;
-  body.append(sourcePanel, modePanel, replaceConfirmation, previewPanel);
+  const confirmationField = replaceConfirmation.lastElementChild;
+  confirmationField.append(
+    createElement(document, "span", {
+      text: `Digite ${REPLACE_CONFIRMATION_TEXT} para confirmar`,
+    }),
+  );
+  const replaceConfirmationInput = createElement(document, "input", {
+    attributes: {
+      type: "text",
+      autocomplete: "off",
+      placeholder: REPLACE_CONFIRMATION_TEXT,
+      "aria-label": `Digite ${REPLACE_CONFIRMATION_TEXT} para confirmar a substituição`,
+    },
+  });
+  confirmationField.append(replaceConfirmationInput);
+
+  body.append(sourcePanel, modePanel, previewPanel, replaceConfirmation);
 
   const errorMessage = createElement(document, "p", {
     className: "form-error",
@@ -154,10 +211,10 @@ export function openRestoreModal({
   errorMessage.hidden = true;
   body.append(errorMessage);
 
-  const footer = createElement(document, "footer", { className: "modal-footer" });
+  const footer = createElement(document, "footer", { className: "modal-footer restore-footer" });
   const previewButton = createElement(document, "button", {
     className: "button button-secondary",
-    text: "Validar e visualizar",
+    text: "Pré-visualizar restauração",
     attributes: { type: "button" },
   });
   const cancelButton = createElement(document, "button", {
@@ -167,13 +224,13 @@ export function openRestoreModal({
   });
   const restoreButton = createElement(document, "button", {
     className: "button button-primary",
-    text: "Aplicar restauração",
+    text: "Restaurar backup",
     attributes: { type: "button" },
   });
   restoreButton.disabled = true;
   const restoreRequirementHint = createElement(document, "small", {
     className: "restore-requirement-hint",
-    text: "Valide o backup antes de aplicar.",
+    text: "Faça a pré-visualização antes de restaurar.",
   });
   const footerActions = createElement(document, "div", { className: "restore-footer-actions" });
   footerActions.append(cancelButton, restoreButton);
@@ -187,26 +244,36 @@ export function openRestoreModal({
     return modeInputs.find((input) => input.checked)?.value ?? "merge";
   }
 
+  function replacementConfirmed() {
+    return replaceConfirmationInput.value.trim() === REPLACE_CONFIRMATION_TEXT;
+  }
+
   function updateRestoreAvailability() {
     const requiresConfirmation = selectedMode() === "replace";
-    replaceConfirmation.hidden = !requiresConfirmation;
+    replaceConfirmation.hidden = !requiresConfirmation || !preview?.valid;
     restoreButton.disabled =
-      !preview?.valid || (requiresConfirmation && !replaceCheck.checked);
+      !preview?.valid || (requiresConfirmation && !replacementConfirmed());
     restoreButton.className = requiresConfirmation
       ? "button button-danger"
       : "button button-primary";
+    restoreButton.textContent = requiresConfirmation
+      ? "Substituir todos os dados"
+      : "Restaurar backup";
 
     if (!preview?.valid) {
-      restoreRequirementHint.textContent = "Valide o backup antes de aplicar.";
-      restoreButton.title = "Valide o backup antes de aplicar.";
-    } else if (requiresConfirmation && !replaceCheck.checked) {
+      restoreRequirementHint.textContent = "Faça a pré-visualização antes de restaurar.";
+      restoreButton.title = "Faça a pré-visualização antes de restaurar.";
+    } else if (requiresConfirmation && !replacementConfirmed()) {
       restoreRequirementHint.textContent =
-        "Marque a confirmação de substituição para habilitar o botão.";
-      restoreButton.title =
-        "Marque a confirmação de substituição para habilitar o botão.";
+        `Digite ${REPLACE_CONFIRMATION_TEXT} para habilitar a substituição.`;
+      restoreButton.title = restoreRequirementHint.textContent;
+    } else if (requiresConfirmation) {
+      restoreRequirementHint.textContent =
+        "A substituição está pronta. Um ponto de recuperação será criado antes da alteração.";
+      restoreButton.title = "Substituir os dados atuais pelo backup validado.";
     } else {
-      restoreRequirementHint.textContent = "A restauração está pronta para ser aplicada.";
-      restoreButton.title = "Aplicar a restauração validada.";
+      restoreRequirementHint.textContent = "O backup está validado e pronto para ser adicionado.";
+      restoreButton.title = "Adicionar os dados validados ao estado atual.";
     }
   }
 
@@ -219,12 +286,23 @@ export function openRestoreModal({
         list.append(createElement(document, "li", { text: error }));
       });
       previewContent.append(
-        createElement(document, "strong", { text: "O backup não pode ser aplicado." }),
+        createElement(document, "strong", { text: "Este backup não pode ser restaurado." }),
+        createElement(document, "p", {
+          className: "section-helper",
+          text: "Nenhum dado atual foi alterado.",
+        }),
         list,
       );
       updateRestoreAvailability();
       return;
     }
+
+    previewContent.append(
+      createElement(document, "strong", {
+        className: "restore-preview-success",
+        text: "Backup válido",
+      }),
+    );
 
     const metrics = createElement(document, "div", { className: "restore-metrics" });
     metrics.append(
@@ -240,13 +318,17 @@ export function openRestoreModal({
       const unchanged = Object.values(result.identical).reduce((sum, value) => sum + value, 0);
       previewContent.append(
         createElement(document, "p", {
-          text: `${added} entidade(s) nova(s), ${unchanged} idêntica(s) e ${result.conflicts.length} conflito(s).`,
+          text: `${added} item(ns) novo(s) serão adicionados. ${unchanged} item(ns) idêntico(s) permanecerão como estão. ${result.conflicts.length} conflito(s) serão preservados sem sobrescrever seus dados atuais.`,
         }),
       );
     } else {
       previewContent.append(
-        createElement(document, "p", {
-          text: "O estado inteiro será substituído pelo conteúdo validado do backup.",
+        createElement(document, "div", { className: "restore-replace-preview-warning" }),
+      );
+      previewContent.lastElementChild.append(
+        createElement(document, "strong", { text: "Todos os dados atuais serão substituídos." }),
+        createElement(document, "span", {
+          text: "Antes da alteração, o Study Stack criará automaticamente um ponto de recuperação.",
         }),
       );
     }
@@ -289,10 +371,23 @@ export function openRestoreModal({
       renderPreview(preview);
     } catch (error) {
       preview = null;
-      errorMessage.textContent = error instanceof Error ? error.message : "Falha ao ler o backup.";
+      errorMessage.textContent =
+        error instanceof Error ? error.message : "Não foi possível ler este backup.";
       errorMessage.hidden = false;
       updateRestoreAvailability();
     }
+  }
+
+  function resetPreview() {
+    preview = null;
+    replaceConfirmationInput.value = "";
+    previewContent.replaceChildren(
+      createElement(document, "p", {
+        className: "muted",
+        text: "Use Pré-visualizar restauração para conferir o efeito desta opção.",
+      }),
+    );
+    updateRestoreAvailability();
   }
 
   function close() {
@@ -305,12 +400,14 @@ export function openRestoreModal({
     const file = fileInput.files?.[0];
     if (!file) return;
     textArea.value = await file.text();
+    advancedSource.open = false;
     performPreview();
   });
+  textArea.addEventListener("input", resetPreview);
   previewButton.addEventListener("click", performPreview);
   modeInputs.forEach((input) => {
     input.addEventListener("change", () => {
-      replaceCheck.checked = false;
+      replaceConfirmationInput.value = "";
       if (envelope) {
         preview = onPreview(envelope, selectedMode());
         renderPreview(preview);
@@ -319,9 +416,10 @@ export function openRestoreModal({
       }
     });
   });
-  replaceCheck.addEventListener("change", updateRestoreAvailability);
+  replaceConfirmationInput.addEventListener("input", updateRestoreAvailability);
   restoreButton.addEventListener("click", () => {
     if (!preview?.valid || !envelope) return;
+    if (selectedMode() === "replace" && !replacementConfirmed()) return;
     const applied = onRestore(envelope, selectedMode());
     if (applied !== false) {
       close();
@@ -340,5 +438,6 @@ export function openRestoreModal({
 
   dialog.showModal();
   fileInput.focus();
+  updateRestoreAvailability();
   return dialog;
 }
