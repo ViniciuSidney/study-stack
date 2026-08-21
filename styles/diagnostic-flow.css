@@ -178,6 +178,11 @@
   background: var(--surface);
 }
 
+.diagnostic-integration-row:first-child {
+  position: relative;
+  box-shadow: inset 0 1px 0 var(--line-strong);
+}
+
 .diagnostic-integration-copy {
   display: grid;
   gap: 3px;
