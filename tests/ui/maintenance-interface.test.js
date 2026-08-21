@@ -11,7 +11,7 @@ test("Configurações oferece backup, restauração, diagnóstico e pendências"
   const source = await read("../../scripts/ui/sections/settings-section.js");
   assert.match(source, /Criar backup/);
   assert.match(source, /Restaurar backup/);
-  assert.match(source, /Executar diagnóstico/);
+  assert.match(source, /Verificar armazenamento/);
   assert.match(source, /Ver importações pendentes/);
 });
 
@@ -38,7 +38,9 @@ test("modais de manutenção mantêm corpo rolável e rodapé separado", async (
 
 test("restauração por substituição explica a confirmação obrigatória", async () => {
   const source = await read("../../scripts/ui/modals/restore-modal.js");
-  assert.match(source, /Marque a confirmação de substituição/);
+  assert.match(source, /SUBSTITUIR TUDO/);
+  assert.match(source, /Digite \$\{REPLACE_CONFIRMATION_TEXT\} para confirmar/);
   assert.match(source, /restore-requirement-hint/);
-  assert.match(source, /body\.append\(sourcePanel, modePanel, replaceConfirmation, previewPanel\)/);
+  assert.match(source, /replacementConfirmed/);
+  assert.match(source, /body\.append\(sourcePanel, modePanel, previewPanel, replaceConfirmation\)/);
 });
