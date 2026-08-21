@@ -68,6 +68,7 @@
 .diagnostic-details[open] {
   height: auto;
   max-height: none;
+  margin-bottom: 12px;
 }
 
 .diagnostic-details > summary {
@@ -159,8 +160,11 @@
   min-width: 0;
   min-height: 0;
   gap: 8px;
-  margin-top: 4px;
   padding-bottom: 8px;
+}
+
+.diagnostic-integration-row:first-child {
+  margin-top: 8px;
 }
 
 .diagnostic-integration-row {
