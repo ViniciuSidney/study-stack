@@ -55,13 +55,13 @@ test("editor exige causa, regra e prevenção e permite vínculos do assunto", a
   assert.match(editor, /Como evitar o mesmo erro\?/);
   assert.match(editor, /Categorias do erro/);
   assert.match(editor, /Vincule Resumos e Anotações do mesmo assunto/);
-  assert.match(editor, /Salvar análise/);
+  assert.match(editor, /Salvar Registro de Erro/);
   assert.match(editor, /Ocorrências e evidências/);
-  assert.match(editor, /error-editor-history-toggle/);
-  assert.match(editor, /aria-expanded/);
-  assert.match(editor, /requestAnimationFrame/);
-  assert.match(editor, /body\.scrollTo/);
-  assert.match(editor, /timeline\.hidden = !willOpen/);
+  assert.match(editor, /\["analysis", "Análise"\]/);
+  assert.match(editor, /\["context", "Contexto"\]/);
+  assert.match(editor, /\["organization", "Organização"\]/);
+  assert.match(editor, /\["history", "Histórico"\]/);
+  assert.match(editor, /data-error-tab-panel/);
 });
 
 test("modal de evidência diferencia reincidência e acerto real", async () => {
@@ -91,7 +91,7 @@ test("editor de erro preserva e recupera rascunhos de análise", async () => {
 
   assert.match(app, /draftService\.get\(\s*"error_record"/s);
   assert.match(app, /recordType:\s*"error_record"/);
-  assert.match(editor, /Rascunho de análise recuperado/);
+  assert.match(editor, /Rascunho recuperado/);
   assert.match(editor, /onAutosave/);
   assert.match(editor, /Descartar alterações/);
   assert.match(editor, /saveDraftNow/);
