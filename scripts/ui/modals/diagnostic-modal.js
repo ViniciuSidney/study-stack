@@ -14,6 +14,18 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function createDetails(document, label, className = "") {
+  const details = createElement(document, "details", {
+    className: `diagnostic-details ${className}`.trim(),
+  });
+  details.append(createElement(document, "summary", { text: label }));
+  const content = createElement(document, "div", {
+    className: "diagnostic-details-content",
+  });
+  details.append(content);
+  return { details, content };
+}
+
 export function openDiagnosticModal({
   document,
   report,
@@ -28,44 +40,63 @@ export function openDiagnosticModal({
   const card = createElement(document, "div", {
     className: "modal-card diagnostic-card",
   });
+
   const header = createElement(document, "header", { className: "modal-header" });
   const copy = createElement(document, "div");
   copy.append(
     createElement(document, "p", { className: "eyebrow", text: "Manutenção" }),
-    createElement(document, "h2", { text: "Diagnóstico do armazenamento" }),
+    createElement(document, "h2", { text: "Verificação do armazenamento" }),
     createElement(document, "p", {
       className: "modal-description",
-      text: `Verificação executada em ${formatDate(report.checkedAt)}.`,
+      text: "Confira se os dados locais do Study Stack estão íntegros e se existe algo que precisa da sua atenção.",
     }),
   );
   const closeButton = createElement(document, "button", {
     className: "icon-button",
     text: "×",
-    attributes: { type: "button", "aria-label": "Fechar diagnóstico" },
+    attributes: { type: "button", "aria-label": "Fechar verificação" },
   });
   header.append(copy, closeButton);
 
   const body = createElement(document, "div", {
     className: "modal-body diagnostic-body",
   });
+
+  const statusLabels = {
+    healthy: {
+      title: "Tudo certo com seus dados",
+      description: "Nenhum problema de integridade foi encontrado nesta verificação.",
+    },
+    warning: {
+      title: "Há itens que merecem atenção",
+      description: "Seus dados continuam acessíveis, mas existem avisos que vale a pena revisar.",
+    },
+    error: {
+      title: "Foram encontrados problemas nos dados",
+      description: "Revise os resultados abaixo antes de continuar fazendo alterações importantes.",
+    },
+  };
+  const statusCopy = statusLabels[report.status] ?? statusLabels.warning;
   const status = createElement(document, "section", {
     className: `diagnostic-status diagnostic-${report.status}`,
   });
-  const statusLabels = {
-    healthy: "Estado saudável",
-    warning: "Atenção recomendada",
-    error: "Problemas de integridade encontrados",
-  };
+  const statusText = createElement(document, "div", {
+    className: "diagnostic-status-copy",
+  });
+  statusText.append(
+    createElement(document, "strong", { text: statusCopy.title }),
+    createElement(document, "p", { text: statusCopy.description }),
+  );
   status.append(
-    createElement(document, "strong", { text: statusLabels[report.status] }),
-    createElement(document, "span", {
-      text: `Schema ${report.schemaVersion} · ${formatBytes(report.storageBytes)}`,
+    statusText,
+    createElement(document, "small", {
+      text: `Verificado em ${formatDate(report.checkedAt)}`,
     }),
   );
   body.append(status);
 
   const metrics = createElement(document, "section", {
-    className: "diagnostic-metrics",
+    className: "diagnostic-metrics diagnostic-summary-metrics",
   });
   const metricData = [
     ["Assuntos", report.collectionCounts.subjects],
@@ -86,8 +117,16 @@ export function openDiagnosticModal({
   body.append(metrics);
 
   if (report.validationErrors.length || report.warnings.length) {
-    const issues = createElement(document, "section", { className: "diagnostic-panel" });
-    issues.append(createElement(document, "h3", { text: "Resultados" }));
+    const issues = createElement(document, "section", {
+      className: "diagnostic-panel diagnostic-results-panel",
+    });
+    issues.append(
+      createElement(document, "h3", { text: "O que precisa de atenção" }),
+      createElement(document, "p", {
+        className: "section-helper",
+        text: "Estes avisos explicam o que foi encontrado durante a verificação.",
+      }),
+    );
     const list = createElement(document, "ul", { className: "diagnostic-issue-list" });
     [...report.validationErrors, ...report.warnings].forEach((issue) => {
       list.append(createElement(document, "li", { text: issue }));
@@ -96,24 +135,6 @@ export function openDiagnosticModal({
     body.append(issues);
   }
 
-  const integrationPanel = createElement(document, "section", {
-    className: "diagnostic-panel",
-  });
-  integrationPanel.append(createElement(document, "h3", { text: "Integrações" }));
-  const integrationList = createElement(document, "div", {
-    className: "diagnostic-integration-list",
-  });
-  Object.entries(report.integrations).forEach(([name, value]) => {
-    const row = createElement(document, "div");
-    row.append(
-      createElement(document, "span", { text: name }),
-      createElement(document, "strong", { text: value }),
-    );
-    integrationList.append(row);
-  });
-  integrationPanel.append(integrationList);
-  body.append(integrationPanel);
-
   const recoveryPanel = createElement(document, "section", {
     className: "diagnostic-panel recovery-panel",
   });
@@ -121,8 +142,8 @@ export function openDiagnosticModal({
     createElement(document, "h3", { text: "Ponto de recuperação" }),
     createElement(document, "p", {
       text: report.recoveryPoint
-        ? `Criado em ${formatDate(report.recoveryPoint.createdAt)} antes da última restauração.`
-        : "Nenhum ponto de recuperação está armazenado.",
+        ? `Há uma cópia do estado anterior criada em ${formatDate(report.recoveryPoint.createdAt)} antes da última substituição.`
+        : "Nenhum ponto de recuperação está armazenado no momento.",
     }),
   );
   if (report.recoveryPoint) {
@@ -150,15 +171,39 @@ export function openDiagnosticModal({
   }
   body.append(recoveryPanel);
 
-  if (report.technicalLogs.length) {
-    const logs = createElement(document, "details", {
-      className: "diagnostic-panel diagnostic-logs",
-    });
-    logs.append(
-      createElement(document, "summary", {
-        text: `Eventos técnicos recentes · ${report.technicalLogCount}`,
-      }),
+  const technical = createDetails(document, "Mostrar detalhes técnicos");
+  const technicalSummary = createElement(document, "div", {
+    className: "diagnostic-technical-summary",
+  });
+  technicalSummary.append(
+    createElement(document, "span", { text: `Versão dos dados: ${report.schemaVersion}` }),
+    createElement(document, "span", { text: `Espaço ocupado: ${formatBytes(report.storageBytes)}` }),
+  );
+  technical.content.append(technicalSummary);
+
+  const integrationBlock = createElement(document, "section", {
+    className: "diagnostic-technical-block",
+  });
+  integrationBlock.append(createElement(document, "h3", { text: "Integrações" }));
+  const integrationList = createElement(document, "div", {
+    className: "diagnostic-integration-list",
+  });
+  Object.entries(report.integrations).forEach(([name, value]) => {
+    const row = createElement(document, "div");
+    row.append(
+      createElement(document, "span", { text: name }),
+      createElement(document, "strong", { text: value }),
     );
+    integrationList.append(row);
+  });
+  integrationBlock.append(integrationList);
+  technical.content.append(integrationBlock);
+
+  if (report.technicalLogs.length) {
+    const logs = createElement(document, "section", {
+      className: "diagnostic-technical-block diagnostic-logs",
+    });
+    logs.append(createElement(document, "h3", { text: "Eventos técnicos recentes" }));
     const list = createElement(document, "ul");
     report.technicalLogs.forEach((log) => {
       list.append(
@@ -168,10 +213,13 @@ export function openDiagnosticModal({
       );
     });
     logs.append(list);
-    body.append(logs);
+    technical.content.append(logs);
   }
+  body.append(technical.details);
 
-  const footer = createElement(document, "footer", { className: "modal-footer" });
+  const footer = createElement(document, "footer", {
+    className: "modal-footer diagnostic-footer",
+  });
   const backupButton = createElement(document, "button", {
     className: "button button-secondary",
     text: "Criar backup agora",
@@ -184,6 +232,7 @@ export function openDiagnosticModal({
   });
   backupButton.addEventListener("click", onBackup);
   footer.append(backupButton, doneButton);
+
   card.append(header, body, footer);
   dialog.append(card);
   document.body.append(dialog);
@@ -191,6 +240,7 @@ export function openDiagnosticModal({
   function close() {
     if (dialog.open) dialog.close();
   }
+
   closeButton.addEventListener("click", close);
   doneButton.addEventListener("click", close);
   dialog.addEventListener("cancel", (event) => {
@@ -201,6 +251,7 @@ export function openDiagnosticModal({
     dialog.remove();
     onClose();
   });
+
   dialog.showModal();
   doneButton.focus();
   return dialog;
