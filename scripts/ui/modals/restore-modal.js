@@ -357,7 +357,12 @@ export function openRestoreModal({
 
     if (result.warnings.length) {
       const warnings = createElement(document, "ul", { className: "restore-issue-list warning" });
-      result.warnings.forEach((warning) => {
+      const warningMessages = result.warnings.map((warning) =>
+        result.mode === "merge" && result.conflicts.length > 0 && /conflito/iu.test(warning)
+          ? "Conflitos serão preservados no estado atual, sem sobrescrita."
+          : warning,
+      );
+      [...new Set(warningMessages)].forEach((warning) => {
         warnings.append(createElement(document, "li", { text: warning }));
       });
       previewContent.append(warnings);
@@ -367,7 +372,7 @@ export function openRestoreModal({
       const details = createElement(document, "details", { className: "restore-conflicts" });
       details.append(
         createElement(document, "summary", {
-          text: `Ver ${result.conflicts.length} conflito(s) preservado(s)`,
+          text: "Ver detalhes dos conflitos",
         }),
       );
       const list = createElement(document, "ul");
