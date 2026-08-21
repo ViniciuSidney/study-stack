@@ -78,12 +78,13 @@ export class DataResetController {
   }
 
   #handleClick(event) {
-    const button = event.target.closest?.(".settings-danger-panel button");
+    const button = event.target.closest?.("[data-danger-action]");
     if (!button) return;
 
-    if (button.classList.contains("button-quiet-danger")) {
+    const action = button.dataset.dangerAction;
+    if (action === "delete-study-data") {
       this.openStudyDataDeletion();
-    } else if (button.classList.contains("button-danger")) {
+    } else if (action === "full-reset") {
       this.openFullReset();
     }
   }
