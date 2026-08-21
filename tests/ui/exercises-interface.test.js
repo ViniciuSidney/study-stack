@@ -37,7 +37,7 @@ test("seção oferece importação, métricas, busca e filtros", async () => {
   assert.match(section, /Buscar em títulos, questões e respostas/);
   assert.match(section, /Válidas para prática/);
   assert.match(section, /Com erros/);
-  assert.match(section, /Respostas parciais/);
+  assert.match(section, /Parciais/);
   assert.match(section, /Ver importações pendentes/);
   assert.match(section, /preservada\(s\) como pendência/);
   assert.match(section, /Criar lista no Test Quest/);
@@ -48,11 +48,11 @@ test("seção oferece importação, métricas, busca e filtros", async () => {
 test("meta de validação usa singular e plural corretos", () => {
   assert.equal(
     formatPracticeValidationStatus(3),
-    "Responda mais 12 questões para validar",
+    "Faltam 12 questões respondidas",
   );
   assert.equal(
     formatPracticeValidationStatus(14),
-    "Responda mais 1 questão para validar",
+    "Faltam 1 questão respondida",
   );
 });
 
