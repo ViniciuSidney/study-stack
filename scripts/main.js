@@ -1,3 +1,5 @@
+import { APP_CONFIG } from "./config/app-config.js";
+import { DataResetController } from "./data-reset-controller.js";
 import { StudyStackApp } from "./app.js";
 import { ActiveSubjectStateWatcher } from "./integrations/active-subject-state-watcher.js";
 import { ConceptCompassDeletionConsumer } from "./integrations/concept-compass-deletion-consumer.js";
@@ -23,6 +25,12 @@ try {
     app.shell?.setNewRecordEnabled(false);
   }
 
+  const dataResetController = new DataResetController({
+    app,
+    document,
+    window,
+    config: APP_CONFIG,
+  });
   const liveDeletionConsumer = new ConceptCompassDeletionConsumer({
     window,
     repository: app.repository,
@@ -54,6 +62,7 @@ try {
     },
   });
 
+  dataResetController.install();
   liveDeletionConsumer.install();
   activeSubjectStateWatcher.install().check();
   conceptCompassSubjectWatcher.install().check();
