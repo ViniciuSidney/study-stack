@@ -51,31 +51,46 @@
   line-height: 1.5;
 }
 
+.diagnostic-body {
+  grid-auto-rows: max-content;
+}
+
 .diagnostic-details {
+  width: 100%;
+  min-width: 0;
+  min-height: max-content;
+  height: auto;
+  align-self: start;
+  box-sizing: border-box;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface-soft);
 }
 
-.diagnostic-details > summary {
+.diagnostic-details.open {
+  min-height: max-content;
+  height: auto;
+}
+
+.diagnostic-details-toggle {
   display: flex;
+  width: 100%;
   min-height: 46px;
   align-items: center;
   gap: 8px;
   padding: 11px 14px;
-  cursor: pointer;
+  border: 0;
+  background: transparent;
   color: var(--text-soft);
+  font: inherit;
   font-size: 0.82rem;
   font-weight: 800;
-  list-style: none;
+  text-align: left;
+  cursor: pointer;
 }
 
-.diagnostic-details > summary::-webkit-details-marker {
-  display: none;
-}
-
-.diagnostic-details > summary::before {
+.diagnostic-details-toggle::before {
   content: "▸";
   flex: 0 0 auto;
   color: var(--text-subtle);
@@ -83,20 +98,34 @@
   transition: transform var(--transition-fast);
 }
 
-.diagnostic-details[open] > summary::before {
+.diagnostic-details.open > .diagnostic-details-toggle::before {
   transform: rotate(90deg);
 }
 
-.diagnostic-details[open] > summary {
+.diagnostic-details.open > .diagnostic-details-toggle {
   border-bottom: 1px solid var(--line);
   background: var(--surface);
   color: var(--text);
 }
 
+.diagnostic-details-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 36%, transparent);
+  outline-offset: -3px;
+}
+
 .diagnostic-details-content {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: max-content;
+  height: auto;
+  box-sizing: border-box;
   gap: 14px;
   padding: 14px;
+}
+
+.diagnostic-details-content[hidden] {
+  display: none;
 }
 
 .diagnostic-technical-summary {
@@ -120,6 +149,7 @@
 
 .diagnostic-technical-block {
   display: grid;
+  min-width: 0;
   gap: 9px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -127,6 +157,88 @@
 
 .diagnostic-technical-block h3 {
   font-size: 0.88rem;
+}
+
+.diagnostic-integration-list {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0 12px;
+}
+
+.diagnostic-integration-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.diagnostic-integration-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.diagnostic-integration-copy strong {
+  font-size: 0.82rem;
+}
+
+.diagnostic-integration-copy small {
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.diagnostic-integration-badge {
+  display: inline-flex;
+  min-height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.integration-badge-connected {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--line));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.integration-badge-idle {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.integration-badge-future {
+  border-color: var(--line);
+  background: var(--surface-strong);
+  color: var(--text-soft);
+}
+
+.integration-badge-disconnected {
+  border-color: color-mix(in srgb, var(--warning) 30%, var(--line));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.integration-future {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface-soft) 70%, var(--surface));
 }
 
 .diagnostic-logs ul {
@@ -138,6 +250,7 @@
 }
 
 .diagnostic-footer {
+  margin-top: 14px;
   justify-content: space-between;
 }
 
@@ -148,6 +261,15 @@
 
   .diagnostic-summary-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diagnostic-integration-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .diagnostic-integration-badge {
+    align-self: flex-start;
   }
 
   .diagnostic-footer {

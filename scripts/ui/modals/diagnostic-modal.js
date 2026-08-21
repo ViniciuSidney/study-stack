@@ -14,16 +14,93 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
-function createDetails(document, label, className = "") {
-  const details = createElement(document, "details", {
+function createDisclosure(document, label, panelId, className = "") {
+  const disclosure = createElement(document, "section", {
     className: `diagnostic-details ${className}`.trim(),
   });
-  details.append(createElement(document, "summary", { text: label }));
+  const toggle = createElement(document, "button", {
+    className: "diagnostic-details-toggle",
+    text: label,
+    attributes: {
+      type: "button",
+      "aria-expanded": "false",
+      "aria-controls": panelId,
+    },
+  });
   const content = createElement(document, "div", {
     className: "diagnostic-details-content",
+    attributes: {
+      id: panelId,
+      hidden: "",
+    },
   });
-  details.append(content);
-  return { details, content };
+
+  toggle.addEventListener("click", () => {
+    const isOpen = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!isOpen));
+    content.hidden = isOpen;
+    disclosure.classList.toggle("open", !isOpen);
+  });
+
+  disclosure.append(toggle, content);
+  return { details: disclosure, content };
+}
+
+const INTEGRATION_META = {
+  conceptCompass: {
+    label: "Concept Compass",
+    description: "Contexto de matérias, temas e assuntos.",
+    fallbackStatus: "disconnected",
+  },
+  testQuest: {
+    label: "Test Quest",
+    description: "Listas, questões e resultados de exercícios.",
+    fallbackStatus: "idle",
+  },
+  flashcore: {
+    label: "FlashCore",
+    description: "Flashcards e revisões, integração prevista para versões futuras.",
+    fallbackStatus: "future",
+  },
+};
+
+const INTEGRATION_STATE_META = {
+  connected: { label: "Conectado", className: "connected" },
+  idle: { label: "Disponível", className: "idle" },
+  future: { label: "Planejado", className: "future" },
+  disconnected: { label: "Indisponível", className: "disconnected" },
+};
+
+function normalizeIntegrationState(value, fallbackStatus) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return INTEGRATION_STATE_META[normalized]
+    ? normalized
+    : fallbackStatus;
+}
+
+function createIntegrationRow(document, key, value) {
+  const meta = INTEGRATION_META[key];
+  const state = normalizeIntegrationState(value, meta.fallbackStatus);
+  const stateMeta = INTEGRATION_STATE_META[state];
+
+  const row = createElement(document, "div", {
+    className: `diagnostic-integration-row integration-${state}`,
+  });
+  const copy = createElement(document, "div", {
+    className: "diagnostic-integration-copy",
+  });
+  copy.append(
+    createElement(document, "strong", { text: meta.label }),
+    createElement(document, "small", { text: meta.description }),
+  );
+  row.append(
+    copy,
+    createElement(document, "span", {
+      className: `diagnostic-integration-badge integration-badge-${stateMeta.className}`,
+      text: stateMeta.label,
+    }),
+  );
+  return row;
 }
 
 export function openDiagnosticModal({
@@ -171,7 +248,11 @@ export function openDiagnosticModal({
   }
   body.append(recoveryPanel);
 
-  const technical = createDetails(document, "Mostrar detalhes técnicos");
+  const technical = createDisclosure(
+    document,
+    "Mostrar detalhes técnicos",
+    "diagnosticTechnicalDetailsPanel",
+  );
   const technicalSummary = createElement(document, "div", {
     className: "diagnostic-technical-summary",
   });
@@ -182,19 +263,15 @@ export function openDiagnosticModal({
   technical.content.append(technicalSummary);
 
   const integrationBlock = createElement(document, "section", {
-    className: "diagnostic-technical-block",
+    className: "diagnostic-technical-block diagnostic-integrations-block",
   });
   integrationBlock.append(createElement(document, "h3", { text: "Integrações" }));
   const integrationList = createElement(document, "div", {
     className: "diagnostic-integration-list",
   });
-  Object.entries(report.integrations).forEach(([name, value]) => {
-    const row = createElement(document, "div");
-    row.append(
-      createElement(document, "span", { text: name }),
-      createElement(document, "strong", { text: value }),
-    );
-    integrationList.append(row);
+  const integrations = report.integrations ?? {};
+  Object.keys(INTEGRATION_META).forEach((key) => {
+    integrationList.append(createIntegrationRow(document, key, integrations[key]));
   });
   integrationBlock.append(integrationList);
   technical.content.append(integrationBlock);
