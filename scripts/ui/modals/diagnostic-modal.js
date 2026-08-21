@@ -27,19 +27,24 @@ function createDetails(document, label, className = "") {
 }
 
 const INTEGRATION_META = {
-  ConceptCompass: {
+  conceptCompass: {
     label: "Concept Compass",
     description: "Contexto de matérias, temas e assuntos.",
+    fallbackState: "disconnected",
   },
-  TestQuest: {
+  testQuest: {
     label: "Test Quest",
     description: "Listas, questões e resultados de exercícios.",
+    fallbackState: "idle",
   },
-  FlashCore: {
+  flashcore: {
     label: "FlashCore",
     description: "Flashcards e revisões, integração prevista para versões futuras.",
+    fallbackState: "future",
   },
 };
+
+const INTEGRATION_ORDER = ["conceptCompass", "testQuest", "flashcore"];
 
 const INTEGRATION_STATE_META = {
   connected: { label: "Conectado", className: "connected" },
@@ -48,19 +53,16 @@ const INTEGRATION_STATE_META = {
   disconnected: { label: "Indisponível", className: "disconnected" },
 };
 
-function normalizeIntegrationState(value) {
+function normalizeIntegrationState(value, fallbackState = "disconnected") {
   const normalized = String(value ?? "").trim().toLowerCase();
   return INTEGRATION_STATE_META[normalized]
     ? normalized
-    : "disconnected";
+    : fallbackState;
 }
 
 function createIntegrationRow(document, name, value) {
-  const meta = INTEGRATION_META[name] ?? {
-    label: name,
-    description: "Integração registrada pelo Study Stack.",
-  };
-  const state = normalizeIntegrationState(value);
+  const meta = INTEGRATION_META[name];
+  const state = normalizeIntegrationState(value, meta.fallbackState);
   const stateMeta = INTEGRATION_STATE_META[state];
 
   const row = createElement(document, "div", {
@@ -239,26 +241,23 @@ export function openDiagnosticModal({
   technical.content.append(technicalSummary);
 
   const integrationBlock = createElement(document, "section", {
-    className: "diagnostic-technical-block",
+    className: "diagnostic-technical-block diagnostic-integrations-block",
   });
   integrationBlock.append(createElement(document, "h3", { text: "Integrações" }));
   const integrationList = createElement(document, "div", {
     className: "diagnostic-integration-list",
   });
   const integrations = report.integrations ?? {};
-  const preferredIntegrations = [
-    ["ConceptCompass", integrations.ConceptCompass],
-    ["TestQuest", integrations.TestQuest],
-    ["FlashCore", integrations.FlashCore ?? "future"],
-  ];
-  preferredIntegrations.forEach(([name, value]) => {
-    integrationList.append(createIntegrationRow(document, name, value));
+  INTEGRATION_ORDER.forEach((name) => {
+    const meta = INTEGRATION_META[name];
+    integrationList.append(
+      createIntegrationRow(
+        document,
+        name,
+        integrations[name] ?? meta.fallbackState,
+      ),
+    );
   });
-  Object.entries(integrations)
-    .filter(([name]) => !INTEGRATION_META[name])
-    .forEach(([name, value]) => {
-      integrationList.append(createIntegrationRow(document, name, value));
-    });
   integrationBlock.append(integrationList);
   technical.content.append(integrationBlock);
 
