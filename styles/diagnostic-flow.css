@@ -129,6 +129,81 @@
   font-size: 0.88rem;
 }
 
+.diagnostic-integration-list {
+  display: grid;
+  gap: 8px;
+}
+
+.diagnostic-integration-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.diagnostic-integration-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.diagnostic-integration-copy strong {
+  font-size: 0.82rem;
+}
+
+.diagnostic-integration-copy small {
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.diagnostic-integration-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.integration-badge-connected {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--line));
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.integration-badge-idle {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.integration-badge-future {
+  border-color: var(--line);
+  background: var(--surface-strong);
+  color: var(--text-soft);
+}
+
+.integration-badge-disconnected {
+  border-color: color-mix(in srgb, var(--warning) 30%, var(--line));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.integration-future {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface-soft) 70%, var(--surface));
+}
+
 .diagnostic-logs ul {
   margin: 0;
   padding-left: 20px;
@@ -148,6 +223,15 @@
 
   .diagnostic-summary-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diagnostic-integration-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .diagnostic-integration-badge {
+    justify-self: start;
   }
 
   .diagnostic-footer {
