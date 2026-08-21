@@ -38,8 +38,8 @@ test("seção oferece importação, métricas, busca e filtros", async () => {
   assert.match(section, /Válidas para prática/);
   assert.match(section, /Com erros/);
   assert.match(section, /Parciais/);
-  assert.match(section, /Ver importações pendentes/);
-  assert.match(section, /preservada\(s\) como pendência/);
+  assert.match(section, /Ver pendências/);
+  assert.match(section, /preservado sem alterar suas listas atuais/);
   assert.match(section, /Criar lista no Test Quest/);
   assert.match(section, /onCreateList/);
   assert.match(section, /section-header-actions/);
