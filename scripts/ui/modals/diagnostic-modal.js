@@ -26,6 +26,63 @@ function createDetails(document, label, className = "") {
   return { details, content };
 }
 
+const INTEGRATION_META = {
+  ConceptCompass: {
+    label: "Concept Compass",
+    description: "Contexto de matérias, temas e assuntos.",
+  },
+  TestQuest: {
+    label: "Test Quest",
+    description: "Listas, questões e resultados de exercícios.",
+  },
+  FlashCore: {
+    label: "FlashCore",
+    description: "Flashcards e revisões, integração prevista para versões futuras.",
+  },
+};
+
+const INTEGRATION_STATE_META = {
+  connected: { label: "Conectado", className: "connected" },
+  idle: { label: "Disponível", className: "idle" },
+  future: { label: "Planejado", className: "future" },
+  disconnected: { label: "Indisponível", className: "disconnected" },
+};
+
+function normalizeIntegrationState(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return INTEGRATION_STATE_META[normalized]
+    ? normalized
+    : "disconnected";
+}
+
+function createIntegrationRow(document, name, value) {
+  const meta = INTEGRATION_META[name] ?? {
+    label: name,
+    description: "Integração registrada pelo Study Stack.",
+  };
+  const state = normalizeIntegrationState(value);
+  const stateMeta = INTEGRATION_STATE_META[state];
+
+  const row = createElement(document, "div", {
+    className: `diagnostic-integration-row integration-${state}`,
+  });
+  const copy = createElement(document, "div", {
+    className: "diagnostic-integration-copy",
+  });
+  copy.append(
+    createElement(document, "strong", { text: meta.label }),
+    createElement(document, "small", { text: meta.description }),
+  );
+  row.append(
+    copy,
+    createElement(document, "span", {
+      className: `diagnostic-integration-badge integration-badge-${stateMeta.className}`,
+      text: stateMeta.label,
+    }),
+  );
+  return row;
+}
+
 export function openDiagnosticModal({
   document,
   report,
@@ -188,14 +245,20 @@ export function openDiagnosticModal({
   const integrationList = createElement(document, "div", {
     className: "diagnostic-integration-list",
   });
-  Object.entries(report.integrations).forEach(([name, value]) => {
-    const row = createElement(document, "div");
-    row.append(
-      createElement(document, "span", { text: name }),
-      createElement(document, "strong", { text: value }),
-    );
-    integrationList.append(row);
+  const integrations = report.integrations ?? {};
+  const preferredIntegrations = [
+    ["ConceptCompass", integrations.ConceptCompass],
+    ["TestQuest", integrations.TestQuest],
+    ["FlashCore", integrations.FlashCore ?? "future"],
+  ];
+  preferredIntegrations.forEach(([name, value]) => {
+    integrationList.append(createIntegrationRow(document, name, value));
   });
+  Object.entries(integrations)
+    .filter(([name]) => !INTEGRATION_META[name])
+    .forEach(([name, value]) => {
+      integrationList.append(createIntegrationRow(document, name, value));
+    });
   integrationBlock.append(integrationList);
   technical.content.append(integrationBlock);
 
