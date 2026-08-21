@@ -159,8 +159,9 @@
   min-width: 0;
   min-height: 0;
   gap: 8px;
-  padding-top: 10px;
+  padding-top: 18px;
   padding-bottom: 8px;
+  overflow: visible;
 }
 
 .diagnostic-integration-row {
@@ -243,13 +244,8 @@
   line-height: 1.5;
 }
 
-.diagnostic-body::after {
-  content: "";
-  display: block;
-  height: 14px;
-}
-
 .diagnostic-footer {
+  margin-top: 14px;
   justify-content: space-between;
 }
 
