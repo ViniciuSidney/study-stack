@@ -159,6 +159,8 @@
   min-width: 0;
   min-height: 0;
   gap: 8px;
+  margin-top: 4px;
+  padding-bottom: 8px;
 }
 
 .diagnostic-integration-row {
