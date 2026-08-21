@@ -366,9 +366,14 @@ export function renderSettingsSection({
   const deleteStudyButton = createElement(document, "button", {
     className: "button button-quiet-danger",
     text: "Excluir dados de estudo",
-    attributes: { type: "button" },
+    attributes: {
+      type: "button",
+      "data-danger-action": "delete-study-data",
+    },
   });
-  deleteStudyButton.addEventListener("click", onDeleteStudyData);
+  if (typeof onDeleteStudyData === "function") {
+    deleteStudyButton.addEventListener("click", onDeleteStudyData);
+  }
   deleteStudyRow.append(deleteStudyCopy, deleteStudyButton);
 
   const fullResetRow = createElement(document, "div", {
@@ -387,9 +392,14 @@ export function renderSettingsSection({
   const fullResetButton = createElement(document, "button", {
     className: "button button-danger",
     text: "Redefinir tudo",
-    attributes: { type: "button" },
+    attributes: {
+      type: "button",
+      "data-danger-action": "full-reset",
+    },
   });
-  fullResetButton.addEventListener("click", onFullReset);
+  if (typeof onFullReset === "function") {
+    fullResetButton.addEventListener("click", onFullReset);
+  }
   fullResetRow.append(fullResetCopy, fullResetButton);
 
   dangerActions.append(deleteStudyRow, fullResetRow);
