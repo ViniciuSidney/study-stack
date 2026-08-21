@@ -84,6 +84,8 @@ export function renderSettingsSection({
   onRestore,
   onDiagnostics,
   onPendingImports,
+  onDeleteStudyData,
+  onFullReset,
 }) {
   clearElement(container);
 
@@ -329,6 +331,70 @@ export function renderSettingsSection({
   );
   storagePanel.append(technicalDetails.details);
 
+  const dangerPanel = createElement(document, "article", {
+    className: "panel settings-panel settings-danger-panel",
+  });
+  dangerPanel.append(
+    createElement(document, "p", {
+      className: "eyebrow",
+      text: "Zona de risco",
+    }),
+    createElement(document, "h3", { text: "Excluir ou redefinir dados" }),
+    createElement(document, "p", {
+      text:
+        "Estas ações alteram permanentemente o armazenamento local. Revise o impacto e crie um backup antes de continuar quando quiser guardar uma cópia.",
+    }),
+  );
+
+  const dangerActions = createElement(document, "div", {
+    className: "danger-zone-actions",
+  });
+
+  const deleteStudyRow = createElement(document, "div", {
+    className: "danger-zone-action",
+  });
+  const deleteStudyCopy = createElement(document, "div", {
+    className: "danger-zone-action-copy",
+  });
+  deleteStudyCopy.append(
+    createElement(document, "strong", { text: "Excluir dados de estudo" }),
+    createElement(document, "span", {
+      text:
+        "Remove assuntos, registros, exercícios, erros, histórico, progresso, rascunhos e pendências. Preferências e integrações são preservadas, com ponto de recuperação automático.",
+    }),
+  );
+  const deleteStudyButton = createElement(document, "button", {
+    className: "button button-quiet-danger",
+    text: "Excluir dados de estudo",
+    attributes: { type: "button" },
+  });
+  deleteStudyButton.addEventListener("click", onDeleteStudyData);
+  deleteStudyRow.append(deleteStudyCopy, deleteStudyButton);
+
+  const fullResetRow = createElement(document, "div", {
+    className: "danger-zone-action",
+  });
+  const fullResetCopy = createElement(document, "div", {
+    className: "danger-zone-action-copy",
+  });
+  fullResetCopy.append(
+    createElement(document, "strong", { text: "Redefinir todo o Study Stack" }),
+    createElement(document, "span", {
+      text:
+        "Restaura o armazenamento ao estado inicial, inclusive preferências, integrações e ponto de recuperação. Use somente se quiser recomeçar do zero.",
+    }),
+  );
+  const fullResetButton = createElement(document, "button", {
+    className: "button button-danger",
+    text: "Redefinir tudo",
+    attributes: { type: "button" },
+  });
+  fullResetButton.addEventListener("click", onFullReset);
+  fullResetRow.append(fullResetCopy, fullResetButton);
+
+  dangerActions.append(deleteStudyRow, fullResetRow);
+  dangerPanel.append(dangerActions);
+
   themeField.select.addEventListener("change", (event) => {
     onUpdate({ theme: event.target.value });
   });
@@ -351,6 +417,7 @@ export function renderSettingsSection({
     maintenancePanel,
     resetPanel,
     storagePanel,
+    dangerPanel,
   );
   inner.append(header, grid);
   container.append(inner);
