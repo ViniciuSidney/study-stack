@@ -316,11 +316,33 @@ export function openRestoreModal({
     if (result.mode === "merge") {
       const added = Object.values(result.additions).reduce((sum, value) => sum + value, 0);
       const unchanged = Object.values(result.identical).reduce((sum, value) => sum + value, 0);
-      previewContent.append(
-        createElement(document, "p", {
-          text: `${added} item(ns) novo(s) serão adicionados. ${unchanged} item(ns) idêntico(s) permanecerão como estão. ${result.conflicts.length} conflito(s) serão preservados sem sobrescrever seus dados atuais.`,
+      const summary = createElement(document, "div", {
+        className: "restore-merge-summary",
+      });
+      const summaryStats = createElement(document, "div", {
+        className: "restore-merge-summary-stats",
+      });
+      summaryStats.append(
+        createElement(document, "span", {
+          className: "restore-merge-chip restore-merge-chip-added",
+          text: `${added} ${added === 1 ? "novo" : "novos"}`,
+        }),
+        createElement(document, "span", {
+          className: "restore-merge-chip restore-merge-chip-identical",
+          text: `${unchanged} ${unchanged === 1 ? "idêntico" : "idênticos"}`,
+        }),
+        createElement(document, "span", {
+          className: "restore-merge-chip restore-merge-chip-conflict",
+          text: `${result.conflicts.length} ${result.conflicts.length === 1 ? "conflito" : "conflitos"}`,
         }),
       );
+      summary.append(
+        summaryStats,
+        createElement(document, "p", {
+          text: "Novos itens serão adicionados, itens idênticos permanecerão como estão e conflitos serão preservados sem sobrescrever seus dados atuais.",
+        }),
+      );
+      previewContent.append(summary);
     } else {
       previewContent.append(
         createElement(document, "div", { className: "restore-replace-preview-warning" }),
@@ -436,8 +458,8 @@ export function openRestoreModal({
     onClose();
   });
 
+  updateRestoreAvailability();
   dialog.showModal();
   fileInput.focus();
-  updateRestoreAvailability();
   return dialog;
 }
