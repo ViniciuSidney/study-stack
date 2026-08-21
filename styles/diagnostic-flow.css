@@ -52,7 +52,9 @@
 }
 
 .diagnostic-details {
-  overflow: hidden;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface-soft);
@@ -69,6 +71,7 @@
   font-size: 0.82rem;
   font-weight: 800;
   list-style: none;
+  border-radius: inherit;
 }
 
 .diagnostic-details > summary::-webkit-details-marker {
@@ -89,14 +92,18 @@
 
 .diagnostic-details[open] > summary {
   border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: var(--surface);
   color: var(--text);
 }
 
 .diagnostic-details-content {
   display: grid;
+  min-height: 0;
+  height: auto;
   gap: 14px;
-  padding: 14px;
+  padding: 14px 14px 18px;
+  overflow: visible;
 }
 
 .diagnostic-technical-summary {
@@ -120,6 +127,7 @@
 
 .diagnostic-technical-block {
   display: grid;
+  min-height: 0;
   gap: 9px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -131,6 +139,7 @@
 
 .diagnostic-integration-list {
   display: grid;
+  min-height: 0;
   gap: 8px;
 }
 
