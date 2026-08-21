@@ -15,6 +15,19 @@ test("Configurações oferece backup, restauração, diagnóstico e pendências"
   assert.match(source, /Ver importações pendentes/);
 });
 
+test("Configurações separa a Zona de risco das preferências", async () => {
+  const source = await read("../../scripts/ui/sections/settings-section.js");
+  const modal = await read("../../scripts/ui/modals/data-reset-modal.js");
+
+  assert.match(source, /Zona de risco/);
+  assert.match(source, /Excluir dados de estudo/);
+  assert.match(source, /Redefinir todo o Study Stack/);
+  assert.match(source, /data-danger-action/);
+  assert.match(modal, /EXCLUIR TUDO/);
+  assert.match(modal, /ZERAR STUDY STACK/);
+  assert.match(modal, /Criar backup antes/);
+});
+
 test("menu de utilidades apresenta as ferramentas e a versão estável", async () => {
   const html = await read("../../index.html");
   const pkg = JSON.parse(await read("../../package.json"));
