@@ -1,3 +1,8 @@
+html.action-confirmation-open,
+html.action-confirmation-open body {
+  overflow: hidden;
+}
+
 .action-confirmation-screen {
   position: fixed;
   inset: 0;
@@ -30,7 +35,7 @@
   border: 1px solid color-mix(in srgb, var(--success) 24%, var(--line));
   border-radius: clamp(20px, 3vw, 28px);
   background: var(--surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   text-align: center;
   transform: translateY(16px) scale(0.985);
   opacity: 0;
