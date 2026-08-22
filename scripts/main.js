@@ -1,4 +1,5 @@
 import { APP_CONFIG } from "./config/app-config.js";
+import { ActionConfirmationController } from "./action-confirmation-controller.js";
 import { DataResetController } from "./data-reset-controller.js";
 import { StudyStackApp } from "./app.js";
 import { ActiveSubjectStateWatcher } from "./integrations/active-subject-state-watcher.js";
@@ -25,6 +26,11 @@ try {
     app.shell?.setNewRecordEnabled(false);
   }
 
+  const actionConfirmationController = new ActionConfirmationController({
+    app,
+    document,
+    window,
+  });
   const dataResetController = new DataResetController({
     app,
     document,
@@ -62,6 +68,7 @@ try {
     },
   });
 
+  actionConfirmationController.install();
   dataResetController.install();
   liveDeletionConsumer.install();
   activeSubjectStateWatcher.install().check();

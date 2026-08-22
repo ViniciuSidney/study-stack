@@ -1,3 +1,5 @@
+@import url("./action-confirmation-screen.css");
+
 .settings-danger-panel {
   grid-column: 1 / -1;
   border-color: color-mix(in srgb, var(--danger) 28%, var(--line));

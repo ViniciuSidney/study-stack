@@ -1,4 +1,5 @@
 import { DataResetService } from "./services/data-reset-service.js";
+import { openActionConfirmationScreen } from "./ui/action-confirmation-screen.js";
 import { openDataResetModal } from "./ui/modals/data-reset-modal.js";
 
 export class DataResetController {
@@ -35,11 +36,22 @@ export class DataResetController {
       onBackup: () => this.app.createBackup(),
       onConfirm: () => {
         try {
-          this.service.deleteStudyData();
-          this.app.shell.showToast(
-            "Dados de estudo excluídos. Um ponto de recuperação foi criado.",
-          );
-          this.window.setTimeout(() => this.window.location.reload(), 450);
+          const result = this.service.deleteStudyData();
+          this.window.setTimeout(() => {
+            openActionConfirmationScreen({
+              document: this.document,
+              title: "Dados de estudo excluídos",
+              message:
+                "O conteúdo de estudo foi removido e suas preferências foram preservadas. Um ponto de recuperação foi criado antes da exclusão.",
+              metrics: [
+                { label: "Assuntos removidos", value: result.summary.subjects },
+                { label: "Registros removidos", value: result.summary.records },
+                { label: "Listas removidas", value: result.summary.sessions },
+                { label: "Erros removidos", value: result.summary.errors },
+              ],
+              onConfirm: () => this.window.location.reload(),
+            });
+          }, 0);
           return true;
         } catch (error) {
           this.app.handleFailure(
@@ -62,8 +74,15 @@ export class DataResetController {
       onConfirm: () => {
         try {
           this.service.resetApplication();
-          this.app.shell.showToast("Study Stack redefinido para o estado inicial.");
-          this.window.setTimeout(() => this.window.location.reload(), 450);
+          this.window.setTimeout(() => {
+            openActionConfirmationScreen({
+              document: this.document,
+              title: "Study Stack redefinido",
+              message:
+                "O armazenamento local voltou ao estado inicial. Preferências, integrações e dados de estudo foram redefinidos.",
+              onConfirm: () => this.window.location.reload(),
+            });
+          }, 0);
           return true;
         } catch (error) {
           this.app.handleFailure(
