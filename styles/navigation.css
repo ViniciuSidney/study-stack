@@ -1,0 +1,17 @@
+.nav-count[hidden],
+.no-counters .nav-count {
+  display: none;
+}
+
+.nav-group-label {
+  margin: 14px 0 0;
+  padding: 14px 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.sidebar-footer {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
