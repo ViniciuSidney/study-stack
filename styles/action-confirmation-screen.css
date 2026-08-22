@@ -11,7 +11,7 @@ html.action-confirmation-open body {
   place-items: center;
   padding: clamp(20px, 4vw, 40px);
   box-sizing: border-box;
-  background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
+  background: var(--surface-overlay);
   backdrop-filter: blur(10px);
   opacity: 0;
   transition: opacity 220ms ease;
