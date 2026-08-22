@@ -95,7 +95,7 @@ function formatEventSummary(event) {
       return "Erro superado.";
     case "progress_changed":
       return metadata.currentTotal !== undefined
-        ? `Progresso atualizado para ${metadata.currentTotal}/10.`
+        ? `Progresso atualizado: ${metadata.currentTotal} pontos (${metadata.percentage ?? 0}%).`
         : "Progresso atualizado.";
     default:
       return event.summary || "Evento registrado.";
