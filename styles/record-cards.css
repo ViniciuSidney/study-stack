@@ -78,6 +78,49 @@
   color: var(--danger);
 }
 
+.archived-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.archived-toolbar .field {
+  width: min(100%, 280px);
+}
+
+.archived-count {
+  margin: 0 0 10px;
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.archived-card {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface-soft) 58%, var(--surface));
+}
+
+.archived-reason {
+  flex: 1 1 auto;
+}
+
+.archived-actions {
+  margin-top: auto;
+  padding-top: 2px;
+  border-top: 1px solid var(--line);
+}
+
+.archived-restore-button {
+  min-width: 180px;
+}
+
+.archived-empty-state {
+  margin-top: 0;
+}
+
 .error-editor-tab-panel[data-error-tab-panel="analysis"] textarea {
   min-height: 88px;
   height: 88px;
@@ -100,6 +143,23 @@
 }
 
 @media (max-width: 720px) {
+  .archived-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .archived-toolbar .field {
+    width: 100%;
+  }
+
+  .archived-count {
+    margin: 0;
+  }
+
+  .archived-restore-button {
+    width: 100%;
+  }
+
   .error-editor-tab-panel[data-error-tab-panel="organization"] .error-metadata-grid {
     grid-template-columns: 1fr;
   }
