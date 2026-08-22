@@ -30,10 +30,6 @@ export class AppShell {
       returnButton: getRequiredElement(document, "#returnButton"),
       subjectArea: getRequiredElement(document, "#subjectArea"),
       subjectTheme: getRequiredElement(document, "#subjectTheme"),
-      subjectBreadcrumbName: getRequiredElement(
-        document,
-        "#subjectBreadcrumbName",
-      ),
       subjectTitle: getRequiredElement(document, "#subjectTitle"),
       subjectStatus: getRequiredElement(document, "#subjectStatus"),
       saveState: getRequiredElement(document, "#saveState"),
@@ -111,7 +107,6 @@ export class AppShell {
     if (context.valid === false || (!context.valid && !context.id)) {
       this.elements.subjectArea.textContent = "Concept Compass";
       this.elements.subjectTheme.textContent = "Vínculo";
-      this.elements.subjectBreadcrumbName.textContent = "Ausente";
       this.elements.subjectTitle.textContent = "Assunto não identificado";
       this.elements.subjectStatus.textContent = "Vínculo ausente";
       this.elements.subjectStatus.className =
@@ -122,8 +117,6 @@ export class AppShell {
     this.elements.subjectArea.textContent =
       context.matterName || context.subjectArea;
     this.elements.subjectTheme.textContent = context.themeName;
-    this.elements.subjectBreadcrumbName.textContent =
-      context.subjectName;
     this.elements.subjectTitle.textContent = context.subjectName;
     const statusLabels = {
       initial_base: "Base inicial",
@@ -174,7 +167,9 @@ export class AppShell {
     this.document.querySelectorAll("[data-section]").forEach((button) => {
       const counter = button.querySelector(".nav-count");
       if (counter && Object.hasOwn(values, button.dataset.section)) {
-        counter.textContent = String(values[button.dataset.section]);
+        const value = values[button.dataset.section];
+        counter.textContent = value > 0 ? String(value) : "";
+        counter.hidden = value <= 0;
       }
     });
   }
