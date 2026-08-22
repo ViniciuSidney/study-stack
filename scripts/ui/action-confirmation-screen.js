@@ -103,12 +103,17 @@ export function openActionConfirmationScreen({
   const previousActiveElement = document.activeElement;
   const appShell = document.querySelector("#appShell");
   const appShellWasInert = appShell?.inert ?? false;
+  const root = document.documentElement;
+  const rootWasLocked = root.classList.contains("action-confirmation-open");
   let closed = false;
   let fallbackTimer = null;
 
   function restorePageState() {
     if (appShell) {
       appShell.inert = appShellWasInert;
+    }
+    if (!rootWasLocked) {
+      root.classList.remove("action-confirmation-open");
     }
     if (previousActiveElement?.isConnected) {
       previousActiveElement.focus?.({ preventScroll: true });
@@ -166,11 +171,17 @@ export function openActionConfirmationScreen({
   if (appShell) {
     appShell.inert = true;
   }
+  root.classList.add("action-confirmation-open");
 
   document.body.append(screen);
-  document.defaultView?.requestAnimationFrame?.(() => {
+  const requestFrame = document.defaultView?.requestAnimationFrame;
+  if (typeof requestFrame === "function") {
+    requestFrame.call(document.defaultView, () => {
+      screen.classList.add("is-visible");
+    });
+  } else {
     screen.classList.add("is-visible");
-  });
+  }
   confirmButton.focus();
 
   return Object.freeze({
