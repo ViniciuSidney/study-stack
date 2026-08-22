@@ -26,7 +26,17 @@ export function openActionConfirmationScreen({
     throw new TypeError("A tela de confirmação exige um título.");
   }
 
-  document.querySelector(".action-confirmation-screen")?.remove();
+  const existingScreen = document.querySelector(".action-confirmation-screen");
+  if (existingScreen) {
+    const existingButton = existingScreen.querySelector(
+      ".action-confirmation-button",
+    );
+    existingButton?.focus();
+    return Object.freeze({
+      element: existingScreen,
+      close: () => existingButton?.click(),
+    });
+  }
 
   const screenId = `action-confirmation-${++confirmationScreenSequence}`;
   const titleId = `${screenId}-title`;
