@@ -77,7 +77,7 @@ export class ActionConfirmationController {
       document: this.document,
       title: "Recuperar estado anterior?",
       message:
-        "O Study Stack voltará ao estado salvo imediatamente antes da última restauração.",
+        "O Study Stack voltará ao estado guardado no ponto de recuperação atual.",
       confirmLabel: "Recuperar",
       onConfirm: () => {
         try {
@@ -87,7 +87,7 @@ export class ActionConfirmationController {
               document: this.document,
               title: "Estado anterior recuperado",
               message:
-                "O Study Stack restaurou o estado salvo antes da última substituição.",
+                "O Study Stack restaurou com sucesso o estado guardado no ponto de recuperação.",
               onConfirm: () => this.window.location.reload(),
             });
           }, 0);
