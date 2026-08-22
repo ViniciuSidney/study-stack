@@ -34,8 +34,9 @@ const PERIOD_OPTIONS = Object.freeze([
   { value: "30d", label: "Últimos 30 dias" },
 ]);
 
-const GROUPABLE_EVENT_TYPES = new Set(["edited", "progress_changed"]);
-const GROUP_WINDOW_MS = 30 * 60 * 1000;
+const SAME_ENTITY_GROUPABLE_EVENT_TYPES = new Set(["edited", "progress_changed"]);
+const SAME_ENTITY_GROUP_WINDOW_MS = 30 * 60 * 1000;
+const BULK_ERROR_GROUP_WINDOW_MS = 2 * 60 * 1000;
 
 function categoryForEvent(event) {
   if (event.entityType === "imported_session") return "exercises";
@@ -102,17 +103,40 @@ function formatEventSummary(event) {
   }
 }
 
-function canGroup(previous, current) {
-  if (!previous || !GROUPABLE_EVENT_TYPES.has(current.eventType)) return false;
-  if (previous.eventType !== current.eventType) return false;
-  if (previous.entityType !== current.entityType) return false;
-  if (previous.entityId !== current.entityId) return false;
+function isBulkErrorCreation(event) {
+  return (
+    event?.eventType === "created" &&
+    event?.entityType === "error_record" &&
+    Boolean(event?.metadata?.sessionId)
+  );
+}
 
+function eventsAreWithin(previous, current, windowMs) {
   const previousTime = Date.parse(previous.occurredAt);
   const currentTime = Date.parse(current.occurredAt);
   if (Number.isNaN(previousTime) || Number.isNaN(currentTime)) return false;
+  return Math.abs(previousTime - currentTime) <= windowMs;
+}
 
-  return Math.abs(previousTime - currentTime) <= GROUP_WINDOW_MS;
+function canGroupBulkErrors(previous, current) {
+  if (!isBulkErrorCreation(previous) || !isBulkErrorCreation(current)) return false;
+  if (previous.subjectId !== current.subjectId) return false;
+  if (previous.origin !== current.origin) return false;
+  if (previous.metadata.sessionId !== current.metadata.sessionId) return false;
+  return eventsAreWithin(previous, current, BULK_ERROR_GROUP_WINDOW_MS);
+}
+
+function canGroupSameEntity(previous, current) {
+  if (!SAME_ENTITY_GROUPABLE_EVENT_TYPES.has(current.eventType)) return false;
+  if (previous.eventType !== current.eventType) return false;
+  if (previous.entityType !== current.entityType) return false;
+  if (previous.entityId !== current.entityId) return false;
+  return eventsAreWithin(previous, current, SAME_ENTITY_GROUP_WINDOW_MS);
+}
+
+function canGroup(previous, current) {
+  if (!previous || !current) return false;
+  return canGroupBulkErrors(previous, current) || canGroupSameEntity(previous, current);
 }
 
 function groupEvents(events) {
@@ -131,6 +155,14 @@ function groupEvents(events) {
   }
 
   return groups;
+}
+
+function formatGroupSummary(group) {
+  const event = group.events[0];
+  if (group.events.length > 1 && isBulkErrorCreation(event)) {
+    return `${group.events.length} erros registrados.`;
+  }
+  return formatEventSummary(event);
 }
 
 function isWithinPeriod(event, period, now = new Date()) {
@@ -164,6 +196,54 @@ function createSelectField(document, labelText, options) {
   });
   field.append(select);
   return { field, select };
+}
+
+function appendGroupDetails(document, content, group, formatter) {
+  if (group.events.length <= 1) return;
+
+  const latest = group.events[0];
+  const oldest = group.events.at(-1);
+  const bulkErrors = isBulkErrorCreation(latest);
+  const intervalText =
+    latest.occurredAt === oldest.occurredAt
+      ? ""
+      : ` entre ${formatter.format(new Date(oldest.occurredAt))} e ${formatter.format(new Date(latest.occurredAt))}`;
+
+  content.append(
+    createElement(document, "p", {
+      className: "history-group-note",
+      text: bulkErrors
+        ? `${group.events.length} erros da mesma lista foram agrupados${intervalText}.`
+        : `${group.events.length} atualizações semelhantes agrupadas${intervalText}.`,
+    }),
+  );
+
+  const details = createElement(document, "details", {
+    className: "history-group-details",
+  });
+  details.append(
+    createElement(document, "summary", {
+      text: `Ver ${group.events.length} eventos`,
+    }),
+  );
+  const list = createElement(document, "ul", {
+    className: "history-group-event-list",
+  });
+  group.events.forEach((event) => {
+    const item = createElement(document, "li");
+    item.append(
+      createElement(document, "span", {
+        text: event.summary || formatEventSummary(event),
+      }),
+      createElement(document, "time", {
+        text: formatter.format(new Date(event.occurredAt)),
+        attributes: { datetime: event.occurredAt },
+      }),
+    );
+    list.append(item);
+  });
+  details.append(list);
+  content.append(details);
 }
 
 export function renderHistorySection({ document, container, events }) {
@@ -251,13 +331,12 @@ export function renderHistorySection({ document, container, events }) {
         className: "history-content-copy",
       });
       const latest = group.events[0];
-      const oldest = group.events.at(-1);
       const formatter = new Intl.DateTimeFormat("pt-BR", {
         dateStyle: "short",
         timeStyle: "short",
       });
       contentCopy.append(
-        createElement(document, "strong", { text: formatEventSummary(latest) }),
+        createElement(document, "strong", { text: formatGroupSummary(group) }),
         createElement(document, "time", {
           text: formatter.format(new Date(latest.occurredAt)),
           attributes: { datetime: latest.occurredAt },
@@ -271,19 +350,7 @@ export function renderHistorySection({ document, container, events }) {
         }),
       );
       content.append(contentHeader);
-
-      if (group.events.length > 1) {
-        const intervalText =
-          latest.occurredAt === oldest.occurredAt
-            ? ""
-            : ` entre ${formatter.format(new Date(oldest.occurredAt))} e ${formatter.format(new Date(latest.occurredAt))}`;
-        content.append(
-          createElement(document, "p", {
-            className: "history-group-note",
-            text: `${group.events.length} atualizações semelhantes agrupadas${intervalText}.`,
-          }),
-        );
-      }
+      appendGroupDetails(document, content, group, formatter);
 
       item.append(content);
       timeline.append(item);
