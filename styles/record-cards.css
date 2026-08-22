@@ -109,12 +109,12 @@
 
 .archived-actions {
   margin-top: auto;
-  padding-top: 2px;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
 .archived-restore-button {
-  min-width: 180px;
+  width: 100%;
 }
 
 .archived-empty-state {
@@ -154,10 +154,6 @@
 
   .archived-count {
     margin: 0;
-  }
-
-  .archived-restore-button {
-    width: 100%;
   }
 
   .error-editor-tab-panel[data-error-tab-panel="organization"] .error-metadata-grid {
