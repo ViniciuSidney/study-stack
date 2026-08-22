@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="styles/base.css" />
     <link rel="stylesheet" href="styles/layout.css" />
     <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/navigation.css" />
     <link rel="stylesheet" href="styles/summary-editor-tabs.css" />
     <link rel="stylesheet" href="styles/record-cards.css" />
     <link rel="stylesheet" href="styles/exercise-practice-criteria.css" />
@@ -116,8 +117,6 @@
             <span id="subjectArea">Área</span>
             <span aria-hidden="true">›</span>
             <span id="subjectTheme">Tema</span>
-            <span aria-hidden="true">›</span>
-            <strong id="subjectBreadcrumbName">Assunto</strong>
           </nav>
 
           <div class="subject-title-row">
@@ -164,25 +163,25 @@
             <button class="nav-item" type="button" data-section="summaries">
               <span aria-hidden="true">▤</span>
               <span>Resumos</span>
-              <span class="nav-count">0</span>
+              <span class="nav-count" hidden></span>
             </button>
 
             <button class="nav-item" type="button" data-section="notes">
               <span aria-hidden="true">✎</span>
               <span>Anotações</span>
-              <span class="nav-count">0</span>
+              <span class="nav-count" hidden></span>
             </button>
 
             <button class="nav-item" type="button" data-section="exercises">
               <span aria-hidden="true">✓</span>
               <span>Exercícios</span>
-              <span class="nav-count">0</span>
+              <span class="nav-count" hidden></span>
             </button>
 
             <button class="nav-item" type="button" data-section="errors">
               <span aria-hidden="true">!</span>
               <span>Erros</span>
-              <span class="nav-count">0</span>
+              <span class="nav-count" hidden></span>
             </button>
 
             <button class="nav-item" type="button" data-section="history">
@@ -204,9 +203,7 @@
           </nav>
 
           <div class="sidebar-footer">
-            <p><strong>Versão atual</strong></p>
-            <p>v0.3.0</p>
-            <p class="muted">Integração consolidada</p>
+            <p>Study Stack v0.3.0</p>
           </div>
         </aside>
 
@@ -246,22 +243,22 @@
         <button class="nav-item" type="button" data-section="summaries">
           <span aria-hidden="true">▤</span>
           <span>Resumos</span>
-          <span class="nav-count">0</span>
+          <span class="nav-count" hidden></span>
         </button>
         <button class="nav-item" type="button" data-section="notes">
           <span aria-hidden="true">✎</span>
           <span>Anotações</span>
-          <span class="nav-count">0</span>
+          <span class="nav-count" hidden></span>
         </button>
         <button class="nav-item" type="button" data-section="exercises">
           <span aria-hidden="true">✓</span>
           <span>Exercícios</span>
-          <span class="nav-count">0</span>
+          <span class="nav-count" hidden></span>
         </button>
         <button class="nav-item" type="button" data-section="errors">
           <span aria-hidden="true">!</span>
           <span>Erros</span>
-          <span class="nav-count">0</span>
+          <span class="nav-count" hidden></span>
         </button>
         <button class="nav-item" type="button" data-section="history">
           <span aria-hidden="true">◴</span>
