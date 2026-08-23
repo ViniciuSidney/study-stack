@@ -137,3 +137,20 @@ test("critérios de lista válida usam disclosure estilizado", async () => {
   assert.match(css, /\.flow-help-criteria\[open\] \.flow-help-criteria-summary::before/);
   assert.match(css, /\.flow-help-criteria-content\s*\{/);
 });
+
+test("painel oculta Tornar etapa atual e preserva progressão contextual", async () => {
+  const source = await read("../../scripts/ui/sections/overview-section.js");
+  const css = await read("../../styles/overview-refinements.css");
+
+  assert.match(css, /\.guided-flow-actions > \.button-secondary\s*\{[\s\S]*display:\s*none/);
+  assert.match(source, /text: `Prosseguir para \$\{flowView\.recommended\.shortLabel\}`/);
+  assert.match(source, /onMakeStageCurrent\(flowView\.recommendedStage\)/);
+});
+
+test("etapas bloqueadas priorizam dependência e reduzem informação repetida", async () => {
+  const css = await read("../../styles/overview-refinements.css");
+
+  assert.match(css, /\.guided-flow-detail-copy:has\(\.guided-flow-blocked-reason\) \.guided-flow-stage-note\s*\{[\s\S]*display:\s*none/);
+  assert.match(css, /\.guided-flow-blocked-reason\s*\{[\s\S]*width:\s*fit-content/);
+  assert.match(css, /\.guided-flow-blocked-reason::before\s*\{[\s\S]*content:\s*"🔒"/);
+});
