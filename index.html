@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="styles/layout.css" />
     <link rel="stylesheet" href="styles/components.css" />
     <link rel="stylesheet" href="styles/navigation.css" />
+    <link rel="stylesheet" href="styles/header-global.css" />
     <link rel="stylesheet" href="styles/summary-editor-tabs.css" />
     <link rel="stylesheet" href="styles/record-cards.css" />
     <link rel="stylesheet" href="styles/exercise-practice-criteria.css" />
@@ -66,7 +67,7 @@
 
         <div class="header-actions">
           <span class="save-state" id="saveState" aria-live="polite">
-            Schema 1.0.0 · iniciando
+            Preparando dados...
           </span>
 
           <button
@@ -95,6 +96,10 @@
               <button type="button" role="menuitem" data-utility="settings">
                 Configurações
               </button>
+
+              <div class="menu-separator" role="separator"></div>
+              <p class="utilities-menu-label">Manutenção</p>
+
               <button type="button" role="menuitem" data-utility="backup">
                 Criar backup
               </button>
@@ -104,8 +109,11 @@
               <button type="button" role="menuitem" data-utility="diagnostics">
                 Diagnóstico
               </button>
+
               <div class="menu-separator" role="separator"></div>
-              <p>Study Stack · v0.3.0</p>
+              <button type="button" role="menuitem" data-utility="about">
+                Sobre o Study Stack
+              </button>
             </div>
           </div>
         </div>
@@ -126,25 +134,21 @@
             </div>
 
             <div class="subject-status-group">
-              <span class="status-badge status-base" id="subjectStatus">
-                Base inicial
-              </span>
-
               <button
-                class="progress-compact"
+                class="progress-compact subject-progress-summary"
                 id="progressButton"
                 type="button"
                 title="Abrir a Visão Geral e conferir as evidências."
               >
+                <span class="subject-progress-stage" id="subjectStatus">Base inicial</span>
                 <strong>0/10</strong>
-                <span>0% concluído</span>
               </button>
             </div>
           </div>
         </div>
 
         <button class="button button-return" id="returnButton" type="button">
-          ← Voltar ao Concept Compass
+          ← Concept Compass
         </button>
       </section>
 
