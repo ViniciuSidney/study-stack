@@ -117,8 +117,26 @@
   border: 0;
   background: transparent;
   color: inherit;
+  font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.overview-record-link > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.overview-record-link > div span {
+  color: var(--text-subtle);
+  font-size: 0.76rem;
+}
+
+.overview-record-link strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .overview-record-link:hover strong,
