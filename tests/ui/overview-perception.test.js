@@ -1,38 +1,42 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
 
 import {
   getPerceivedMasteryPresentation,
 } from "../../scripts/ui/sections/overview-section.js";
 
-const componentsCssUrl = new URL("../../styles/components.css", import.meta.url);
+test("percepção numérica antiga é apresentada em escala qualitativa", () => {
+  const fragile = getPerceivedMasteryPresentation(0);
+  const safe = getPerceivedMasteryPresentation(75);
 
-test("domínio percebido igual a zero continua visível como percepção pessoal", () => {
-  const presentation = getPerceivedMasteryPresentation(0);
+  assert.equal(fragile.informed, true);
+  assert.equal(fragile.value, 0);
+  assert.equal(fragile.normalizedValue, 20);
+  assert.equal(fragile.displayValue, "Muito frágil");
 
-  assert.equal(presentation.informed, true);
-  assert.equal(presentation.value, 0);
-  assert.equal(presentation.displayValue, "0%");
+  assert.equal(safe.informed, true);
+  assert.equal(safe.value, 75);
+  assert.equal(safe.normalizedValue, 80);
+  assert.equal(safe.displayValue, "Seguro");
 });
 
-test("percepção pessoal ausente possui estado explícito", () => {
-  const presentation = getPerceivedMasteryPresentation(null);
-
-  assert.equal(presentation.informed, false);
-  assert.equal(presentation.value, null);
-  assert.equal(presentation.displayValue, "Não informado");
+test("percepção pessoal ausente continua explícita", () => {
+  for (const value of [null, undefined, ""]) {
+    const presentation = getPerceivedMasteryPresentation(value);
+    assert.equal(presentation.informed, false);
+    assert.equal(presentation.value, null);
+    assert.equal(presentation.normalizedValue, null);
+    assert.equal(presentation.displayValue, "Não informado");
+  }
 });
 
-test("Visão Geral apresenta a percepção pessoal como selo compacto", async () => {
-  const css = await readFile(fileURLToPath(componentsCssUrl), "utf8");
-
-  assert.match(css, /\.overview-progress-meta\s*\{/);
-  assert.match(css, /\.overview-personal-perception\s*\{/);
-  assert.match(css, /display:\s*inline-flex/);
-  assert.match(css, /padding:\s*5px 8px/);
-  assert.match(css, /border-radius:\s*999px/);
-  assert.doesNotMatch(css, /\.overview-personal-track\s*\{/);
-  assert.doesNotMatch(css, /\.overview-personal-fill\s*\{/);
+test("escala qualitativa preserva os extremos válidos do domínio", () => {
+  assert.equal(
+    getPerceivedMasteryPresentation(20).displayValue,
+    "Muito frágil",
+  );
+  assert.equal(
+    getPerceivedMasteryPresentation(100).displayValue,
+    "Muito seguro",
+  );
 });
