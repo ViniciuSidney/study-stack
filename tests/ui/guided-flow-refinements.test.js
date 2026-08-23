@@ -94,10 +94,10 @@ test("painel principal usa a mesma linguagem simplificada do roteiro", async () 
     source,
     /Conclua listas no Test Quest e salve os resultados no Study Stack\./,
   );
-  assert.match(source, /Conclua a Base para avançar até esta etapa\./);
-  assert.match(source, /Conclua a Prática para avançar até esta etapa\./);
-  assert.match(source, /Conclua a Análise para avançar até esta etapa\./);
-  assert.match(source, /Conclua a Revisão para avançar até esta etapa\./);
+  assert.match(source, /Conclua a Base para avançar\./);
+  assert.match(source, /Conclua a Prática para avançar\./);
+  assert.match(source, /Conclua a Análise para avançar\./);
+  assert.match(source, /Conclua a Revisão para avançar\./);
   assert.match(source, /stage\.key === "practice"/);
   assert.match(source, /getGuidedStageProgress\(stage\)/);
   assert.match(source, /getGuidedStageNote\(stage\)/);
@@ -138,13 +138,21 @@ test("critérios de lista válida usam disclosure estilizado", async () => {
   assert.match(css, /\.flow-help-criteria-content\s*\{/);
 });
 
-test("painel oculta Tornar etapa atual e preserva progressão contextual", async () => {
+test("painel remove Tornar etapa atual e preserva progressão contextual", async () => {
   const source = await read("../../scripts/ui/sections/overview-section.js");
-  const css = await read("../../styles/overview-refinements.css");
 
-  assert.match(css, /\.guided-flow-actions > \.button-secondary\s*\{[\s\S]*display:\s*none/);
+  assert.doesNotMatch(source, /Tornar etapa atual/);
   assert.match(source, /text: `Prosseguir para \$\{flowView\.recommended\.shortLabel\}`/);
   assert.match(source, /onMakeStageCurrent\(flowView\.recommendedStage\)/);
+});
+
+test("Prática evita repetir a quantidade que já aparece no contador", async () => {
+  const source = await read("../../scripts/ui/sections/overview-section.js");
+
+  assert.match(source, /if \(stage\.key === "practice"\) \{\s*return "";/);
+  assert.doesNotMatch(source, /Faltam \$\{remaining\} resultados de listas concluídas/);
+  assert.match(source, /const stageNote = getGuidedStageNote\(stage\)/);
+  assert.match(source, /if \(stageNote\)/);
 });
 
 test("etapas bloqueadas priorizam dependência e reduzem informação repetida", async () => {
