@@ -150,16 +150,23 @@ function createChecklist(document, requirements) {
 
 function appendPracticeCriteria(document, body) {
   const criteria = createElement(document, "details", {
-    className: "flow-help-section",
+    className: "flow-help-section flow-help-criteria",
   });
-  criteria.append(
-    createElement(document, "summary", { text: "Ver critérios de uma lista válida" }),
+  const summary = createElement(document, "summary", {
+    className: "flow-help-criteria-summary",
+    text: "Ver critérios de uma lista válida",
+  });
+  const content = createElement(document, "div", {
+    className: "flow-help-criteria-content",
+  });
+  content.append(
     createElement(document, "p", {
       className: "flow-help-empty",
       text:
         "Para contar na Prática, o resultado salvo precisa representar uma lista concluída com pelo menos 15 questões respondidas. Resultados importados que já tragam a validação de prática preservam essa informação.",
     }),
   );
+  criteria.append(summary, content);
   body.append(criteria);
 }
 
@@ -211,14 +218,14 @@ export function openFlowStageHelpModal({
   if (!stage.canBecomeCurrent && IMMEDIATE_DEPENDENCY[stage.key]) {
     body.append(
       createElement(document, "p", {
-        className: "flow-help-warning",
+        className: "flow-help-warning flow-help-blocked-warning",
         text: IMMEDIATE_DEPENDENCY[stage.key],
       }),
     );
   }
 
   const checklist = createElement(document, "section", {
-    className: "flow-help-section",
+    className: "flow-help-section flow-help-checklist-section",
     attributes: { "aria-label": "O que ainda falta nesta etapa" },
   });
   checklist.append(
@@ -239,7 +246,7 @@ export function openFlowStageHelpModal({
   } else {
     body.append(
       createElement(document, "p", {
-        className: "flow-help-empty",
+        className: "flow-help-empty flow-help-empty-evidence",
         text: "Nenhuma evidência registrada ainda.",
       }),
     );

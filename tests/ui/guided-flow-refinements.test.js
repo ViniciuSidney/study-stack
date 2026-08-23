@@ -34,6 +34,7 @@ test("modal transforma pendências em checklist e compacta evidências vazias", 
   assert.match(source, /flow-help-checklist/);
   assert.match(source, /Concluído.*Pendente|Pendente.*Concluído/s);
   assert.match(source, /Nenhuma evidência registrada ainda\./);
+  assert.match(source, /flow-help-empty-evidence/);
   assert.match(source, /if \(stage\.evidence\.length\)/);
   assert.match(source, /Evidências já conquistadas/);
 });
@@ -55,6 +56,8 @@ test("Prática usa linguagem simples, progresso em três listas e critérios sob
   assert.match(source, /listas registradas/);
   assert.match(source, /Salvar o \$\{position\}º resultado de uma lista concluída/);
   assert.match(source, /Ver critérios de uma lista válida/);
+  assert.match(source, /flow-help-criteria-summary/);
+  assert.match(source, /flow-help-criteria-content/);
   assert.match(source, /pelo menos 15 questões respondidas/);
 });
 
@@ -109,4 +112,28 @@ test("painel principal mantém confirmação de consolidação visível antes de
   assert.match(source, /consolidationButton\.disabled = !stage\.canBecomeCurrent/);
   assert.match(source, /Disponível ao alcançar 9\/9 pontos nas etapas anteriores\./);
   assert.match(source, /type: "confirm_consolidation"/);
+});
+
+test("modal do roteiro dá respiro a evidências vazias e avisos de bloqueio", async () => {
+  const source = await read("../../scripts/ui/modals/flow-stage-help-modal.js");
+  const css = await read("../../styles/overview-refinements.css");
+
+  assert.match(source, /flow-help-checklist-section/);
+  assert.match(source, /flow-help-empty-evidence/);
+  assert.match(source, /flow-help-blocked-warning/);
+  assert.match(css, /\.flow-help-score \+ \.flow-help-blocked-warning\s*\{[\s\S]*margin-top:\s*14px/);
+  assert.match(css, /\.flow-help-checklist-section \+ \.flow-help-empty-evidence\s*\{[\s\S]*margin-top:\s*12px/);
+});
+
+test("critérios de lista válida usam disclosure estilizado", async () => {
+  const source = await read("../../scripts/ui/modals/flow-stage-help-modal.js");
+  const css = await read("../../styles/overview-refinements.css");
+
+  assert.match(source, /flow-help-criteria/);
+  assert.match(source, /flow-help-criteria-summary/);
+  assert.match(source, /flow-help-criteria-content/);
+  assert.match(css, /\.flow-help-criteria\s*\{/);
+  assert.match(css, /\.flow-help-criteria-summary::before/);
+  assert.match(css, /\.flow-help-criteria\[open\] \.flow-help-criteria-summary::before/);
+  assert.match(css, /\.flow-help-criteria-content\s*\{/);
 });

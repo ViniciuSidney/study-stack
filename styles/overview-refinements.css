@@ -38,6 +38,75 @@
   color: var(--text-soft);
 }
 
+.flow-help-score + .flow-help-blocked-warning {
+  margin-top: 14px;
+}
+
+.flow-help-checklist-section + .flow-help-empty-evidence {
+  margin-top: 12px;
+}
+
+.flow-help-criteria {
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.flow-help-criteria-summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-weight: 800;
+  list-style: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.flow-help-criteria-summary::-webkit-details-marker {
+  display: none;
+}
+
+.flow-help-criteria-summary::before {
+  content: "›";
+  flex: 0 0 auto;
+  color: var(--accent-hover);
+  font-size: 1rem;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform var(--transition-fast);
+}
+
+.flow-help-criteria[open] .flow-help-criteria-summary::before {
+  transform: rotate(90deg);
+}
+
+.flow-help-criteria-summary:hover,
+.flow-help-criteria-summary:focus-visible {
+  background: var(--surface-strong);
+  color: var(--accent-hover);
+  outline: none;
+}
+
+.flow-help-criteria[open] .flow-help-criteria-summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.flow-help-criteria-content {
+  padding: 12px 14px 14px;
+}
+
+.flow-help-criteria-content .flow-help-empty {
+  margin: 0;
+  line-height: 1.55;
+}
+
 .overview-reflection-panel {
   display: grid;
   gap: 16px;
