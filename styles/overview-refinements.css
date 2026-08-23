@@ -38,11 +38,6 @@
   color: var(--text-soft);
 }
 
-/* O avanço entre etapas acontece pelos avisos contextuais do roteiro. */
-.guided-flow-actions > .button-secondary {
-  display: none;
-}
-
 /* Quando a etapa está bloqueada, a dependência já explica o próximo passo. */
 .guided-flow-detail-copy:has(.guided-flow-blocked-reason) .guided-flow-stage-note {
   display: none;
