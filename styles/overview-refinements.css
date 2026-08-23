@@ -38,6 +38,42 @@
   color: var(--text-soft);
 }
 
+/* Quando a etapa está bloqueada, a dependência já explica o próximo passo. */
+.guided-flow-detail-copy:has(.guided-flow-blocked-reason) .guided-flow-stage-note {
+  display: none;
+}
+
+.guided-flow-blocked-reason {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warning-soft) 62%, transparent);
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.guided-flow-blocked-reason::before {
+  content: "🔒";
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+}
+
+.guided-flow-actions {
+  gap: 8px 10px;
+}
+
+.guided-flow-actions > .button-ghost {
+  min-height: 34px;
+  padding-block: 5px;
+}
+
 .flow-help-score + .flow-help-blocked-warning {
   margin-top: 14px;
 }
@@ -260,5 +296,10 @@
   .overview-reflection-header .button,
   .overview-reflection-empty .button {
     width: 100%;
+  }
+
+  .guided-flow-blocked-reason {
+    width: 100%;
+    border-radius: var(--radius-sm);
   }
 }

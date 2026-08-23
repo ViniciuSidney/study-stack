@@ -94,10 +94,10 @@ test("painel principal usa a mesma linguagem simplificada do roteiro", async () 
     source,
     /Conclua listas no Test Quest e salve os resultados no Study Stack\./,
   );
-  assert.match(source, /Conclua a Base para avançar até esta etapa\./);
-  assert.match(source, /Conclua a Prática para avançar até esta etapa\./);
-  assert.match(source, /Conclua a Análise para avançar até esta etapa\./);
-  assert.match(source, /Conclua a Revisão para avançar até esta etapa\./);
+  assert.match(source, /Conclua a Base para avançar\./);
+  assert.match(source, /Conclua a Prática para avançar\./);
+  assert.match(source, /Conclua a Análise para avançar\./);
+  assert.match(source, /Conclua a Revisão para avançar\./);
   assert.match(source, /stage\.key === "practice"/);
   assert.match(source, /getGuidedStageProgress\(stage\)/);
   assert.match(source, /getGuidedStageNote\(stage\)/);
@@ -136,4 +136,29 @@ test("critérios de lista válida usam disclosure estilizado", async () => {
   assert.match(css, /\.flow-help-criteria-summary::before/);
   assert.match(css, /\.flow-help-criteria\[open\] \.flow-help-criteria-summary::before/);
   assert.match(css, /\.flow-help-criteria-content\s*\{/);
+});
+
+test("painel remove Tornar etapa atual e preserva progressão contextual", async () => {
+  const source = await read("../../scripts/ui/sections/overview-section.js");
+
+  assert.doesNotMatch(source, /Tornar etapa atual/);
+  assert.match(source, /text: `Prosseguir para \$\{flowView\.recommended\.shortLabel\}`/);
+  assert.match(source, /onMakeStageCurrent\(flowView\.recommendedStage\)/);
+});
+
+test("Prática evita repetir a quantidade que já aparece no contador", async () => {
+  const source = await read("../../scripts/ui/sections/overview-section.js");
+
+  assert.match(source, /if \(stage\.key === "practice"\) \{\s*return "";/);
+  assert.doesNotMatch(source, /Faltam \$\{remaining\} resultados de listas concluídas/);
+  assert.match(source, /const stageNote = getGuidedStageNote\(stage\)/);
+  assert.match(source, /if \(stageNote\)/);
+});
+
+test("etapas bloqueadas priorizam dependência e reduzem informação repetida", async () => {
+  const css = await read("../../styles/overview-refinements.css");
+
+  assert.match(css, /\.guided-flow-detail-copy:has\(\.guided-flow-blocked-reason\) \.guided-flow-stage-note\s*\{[\s\S]*display:\s*none/);
+  assert.match(css, /\.guided-flow-blocked-reason\s*\{[\s\S]*width:\s*fit-content/);
+  assert.match(css, /\.guided-flow-blocked-reason::before\s*\{[\s\S]*content:\s*"🔒"/);
 });

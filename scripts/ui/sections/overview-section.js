@@ -29,10 +29,10 @@ const GUIDED_STAGE_DESCRIPTION_OVERRIDES = Object.freeze({
 });
 
 const GUIDED_STAGE_DEPENDENCIES = Object.freeze({
-  practice: "Conclua a Base para avançar até esta etapa.",
-  errorAnalysis: "Conclua a Prática para avançar até esta etapa.",
-  review: "Conclua a Análise para avançar até esta etapa.",
-  consolidation: "Conclua a Revisão para avançar até esta etapa.",
+  practice: "Conclua a Base para avançar.",
+  errorAnalysis: "Conclua a Prática para avançar.",
+  review: "Conclua a Análise para avançar.",
+  consolidation: "Conclua a Revisão para avançar.",
 });
 
 export { getPerceivedMasteryPresentation } from "../overview-perception.js";
@@ -62,10 +62,7 @@ function getGuidedStageNote(stage) {
     return "Todos os requisitos desta etapa estão cumpridos.";
   }
   if (stage.key === "practice") {
-    const remaining = Math.max(0, stage.cap - stage.activePoints);
-    return remaining === 1
-      ? "Falta 1 resultado de lista concluída para registrar."
-      : `Faltam ${remaining} resultados de listas concluídas para registrar.`;
+    return "";
   }
   return stage.missing[0] || "Consulte os requisitos desta etapa.";
 }
@@ -397,14 +394,18 @@ function createGuidedFlowPanel({
     stageProgress.append(stageProgressHeader, stageProgressTrack);
     copy.append(stageProgress);
 
-    copy.append(
-      createElement(document, "p", {
-        className: stage.complete
-          ? "guided-flow-stage-note complete"
-          : "guided-flow-stage-note",
-        text: getGuidedStageNote(stage),
-      }),
-    );
+    const stageNote = getGuidedStageNote(stage);
+    if (stageNote) {
+      copy.append(
+        createElement(document, "p", {
+          className: stage.complete
+            ? "guided-flow-stage-note complete"
+            : "guided-flow-stage-note",
+          text: stageNote,
+        }),
+      );
+    }
+
     if (!stage.canBecomeCurrent && dependencyText) {
       copy.append(
         createElement(document, "p", {
@@ -424,20 +425,6 @@ function createGuidedFlowPanel({
     });
     helpButton.addEventListener("click", () => onOpenStageHelp(stage));
     actions.append(helpButton);
-
-    if (!stage.current) {
-      const makeCurrentButton = createElement(document, "button", {
-        className: "button button-secondary",
-        text: "Tornar etapa atual",
-        attributes: {
-          type: "button",
-          title: dependencyText || "Tornar esta etapa atual",
-        },
-      });
-      makeCurrentButton.disabled = !stage.canBecomeCurrent;
-      makeCurrentButton.addEventListener("click", () => onMakeStageCurrent(stage.key));
-      actions.append(makeCurrentButton);
-    }
 
     if (stage.key === "consolidation" && !stage.complete) {
       const consolidationAction = Object.freeze({
