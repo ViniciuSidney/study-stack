@@ -28,15 +28,19 @@ test("Configurações separa a Zona de risco das preferências", async () => {
   assert.match(modal, /Criar backup antes/);
 });
 
-test("menu de utilidades apresenta as ferramentas e a versão estável", async () => {
+test("menu de utilidades apresenta manutenção, Sobre e versão estável", async () => {
   const html = await read("../../index.html");
   const pkg = JSON.parse(await read("../../package.json"));
   const lock = JSON.parse(await read("../../package-lock.json"));
   const config = await read("../../scripts/config/app-config.js");
+
+  assert.match(html, /data-utility="settings"/);
   assert.match(html, /data-utility="backup"/);
   assert.match(html, /data-utility="restore"/);
   assert.match(html, /data-utility="diagnostics"/);
-  assert.match(html, /Study Stack · v0\.3\.0/);
+  assert.match(html, /data-utility="about"/);
+  assert.match(html, /Sobre o Study Stack/);
+  assert.doesNotMatch(html, /Study Stack · v0\.3\.0/);
   assert.equal(pkg.version, "0.3.0");
   assert.equal(lock.version, "0.3.0");
   assert.match(config, /appVersion: "0\.3\.0"/);
