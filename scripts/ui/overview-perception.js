@@ -7,6 +7,10 @@ export const PERCEIVED_MASTERY_LEVELS = Object.freeze([
 ]);
 
 export function getPerceivedMasteryLevel(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
   const numeric = Number(value);
   if (!Number.isInteger(numeric) || numeric < 0 || numeric > 100) {
     return null;
