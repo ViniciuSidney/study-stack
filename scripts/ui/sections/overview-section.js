@@ -24,12 +24,50 @@ const RECORD_SECTION_BY_TYPE = Object.freeze({
   error_record: "errors",
 });
 
+const GUIDED_STAGE_DESCRIPTION_OVERRIDES = Object.freeze({
+  practice: "Conclua listas no Test Quest e salve os resultados no Study Stack.",
+});
+
+const GUIDED_STAGE_DEPENDENCIES = Object.freeze({
+  practice: "Conclua a Base para avançar até esta etapa.",
+  errorAnalysis: "Conclua a Prática para avançar até esta etapa.",
+  review: "Conclua a Análise para avançar até esta etapa.",
+  consolidation: "Conclua a Revisão para avançar até esta etapa.",
+});
+
 export { getPerceivedMasteryPresentation } from "../overview-perception.js";
 
 function formatStudyDate(value) {
   if (!value) return "Sem data";
   const [year, month, day] = value.split("-");
   return `${day}/${month}/${year}`;
+}
+
+function getGuidedStageDescription(stage) {
+  return GUIDED_STAGE_DESCRIPTION_OVERRIDES[stage.key] ?? stage.description;
+}
+
+function getGuidedStageDependency(stage) {
+  return GUIDED_STAGE_DEPENDENCIES[stage.key] ?? stage.blockedReason ?? "";
+}
+
+function getGuidedStageProgress(stage) {
+  return stage.key === "practice"
+    ? `${stage.activePoints}/${stage.cap} listas`
+    : `${stage.activePoints}/${stage.cap} pontos`;
+}
+
+function getGuidedStageNote(stage) {
+  if (stage.complete) {
+    return "Todos os requisitos desta etapa estão cumpridos.";
+  }
+  if (stage.key === "practice") {
+    const remaining = Math.max(0, stage.cap - stage.activePoints);
+    return remaining === 1
+      ? "Falta 1 resultado de lista concluída para registrar."
+      : `Faltam ${remaining} resultados de listas concluídas para registrar.`;
+  }
+  return stage.missing[0] || "Consulte os requisitos desta etapa.";
 }
 
 function createMetric(document, label, value, onClick, description = "") {
@@ -293,6 +331,7 @@ function createGuidedFlowPanel({
   function renderDetail(stageKey) {
     selectedStage = stageKey;
     const stage = flowView.stages.find((candidate) => candidate.key === stageKey);
+    const dependencyText = getGuidedStageDependency(stage);
     buttons.forEach((button, key) => {
       const selected = key === stageKey;
       button.classList.toggle("selected", selected);
@@ -326,7 +365,7 @@ function createGuidedFlowPanel({
     copy.append(
       badges,
       createElement(document, "h4", { text: stage.label }),
-      createElement(document, "p", { text: stage.description }),
+      createElement(document, "p", { text: getGuidedStageDescription(stage) }),
     );
 
     const stageProgress = createElement(document, "div", {
@@ -337,7 +376,7 @@ function createGuidedFlowPanel({
     });
     stageProgressHeader.append(
       createElement(document, "strong", {
-        text: `${stage.activePoints}/${stage.cap} pontos`,
+        text: getGuidedStageProgress(stage),
       }),
     );
     const stageProgressTrack = createElement(document, "div", {
@@ -358,22 +397,19 @@ function createGuidedFlowPanel({
     stageProgress.append(stageProgressHeader, stageProgressTrack);
     copy.append(stageProgress);
 
-    const missingText = stage.complete
-      ? "Todos os requisitos desta etapa estão cumpridos."
-      : stage.missing[0] || "Consulte os requisitos desta etapa.";
     copy.append(
       createElement(document, "p", {
         className: stage.complete
           ? "guided-flow-stage-note complete"
           : "guided-flow-stage-note",
-        text: missingText,
+        text: getGuidedStageNote(stage),
       }),
     );
-    if (!stage.canBecomeCurrent && stage.blockedReason) {
+    if (!stage.canBecomeCurrent && dependencyText) {
       copy.append(
         createElement(document, "p", {
           className: "guided-flow-blocked-reason",
-          text: stage.blockedReason,
+          text: dependencyText,
         }),
       );
     }
@@ -395,7 +431,7 @@ function createGuidedFlowPanel({
         text: "Tornar etapa atual",
         attributes: {
           type: "button",
-          title: stage.blockedReason ?? "Tornar esta etapa atual",
+          title: dependencyText || "Tornar esta etapa atual",
         },
       });
       makeCurrentButton.disabled = !stage.canBecomeCurrent;
@@ -403,7 +439,29 @@ function createGuidedFlowPanel({
       actions.append(makeCurrentButton);
     }
 
-    if (stage.action) {
+    if (stage.key === "consolidation" && !stage.complete) {
+      const consolidationAction = Object.freeze({
+        type: "confirm_consolidation",
+        label: "Confirmar consolidação",
+      });
+      const consolidationButton = createElement(document, "button", {
+        className: "button button-primary",
+        text: consolidationAction.label,
+        attributes: {
+          type: "button",
+          title: stage.canBecomeCurrent
+            ? "Confirmar consolidação"
+            : "Disponível ao alcançar 9/9 pontos nas etapas anteriores.",
+        },
+      });
+      consolidationButton.disabled = !stage.canBecomeCurrent;
+      consolidationButton.addEventListener("click", () => {
+        if (!consolidationButton.disabled) {
+          onStageAction(consolidationAction);
+        }
+      });
+      actions.append(consolidationButton);
+    } else if (stage.action) {
       const actionButton = createElement(document, "button", {
         className: "button button-primary",
         text: stage.action.label,
