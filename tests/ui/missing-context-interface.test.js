@@ -52,7 +52,7 @@ test("identidade v0.3.0 aplica o ícone no cabeçalho, favicon e estado público
   await access(touchIconPath);
   assert.match(html, /class="brand-icon"/);
   assert.match(html, /apple-touch-icon/);
-  assert.match(html, /Study Stack · v0\.3\.0/);
+  assert.match(html, /Study Stack v0\.3\.0/);
   assert.match(state, /assets\/icons\/app-icon\.svg/);
   assert.match(icon, /Três cartões de estudo empilhados/);
   assert.match(layout, /\.app-shell\.missing-context-mode/);
