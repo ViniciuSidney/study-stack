@@ -1,5 +1,6 @@
 import { getNavigationItem } from "../domain/navigation.js";
 import { getRequiredElement } from "../utils/dom.js";
+import { openAboutModal } from "./modals/about-modal.js";
 
 export class AppShell {
   constructor({ document, window, config, onPreferencesChange }) {
@@ -110,7 +111,7 @@ export class AppShell {
       this.elements.subjectTitle.textContent = "Assunto não identificado";
       this.elements.subjectStatus.textContent = "Vínculo ausente";
       this.elements.subjectStatus.className =
-        "status-badge status-warning";
+        "subject-progress-stage status-warning";
       return;
     }
 
@@ -127,7 +128,7 @@ export class AppShell {
     };
     this.elements.subjectStatus.textContent =
       statusLabels[context.studyState] || "Base inicial";
-    this.elements.subjectStatus.className = "status-badge status-base";
+    this.elements.subjectStatus.className = "subject-progress-stage";
   }
 
   setNewRecordEnabled(enabled) {
@@ -139,18 +140,15 @@ export class AppShell {
 
   setProgress(progress) {
     const strong = this.elements.progressButton.querySelector("strong");
-    const label = this.elements.progressButton.querySelector("span");
 
     if (!progress) {
       strong.textContent = "0/10";
-      label.textContent = "Sem vínculo";
       this.elements.progressButton.disabled = true;
       this.elements.progressButton.title = "Abra um assunto válido para ver o progresso.";
       return;
     }
 
     strong.textContent = `${progress.currentTotal}/${progress.goalTotal}`;
-    label.textContent = `${progress.percentage}% concluído`;
     this.elements.progressButton.disabled = false;
     this.elements.progressButton.title = "Abrir a Visão Geral e conferir as evidências.";
   }
@@ -174,10 +172,10 @@ export class AppShell {
     });
   }
 
-  setStorageStatus({ schemaVersion, saved }) {
+  setStorageStatus({ saved }) {
     this.elements.saveState.textContent = saved
-      ? `Schema ${schemaVersion} · salvo localmente`
-      : `Schema ${schemaVersion} · falha ao salvar`;
+      ? "Salvo localmente"
+      : "Falha ao salvar";
     this.elements.saveState.classList.toggle("save-error", !saved);
   }
 
@@ -351,6 +349,17 @@ export class AppShell {
       .addEventListener("click", () => {
         this.closeUtilitiesMenu();
         this.diagnosticListener?.();
+      });
+
+    this.elements.utilitiesMenu
+      .querySelector('[data-utility="about"]')
+      .addEventListener("click", () => {
+        this.closeUtilitiesMenu();
+        openAboutModal({
+          document: this.document,
+          config: this.config,
+          onClose: () => this.syncToastLayer(),
+        });
       });
 
     this.elements.returnButton.addEventListener("click", () => {
