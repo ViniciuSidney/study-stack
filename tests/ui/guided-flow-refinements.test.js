@@ -83,3 +83,30 @@ test("Consolidação mantém a ação visível e bloqueada até liberar os nove 
   assert.match(source, /Disponível ao alcançar 9\/9 pontos nas etapas anteriores\./);
   assert.match(source, /type: "confirm_consolidation"/);
 });
+
+test("painel principal usa a mesma linguagem simplificada do roteiro", async () => {
+  const source = await read("../../scripts/ui/sections/overview-section.js");
+
+  assert.match(
+    source,
+    /Conclua listas no Test Quest e salve os resultados no Study Stack\./,
+  );
+  assert.match(source, /Conclua a Base para avançar até esta etapa\./);
+  assert.match(source, /Conclua a Prática para avançar até esta etapa\./);
+  assert.match(source, /Conclua a Análise para avançar até esta etapa\./);
+  assert.match(source, /Conclua a Revisão para avançar até esta etapa\./);
+  assert.match(source, /stage\.key === "practice"/);
+  assert.match(source, /getGuidedStageProgress\(stage\)/);
+  assert.match(source, /getGuidedStageNote\(stage\)/);
+  assert.match(source, /getGuidedStageDependency\(stage\)/);
+});
+
+test("painel principal mantém confirmação de consolidação visível antes de 9/9", async () => {
+  const source = await read("../../scripts/ui/sections/overview-section.js");
+
+  assert.match(source, /stage\.key === "consolidation" && !stage\.complete/);
+  assert.match(source, /label: "Confirmar consolidação"/);
+  assert.match(source, /consolidationButton\.disabled = !stage\.canBecomeCurrent/);
+  assert.match(source, /Disponível ao alcançar 9\/9 pontos nas etapas anteriores\./);
+  assert.match(source, /type: "confirm_consolidation"/);
+});
