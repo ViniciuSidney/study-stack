@@ -1,4 +1,8 @@
 import { createElement } from "../../utils/dom.js";
+import {
+  PERCEIVED_MASTERY_LEVELS,
+  getPerceivedMasteryLevel,
+} from "../overview-perception.js";
 
 const STUDY_STATE_OPTIONS = Object.freeze([
   { value: "initial_base", label: "Base inicial" },
@@ -31,7 +35,10 @@ function createTextArea(document, name, value, placeholder, rows = 4) {
 
 function createStudyStateSelect(document, value) {
   const select = createElement(document, "select", {
-    attributes: { name: "studyState" },
+    attributes: {
+      name: "studyState",
+      title: "Esta é uma percepção pessoal da etapa, separada do progresso calculado pelas evidências.",
+    },
   });
 
   STUDY_STATE_OPTIONS.forEach((option) => {
@@ -44,6 +51,52 @@ function createStudyStateSelect(document, value) {
   });
 
   return select;
+}
+
+function createMasterySelect(document, value) {
+  const select = createElement(document, "select", {
+    attributes: {
+      name: "perceivedMastery",
+      title: "Autoavaliação pessoal. Ela não altera a pontuação objetiva do assunto.",
+    },
+  });
+  select.append(
+    createElement(document, "option", {
+      text: "Não informado",
+      attributes: { value: "" },
+    }),
+  );
+
+  const currentLevel = getPerceivedMasteryLevel(value);
+  PERCEIVED_MASTERY_LEVELS.forEach((level) => {
+    const option = createElement(document, "option", {
+      text: level.label,
+      attributes: { value: String(level.value) },
+    });
+    option.selected = currentLevel?.value === level.value;
+    select.append(option);
+  });
+
+  if (!currentLevel) {
+    select.value = "";
+  }
+
+  return select;
+}
+
+function createGroup(document, title, description) {
+  const section = createElement(document, "section", {
+    className: "overview-editor-group",
+  });
+  const header = createElement(document, "header", {
+    className: "overview-editor-group-header",
+  });
+  header.append(
+    createElement(document, "h3", { text: title }),
+    createElement(document, "p", { text: description }),
+  );
+  section.append(header);
+  return section;
 }
 
 export function openOverviewEditorModal({
@@ -64,11 +117,10 @@ export function openOverviewEditorModal({
   const copy = createElement(document, "div");
   copy.append(
     createElement(document, "p", { className: "eyebrow", text: "Visão Geral" }),
-    createElement(document, "h2", { text: "Atualizar momento do estudo" }),
+    createElement(document, "h2", { text: "Editar Visão Geral" }),
     createElement(document, "p", {
       className: "modal-description",
-      text:
-        "Registre somente o que ajuda a decidir o próximo passo. O progresso objetivo continua calculado pelas evidências.",
+      text: "Registre o que ajuda a orientar seu próximo estudo.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -83,46 +135,34 @@ export function openOverviewEditorModal({
   });
 
   const stateSelect = createStudyStateSelect(document, subject.studyState);
-  const masteryInput = createElement(document, "input", {
-    attributes: {
-      type: "number",
-      name: "perceivedMastery",
-      min: "0",
-      max: "100",
-      step: "5",
-      placeholder: "Ex.: 60",
-    },
-  });
-  masteryInput.value = subject.overview.perceivedMastery ?? "";
+  const masterySelect = createMasterySelect(
+    document,
+    subject.overview.perceivedMastery,
+  );
 
+  const momentGroup = createGroup(
+    document,
+    "Momento percebido",
+    "Como você sente o assunto agora.",
+  );
   const metaGrid = createElement(document, "div", {
     className: "overview-editor-meta-grid",
   });
   metaGrid.append(
-    createField(
-      document,
-      "Estado atual",
-      stateSelect,
-      "É uma classificação manual e pode ser alterada a qualquer momento.",
-    ),
-    createField(
-      document,
-      "Domínio percebido (%)",
-      masteryInput,
-      "Sua percepção não altera a pontuação objetiva.",
-    ),
+    createField(document, "Percepção da etapa", stateSelect),
+    createField(document, "Segurança no assunto", masterySelect),
   );
-
-  body.append(
+  momentGroup.append(
     metaGrid,
     createField(
       document,
-      "Próximo passo",
+      "Percepção atual",
       createTextArea(
         document,
-        "nextStep",
-        subject.overview.nextStep?.plainText,
-        "Ex.: resolver uma lista de 20 questões e analisar os erros.",
+        "currentPerception",
+        subject.overview.currentPerception?.plainText,
+        "O que já está claro e o que ainda parece frágil?",
+        3,
       ),
     ),
     createField(
@@ -133,16 +173,26 @@ export function openOverviewEditorModal({
         "mainDifficulty",
         subject.overview.mainDifficulty?.plainText,
         "Ex.: diferenciar consumidores secundários e terciários.",
+        3,
       ),
     ),
+  );
+
+  const nextGroup = createGroup(
+    document,
+    "Próximos passos",
+    "Registre uma intenção prática e uma mudança relevante, quando houver.",
+  );
+  nextGroup.append(
     createField(
       document,
-      "Percepção atual",
+      "Próximo passo pessoal",
       createTextArea(
         document,
-        "currentPerception",
-        subject.overview.currentPerception?.plainText,
-        "O que já está claro e o que ainda parece frágil?",
+        "nextStep",
+        subject.overview.nextStep?.plainText,
+        "Ex.: resolver uma lista de questões e analisar os erros.",
+        3,
       ),
     ),
     createField(
@@ -153,9 +203,12 @@ export function openOverviewEditorModal({
         "progressObservation",
         subject.overview.progressObservation?.plainText,
         "Registre uma mudança relevante percebida desde o último estudo.",
+        3,
       ),
     ),
   );
+
+  body.append(momentGroup, nextGroup);
 
   const errorMessage = createElement(document, "p", {
     className: "form-error",

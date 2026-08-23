@@ -1,5 +1,6 @@
 import { getRichContentPlainText } from "../../domain/rich-content.js";
 import { clearElement, createElement } from "../../utils/dom.js";
+import { getPerceivedMasteryPresentation } from "../overview-perception.js";
 
 const STUDY_STATE_LABELS = Object.freeze({
   initial_base: "Base inicial",
@@ -16,44 +17,29 @@ const RECORD_TYPE_LABELS = Object.freeze({
   error_record: "Erro",
 });
 
+const RECORD_SECTION_BY_TYPE = Object.freeze({
+  summary: "summaries",
+  note: "notes",
+  imported_session: "exercises",
+  error_record: "errors",
+});
 
-export function getPerceivedMasteryPresentation(value) {
-  const informed = Number.isInteger(value) && value >= 0 && value <= 100;
-
-  return Object.freeze({
-    informed,
-    value: informed ? value : null,
-    displayValue: informed ? `${value}%` : "Não informado",
-    description: informed
-      ? "Sua autoavaliação atual. Ela não altera a pontuação objetiva."
-      : "Registre uma autoavaliação de 0% a 100% na edição da Visão Geral.",
-  });
-}
-
-function formatDateTime(value) {
-  if (!value || Number.isNaN(Date.parse(value))) {
-    return "Ainda não registrado";
-  }
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+export { getPerceivedMasteryPresentation } from "../overview-perception.js";
 
 function formatStudyDate(value) {
-  if (!value) {
-    return "Sem data";
-  }
-
+  if (!value) return "Sem data";
   const [year, month, day] = value.split("-");
   return `${day}/${month}/${year}`;
 }
 
 function createMetric(document, label, value, onClick, description = "") {
   const button = createElement(document, "button", {
-    className: "metric-card panel",
-    attributes: { type: "button", title: description || label },
+    className: "metric-card panel overview-shortcut-card",
+    attributes: {
+      type: "button",
+      title: description || `Abrir ${label.toLowerCase()}`,
+      "aria-label": `${label}: ${value}. Abrir seção.`,
+    },
   });
   button.append(
     createElement(document, "strong", { text: value }),
@@ -63,37 +49,112 @@ function createMetric(document, label, value, onClick, description = "") {
   return button;
 }
 
-function createPersonalPerception(document, mastery) {
-  const presentation = getPerceivedMasteryPresentation(mastery);
-  const indicator = createElement(document, "aside", {
-    className: `overview-personal-perception ${presentation.informed ? "" : "empty"}`,
-    attributes: {
-      title: presentation.description,
-      "aria-label": `Percepção pessoal: ${presentation.displayValue}. ${presentation.description}`,
-    },
+function createReflectionItem(document, title, content) {
+  const item = createElement(document, "article", {
+    className: "overview-reflection-item",
   });
-  indicator.append(
-    createElement(document, "span", { text: "Percepção" }),
-    createElement(document, "strong", {
-      text: presentation.informed ? presentation.displayValue : "—",
+  item.append(
+    createElement(document, "span", { text: title }),
+    createElement(document, "p", { text: content }),
+  );
+  return item;
+}
+
+function createReflectionPanel(document, subject, onEditOverview) {
+  const panel = createElement(document, "section", {
+    className: "panel overview-reflection-panel",
+  });
+  const header = createElement(document, "header", {
+    className: "overview-reflection-header",
+  });
+  const copy = createElement(document, "div");
+  copy.append(
+    createElement(document, "p", { className: "eyebrow", text: "Reflexão pessoal" }),
+    createElement(document, "h3", { text: "Como este assunto parece para você" }),
+    createElement(document, "p", {
+      text: "Uma leitura pessoal do momento, separada do progresso objetivo acima.",
     }),
   );
+  header.append(copy);
 
-  return indicator;
-}
+  const values = [
+    {
+      label: "Próximo passo pessoal",
+      value: getRichContentPlainText(subject.overview.nextStep),
+    },
+    {
+      label: "Dificuldade principal",
+      value: getRichContentPlainText(subject.overview.mainDifficulty),
+    },
+    {
+      label: "Percepção atual",
+      value: getRichContentPlainText(subject.overview.currentPerception),
+    },
+    {
+      label: "Observação de progresso",
+      value: getRichContentPlainText(subject.overview.progressObservation),
+    },
+  ].filter((item) => item.value);
 
-function createOverviewFact(document, title, content, emptyText) {
-  const card = createElement(document, "article", {
-    className: `overview-fact ${content ? "" : "empty"}`,
+  const mastery = getPerceivedMasteryPresentation(subject.overview.perceivedMastery);
+  const hasReflection =
+    values.length > 0 ||
+    mastery.informed ||
+    subject.studyState !== "initial_base";
+
+  if (!hasReflection) {
+    panel.append(header);
+    const empty = createElement(document, "div", {
+      className: "overview-reflection-empty",
+    });
+    empty.append(
+      createElement(document, "p", {
+        text: "Você ainda não registrou uma reflexão pessoal para este assunto.",
+      }),
+    );
+    const addButton = createElement(document, "button", {
+      className: "button button-secondary",
+      text: "Adicionar reflexão",
+      attributes: { type: "button" },
+    });
+    addButton.addEventListener("click", onEditOverview);
+    empty.append(addButton);
+    panel.append(empty);
+    return panel;
+  }
+
+  const editButton = createElement(document, "button", {
+    className: "button button-ghost",
+    text: "Editar reflexão",
+    attributes: { type: "button" },
   });
-  card.append(
-    createElement(document, "span", { text: title }),
-    createElement(document, "p", { text: content || emptyText }),
+  editButton.addEventListener("click", onEditOverview);
+  header.append(editButton);
+  panel.append(header);
+
+  const grid = createElement(document, "div", {
+    className: "overview-reflection-grid",
+  });
+  grid.append(
+    createReflectionItem(
+      document,
+      "Percepção da etapa",
+      STUDY_STATE_LABELS[subject.studyState] ?? subject.studyState,
+    ),
   );
-  return card;
+  if (mastery.informed) {
+    grid.append(
+      createReflectionItem(document, "Segurança no assunto", mastery.displayValue),
+    );
+  }
+  values.forEach((item) => {
+    grid.append(createReflectionItem(document, item.label, item.value));
+  });
+  panel.append(grid);
+  return panel;
 }
 
-function createRecordList(document, records, emptyText) {
+function createRecordList(document, records, emptyText, navigate) {
   if (!records.length) {
     return createElement(document, "p", {
       className: "overview-empty-copy",
@@ -104,6 +165,13 @@ function createRecordList(document, records, emptyText) {
   const list = createElement(document, "ul", { className: "overview-record-list" });
   records.forEach((record) => {
     const item = createElement(document, "li");
+    const button = createElement(document, "button", {
+      className: "overview-record-link",
+      attributes: {
+        type: "button",
+        title: `Abrir ${RECORD_TYPE_LABELS[record.type] ?? "registro"}`,
+      },
+    });
     const copy = createElement(document, "div");
     copy.append(
       createElement(document, "strong", {
@@ -113,7 +181,7 @@ function createRecordList(document, records, emptyText) {
         text: `${RECORD_TYPE_LABELS[record.type] ?? "Registro"} · ${formatStudyDate(record.studyDate)}`,
       }),
     );
-    item.append(
+    button.append(
       copy,
       createElement(document, "span", {
         className: `record-badge status-${record.status}`,
@@ -125,39 +193,20 @@ function createRecordList(document, records, emptyText) {
               : "Rascunho",
       }),
     );
+    const target = RECORD_SECTION_BY_TYPE[record.type];
+    if (target) {
+      button.addEventListener("click", () => navigate(target));
+    } else {
+      button.disabled = true;
+    }
+    item.append(button);
     list.append(item);
   });
   return list;
 }
-
-function createHistoryList(document, events) {
-  if (!events.length) {
-    return createElement(document, "p", {
-      className: "overview-empty-copy",
-      text: "A atividade do assunto aparecerá aqui conforme você estudar.",
-    });
-  }
-
-  const list = createElement(document, "ul", { className: "overview-history-list" });
-  events.slice(0, 5).forEach((event) => {
-    const item = createElement(document, "li");
-    item.append(
-      createElement(document, "span", { className: "history-dot" }),
-      createElement(document, "div"),
-    );
-    item.lastElementChild.append(
-      createElement(document, "strong", { text: event.summary }),
-      createElement(document, "small", { text: formatDateTime(event.occurredAt) }),
-    );
-    list.append(item);
-  });
-  return list;
-}
-
 
 function createGuidedFlowPanel({
   document,
-  subject,
   progress,
   flowView,
   onMakeStageCurrent,
@@ -176,15 +225,11 @@ function createGuidedFlowPanel({
       className: "eyebrow",
       text: "Roteiro para consolidar",
     }),
-    createElement(document, "h3", {
-      text: flowView.completed
-        ? "Assunto consolidado"
-        : `Etapa atual: ${flowView.current.label}`,
-    }),
+    createElement(document, "h3", { text: "Roteiro de consolidação" }),
     createElement(document, "p", {
       text: flowView.completed
-        ? "Os 10 pontos estão ativos. O caminho permanece disponível para consulta."
-        : `Recomendação atual: ${flowView.recommended.label}. O avanço só acontece quando você decidir.`,
+        ? "As cinco etapas continuam disponíveis para consulta."
+        : "Consulte as etapas e avance quando fizer sentido para o seu estudo.",
     }),
   );
   header.append(headerCopy);
@@ -217,32 +262,16 @@ function createGuidedFlowPanel({
   const progressCopy = createElement(document, "div", {
     className: "guided-flow-progress-copy",
   });
-  const progressMeta = createElement(document, "div", {
-    className: "overview-progress-meta guided-flow-progress-meta",
-  });
-  const stateRow = createElement(document, "div", {
-    className: "overview-state-row",
-  });
-  stateRow.append(
-    createElement(document, "span", {
-      className: "state-badge",
-      text: STUDY_STATE_LABELS[subject.studyState] ?? subject.studyState,
-    }),
-    createElement(document, "small", {
-      text: `Recalculado em ${formatDateTime(progress.calculatedAt)}`,
-    }),
-  );
-  progressMeta.append(
-    stateRow,
-    createPersonalPerception(document, subject.overview.perceivedMastery),
-  );
   progressCopy.append(
-    progressMeta,
     createElement(document, "h4", {
-      text: `${progress.percentage}% do caminho atual`,
+      text: flowView.completed
+        ? "Assunto consolidado"
+        : `Etapa atual: ${flowView.current.label}`,
     }),
     createElement(document, "p", {
-      text: "Pontuação baseada nas evidências persistidas deste assunto.",
+      text: flowView.completed
+        ? "Todas as evidências previstas estão ativas."
+        : `Próximo passo recomendado: ${flowView.recommended.label}.`,
     }),
   );
   progressSummary.append(score, progressCopy);
@@ -309,9 +338,6 @@ function createGuidedFlowPanel({
     stageProgressHeader.append(
       createElement(document, "strong", {
         text: `${stage.activePoints}/${stage.cap} pontos`,
-      }),
-      createElement(document, "span", {
-        text: `${Math.round((stage.activePoints / stage.cap) * 100)}%`,
       }),
     );
     const stageProgressTrack = createElement(document, "div", {
@@ -393,9 +419,7 @@ function createGuidedFlowPanel({
             text: extraAction.label,
             attributes: { type: "button" },
           });
-          extraButton.addEventListener("click", () =>
-            onStageAction(extraAction),
-          );
+          extraButton.addEventListener("click", () => onStageAction(extraAction));
           actions.append(extraButton);
         });
     }
@@ -433,12 +457,11 @@ function createGuidedFlowPanel({
     );
     button.addEventListener("click", () => renderDetail(stage.key));
     button.addEventListener("keydown", (event) => {
-      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) {
-        return;
-      }
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
       event.preventDefault();
       const direction = event.key === "ArrowRight" ? 1 : -1;
-      const nextIndex = (index + direction + flowView.stages.length) % flowView.stages.length;
+      const nextIndex =
+        (index + direction + flowView.stages.length) % flowView.stages.length;
       const nextStage = flowView.stages[nextIndex];
       renderDetail(nextStage.key);
       buttons.get(nextStage.key)?.focus();
@@ -446,11 +469,12 @@ function createGuidedFlowPanel({
     buttons.set(stage.key, button);
     track.append(button);
   });
+
   detail.id = "guided-flow-detail";
   trackWrap.append(track);
   navigation.append(progressSummary, trackWrap);
-
   panel.append(header, navigation);
+
   if (flowView.regression) {
     const notice = createElement(document, "div", {
       className: "guided-flow-system-notice regression",
@@ -486,11 +510,11 @@ function createGuidedFlowPanel({
     );
     panel.append(notice);
   }
+
   panel.append(detail);
   renderDetail(selectedStage);
   return panel;
 }
-
 
 export function renderOverviewSection({
   document,
@@ -500,7 +524,6 @@ export function renderOverviewSection({
   recordCounts,
   recentRecords,
   importantRecords,
-  recentEvents,
   navigate,
   onCreate,
   onEditOverview,
@@ -521,8 +544,7 @@ export function renderOverviewSection({
     createElement(document, "h2", { text: "Visão Geral" }),
     createElement(document, "p", {
       className: "section-description",
-      text:
-        "Seu momento atual, as evidências já conquistadas e o próximo passo do assunto em uma única tela.",
+      text: "Acompanhe seu progresso e veja o próximo passo deste assunto.",
     }),
   );
   const actions = createElement(document, "div", { className: "section-header-actions" });
@@ -545,7 +567,6 @@ export function renderOverviewSection({
   inner.append(
     createGuidedFlowPanel({
       document,
-      subject,
       progress,
       flowView: guidedFlow,
       onMakeStageCurrent,
@@ -553,7 +574,6 @@ export function renderOverviewSection({
       onOpenStageHelp,
     }),
   );
-
 
   const metrics = createElement(document, "section", { className: "metrics-grid" });
   metrics.append(
@@ -564,101 +584,44 @@ export function renderOverviewSection({
   );
   inner.append(metrics);
 
-  const momentPanel = createElement(document, "section", {
-    className: "panel overview-moment-panel",
-  });
-  const momentHeader = createElement(document, "header", {
-    className: "overview-panel-header",
-  });
-  const momentCopy = createElement(document, "div");
-  momentCopy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Momento atual" }),
-    createElement(document, "h3", { text: subject.subjectName }),
-    createElement(document, "p", { text: `${subject.matterName} › ${subject.themeName}` }),
-  );
-  momentHeader.append(momentCopy);
-
-  const factGrid = createElement(document, "div", { className: "overview-fact-grid" });
-  factGrid.append(
-    createOverviewFact(
-      document,
-      "Próximo passo pessoal",
-      getRichContentPlainText(subject.overview.nextStep),
-      "O roteiro acima mostra a recomendação objetiva; aqui você pode registrar uma intenção pessoal.",
-    ),
-    createOverviewFact(
-      document,
-      "Dificuldade principal",
-      getRichContentPlainText(subject.overview.mainDifficulty),
-      "Nenhuma dificuldade principal foi registrada.",
-    ),
-    createOverviewFact(
-      document,
-      "Percepção atual",
-      getRichContentPlainText(subject.overview.currentPerception),
-      "Registre o que está claro e o que ainda parece frágil.",
-    ),
-    createOverviewFact(
-      document,
-      "Observação de progresso",
-      getRichContentPlainText(subject.overview.progressObservation),
-      "Ainda não há uma observação de evolução.",
-    ),
-  );
-  momentPanel.append(momentHeader, factGrid);
-  inner.append(momentPanel);
+  inner.append(createReflectionPanel(document, subject, onEditOverview));
 
   const lowerGrid = createElement(document, "section", {
-    className: "overview-lower-grid",
+    className: `overview-lower-grid ${importantRecords.length ? "" : "single"}`,
   });
-  const importantPanel = createElement(document, "article", {
-    className: "panel overview-list-panel",
-  });
-  importantPanel.append(
-    createElement(document, "p", { className: "eyebrow", text: "Acesso rápido" }),
-    createElement(document, "h3", { text: "Registros importantes" }),
-    createRecordList(
-      document,
-      importantRecords.slice(0, 4),
-      "Marque um Resumo ou uma Anotação como importante para encontrá-lo aqui.",
-    ),
-  );
+
+  if (importantRecords.length) {
+    const importantPanel = createElement(document, "article", {
+      className: "panel overview-list-panel",
+    });
+    importantPanel.append(
+      createElement(document, "p", { className: "eyebrow", text: "Acesso rápido" }),
+      createElement(document, "h3", { text: "Registros importantes" }),
+      createRecordList(
+        document,
+        importantRecords.slice(0, 4),
+        "",
+        navigate,
+      ),
+    );
+    lowerGrid.append(importantPanel);
+  }
 
   const recentPanel = createElement(document, "article", {
     className: "panel overview-list-panel",
   });
   recentPanel.append(
-    createElement(document, "p", { className: "eyebrow", text: "Cronologia" }),
+    createElement(document, "p", { className: "eyebrow", text: "Acesso rápido" }),
     createElement(document, "h3", { text: "Registros recentes" }),
     createRecordList(
       document,
       recentRecords.slice(0, 4),
       "O primeiro registro do assunto aparecerá aqui.",
+      navigate,
     ),
   );
-  lowerGrid.append(importantPanel, recentPanel);
+  lowerGrid.append(recentPanel);
   inner.append(lowerGrid);
-
-  const historyPanel = createElement(document, "section", {
-    className: "panel overview-history-panel",
-  });
-  const historyHeader = createElement(document, "div", {
-    className: "overview-panel-header",
-  });
-  const historyCopy = createElement(document, "div");
-  historyCopy.append(
-    createElement(document, "p", { className: "eyebrow", text: "Atividade" }),
-    createElement(document, "h3", { text: "Movimentos recentes" }),
-  );
-  const historyButton = createElement(document, "button", {
-    className: "button button-ghost",
-    text: "Ver histórico completo",
-    attributes: { type: "button" },
-  });
-  historyButton.addEventListener("click", () => navigate("history"));
-  historyHeader.append(historyCopy, historyButton);
-  historyPanel.append(historyHeader, createHistoryList(document, recentEvents));
-  inner.append(historyPanel);
 
   container.append(inner);
 }
