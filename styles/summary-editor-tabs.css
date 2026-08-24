@@ -146,6 +146,30 @@
   line-height: 1.35;
 }
 
+.error-link-list {
+  overflow-x: hidden;
+}
+
+.error-link-option {
+  min-width: 0;
+}
+
+.error-link-option > span {
+  min-width: 0;
+}
+
+.error-link-option strong,
+.error-link-option small {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.error-link-option strong {
+  line-height: 1.35;
+}
+
 @media (max-width: 720px) {
   .summary-editor-tabs {
     flex-wrap: nowrap;

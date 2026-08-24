@@ -21,6 +21,10 @@ const exerciseModalUrl = new URL(
   import.meta.url,
 );
 const cssUrl = new URL("../../styles/components.css", import.meta.url);
+const sharedEditorCssUrl = new URL(
+  "../../styles/summary-editor-tabs.css",
+  import.meta.url,
+);
 const responsiveUrl = new URL("../../styles/responsive.css", import.meta.url);
 
 test("rota Erros usa seção e serviços funcionais", async () => {
@@ -62,6 +66,18 @@ test("editor exige causa, regra e prevenção e permite vínculos do assunto", a
   assert.match(editor, /\["organization", "Organização"\]/);
   assert.match(editor, /\["history", "Histórico"\]/);
   assert.match(editor, /data-error-tab-panel/);
+});
+
+test("vínculos do editor de erro acomodam títulos extensos sem scroll horizontal", async () => {
+  const css = await readFile(fileURLToPath(sharedEditorCssUrl), "utf8");
+
+  assert.match(css, /\.error-link-list\s*\{[\s\S]*overflow-x:\s*hidden;/);
+  assert.match(css, /\.error-link-option\s*\{[\s\S]*min-width:\s*0;/);
+  assert.match(css, /\.error-link-option > span\s*\{[\s\S]*min-width:\s*0;/);
+  assert.match(
+    css,
+    /\.error-link-option strong,[\s\S]*overflow-wrap:\s*anywhere;/,
+  );
 });
 
 test("modal de evidência diferencia reincidência e acerto real", async () => {
