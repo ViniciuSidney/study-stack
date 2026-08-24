@@ -14,9 +14,10 @@ test("Visão Geral apresenta roteiro consultável com avanço manual", async () 
   assert.match(source, /role: "tablist"/);
   assert.match(source, /Etapa atual/);
   assert.match(source, /Recomendada/);
-  assert.match(source, /Tornar etapa atual/);
+  assert.doesNotMatch(source, /Tornar etapa atual/);
   assert.match(source, /Prosseguir para/);
   assert.match(source, /Voltar para/);
+  assert.match(source, /onMakeStageCurrent\(flowView\.recommendedStage\)/);
   assert.match(source, /Como conquistar estes pontos\?/);
   assert.match(source, /guided-flow-progress-summary/);
   assert.match(source, /guided-flow-stage-progress-track/);
