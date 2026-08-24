@@ -144,13 +144,15 @@ export class AppShell {
     if (!progress) {
       strong.textContent = "0/10";
       this.elements.progressButton.disabled = true;
-      this.elements.progressButton.title = "Abra um assunto válido para ver o progresso.";
+      this.elements.progressButton.title =
+        "Abra um assunto válido para ver o progresso.";
       return;
     }
 
     strong.textContent = `${progress.currentTotal}/${progress.goalTotal}`;
     this.elements.progressButton.disabled = false;
-    this.elements.progressButton.title = "Abrir a Visão Geral e conferir as evidências.";
+    this.elements.progressButton.title =
+      "Abrir a Visão Geral e conferir as evidências.";
   }
 
   updateCounters(counts) {
@@ -410,7 +412,9 @@ export class AppShell {
   }
 
   #isMobile() {
-    return this.window.innerWidth <= this.config.mobileBreakpoint;
+    return this.window.matchMedia(
+      `(max-width: ${this.config.mobileBreakpoint}px)`,
+    ).matches;
   }
 
   #updateNavigationToggle() {
