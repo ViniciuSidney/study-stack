@@ -21,9 +21,23 @@
   border-left: 1px solid var(--line);
 }
 
-@media (min-width: 901px) {
-  .subject-context > .button-return {
-    align-self: flex-end;
+@media (max-width: 900px) {
+  .subject-title-row {
+    flex-wrap: wrap;
+  }
+
+  .subject-context .subject-status-group {
+    display: flex;
+    width: 100%;
+    flex: 1 0 100%;
+  }
+
+  .subject-status-group .subject-progress-summary {
+    display: none;
+  }
+
+  .subject-status-group .button-return {
+    width: 100%;
   }
 }
 
