@@ -27,7 +27,7 @@ export function openTestQuestImportModal({
     createElement(document, "p", {
       className: "modal-description",
       text:
-        "Importe o JSON completo de uma sessão concluída. O conteúdo original será preservado como evidência imutável.",
+        "Importe uma sessão concluída do Test Quest para registrar os resultados neste assunto.",
     }),
   );
   const closeButton = createElement(document, "button", {
@@ -46,57 +46,65 @@ export function openTestQuestImportModal({
   contextPanel.append(
     createElement(document, "span", {
       className: "eyebrow",
-      text: "Assunto de destino",
+      text: "Assunto",
     }),
     createElement(document, "strong", { text: subject.subjectName }),
     createElement(document, "small", {
-      text: `${subject.matterName} › ${subject.themeName} · ID ${subject.id}`,
+      text: `${subject.matterName} › ${subject.themeName}`,
+    }),
+  );
+
+  const sourceSection = createElement(document, "section", {
+    className: "testquest-import-source",
+  });
+  const sourceCopy = createElement(document, "div", {
+    className: "testquest-import-source-copy",
+  });
+  sourceCopy.append(
+    createElement(document, "strong", { text: "Arquivo da sessão" }),
+    createElement(document, "p", {
+      text: "Selecione o arquivo JSON exportado pelo Test Quest.",
     }),
   );
 
   const fileField = createElement(document, "label", {
-    className: "field file-field",
+    className: "field testquest-file-field",
   });
-  fileField.append(
-    createElement(document, "span", { text: "Arquivo JSON" }),
-  );
   const fileInput = createElement(document, "input", {
     attributes: {
       type: "file",
       accept: ".json,application/json",
-      "aria-describedby": "testQuestImportHelp",
+      "aria-describedby": "testQuestImportStatus",
     },
   });
   fileField.append(fileInput);
+  sourceSection.append(sourceCopy, fileField);
 
+  const manualDetails = createElement(document, "details", {
+    className: "testquest-manual-entry",
+  });
+  manualDetails.append(
+    createElement(document, "summary", { text: "Colar JSON manualmente" }),
+  );
+  const manualContent = createElement(document, "div", {
+    className: "testquest-manual-content",
+  });
   const textareaField = createElement(document, "label", {
     className: "field",
   });
   textareaField.append(
-    createElement(document, "span", { text: "Conteúdo do resultado" }),
+    createElement(document, "span", { text: "JSON da sessão" }),
   );
   const textarea = createElement(document, "textarea", {
     className: "json-import-textarea",
     attributes: {
-      rows: "13",
+      rows: "9",
       spellcheck: "false",
-      placeholder:
-        '{\n  "contractVersion": "1.0.0",\n  "sourceApp": "test_quest",\n  ...\n}',
+      placeholder: "Cole aqui o JSON exportado pelo Test Quest...",
     },
   });
   textareaField.append(textarea);
-
-  const help = createElement(document, "p", {
-    className: "field-help",
-    text:
-      "Contrato aceito: 1.0.0. O subjectId deve corresponder ao assunto aberto. Sessões repetidas são ignoradas sem duplicação.",
-    attributes: { id: "testQuestImportHelp" },
-  });
-  const error = createElement(document, "p", {
-    className: "form-error",
-    attributes: { role: "alert" },
-  });
-  error.hidden = true;
+  manualContent.append(textareaField);
 
   const supportActions = createElement(document, "div", {
     className: "import-support-actions",
@@ -113,13 +121,33 @@ export function openTestQuestImportModal({
         null,
         2,
       );
+      manualDetails.open = true;
       error.hidden = true;
+      refreshInputState("Exemplo de teste pronto para importar.");
       textarea.focus();
     });
     supportActions.append(exampleButton);
+    manualContent.append(supportActions);
   }
+  manualDetails.append(manualContent);
 
-  body.append(contextPanel, fileField, textareaField, help, supportActions, error);
+  const status = createElement(document, "p", {
+    className: "testquest-import-status",
+    attributes: {
+      id: "testQuestImportStatus",
+      role: "status",
+      "aria-live": "polite",
+    },
+  });
+  status.hidden = true;
+
+  const error = createElement(document, "p", {
+    className: "form-error",
+    attributes: { role: "alert" },
+  });
+  error.hidden = true;
+
+  body.append(contextPanel, sourceSection, manualDetails, status, error);
 
   const footer = createElement(document, "footer", {
     className: "modal-footer",
@@ -131,8 +159,8 @@ export function openTestQuestImportModal({
   });
   const importButton = createElement(document, "button", {
     className: "button button-primary",
-    text: "Validar e importar",
-    attributes: { type: "button" },
+    text: "Importar resultado",
+    attributes: { type: "button", disabled: "" },
   });
   footer.append(cancelButton, importButton);
   card.append(header, body, footer);
@@ -141,10 +169,41 @@ export function openTestQuestImportModal({
 
   let submitted = false;
 
+  function setStatus(message, tone = "info") {
+    status.textContent = message;
+    status.dataset.tone = tone;
+    status.hidden = !message;
+  }
+
   function showError(message) {
     error.textContent = message;
     error.hidden = false;
     error.scrollIntoView?.({ block: "nearest" });
+  }
+
+  function clearError() {
+    error.hidden = true;
+    error.textContent = "";
+  }
+
+  function refreshInputState(successMessage = "JSON pronto para importar.") {
+    const parsed = TestQuestAdapter.parseManualText(textarea.value);
+
+    if (!String(textarea.value ?? "").trim()) {
+      importButton.disabled = true;
+      setStatus("");
+      return parsed;
+    }
+
+    if (parsed.valid) {
+      importButton.disabled = false;
+      setStatus(successMessage, "success");
+      return parsed;
+    }
+
+    importButton.disabled = true;
+    setStatus("O conteúdo ainda não é um JSON válido.", "warning");
+    return parsed;
   }
 
   function close() {
@@ -161,10 +220,21 @@ export function openTestQuestImportModal({
 
     try {
       textarea.value = await file.text();
-      error.hidden = true;
+      clearError();
+      const parsed = refreshInputState(`${file.name} pronto para importar.`);
+      if (!parsed.valid) {
+        showError("O arquivo selecionado não contém um JSON válido.");
+      }
     } catch {
+      importButton.disabled = true;
+      setStatus("");
       showError("Não foi possível ler o arquivo selecionado.");
     }
+  });
+
+  textarea.addEventListener("input", () => {
+    clearError();
+    refreshInputState();
   });
 
   importButton.addEventListener("click", () => {
@@ -200,6 +270,6 @@ export function openTestQuestImportModal({
   });
 
   dialog.showModal();
-  textarea.focus();
+  fileInput.focus();
   return dialog;
 }

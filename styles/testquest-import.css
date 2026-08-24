@@ -1,0 +1,140 @@
+.test-quest-import-card {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.test-quest-import-body {
+  display: grid;
+  gap: 18px;
+}
+
+.import-context-panel {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+}
+
+.import-context-panel strong {
+  overflow-wrap: anywhere;
+}
+
+.import-context-panel small {
+  color: var(--text-soft);
+}
+
+.testquest-import-source {
+  display: grid;
+  gap: 12px;
+}
+
+.testquest-import-source-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.testquest-import-source-copy p {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.testquest-file-field input[type="file"] {
+  min-height: 52px;
+  padding: 7px;
+}
+
+.testquest-file-field input[type="file"]::file-selector-button {
+  min-height: 36px;
+  margin-right: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.testquest-file-field input[type="file"]::file-selector-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  background: var(--accent-soft);
+}
+
+.testquest-manual-entry {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.testquest-manual-entry summary {
+  padding: 13px 15px;
+  color: var(--text-soft);
+  font-weight: 750;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.testquest-manual-entry[open] summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.testquest-manual-content {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.testquest-manual-content .json-import-textarea {
+  min-height: 190px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.testquest-import-status {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.testquest-import-status[data-tone="success"] {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--line));
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  color: var(--success);
+}
+
+.testquest-import-status[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--line));
+  background: color-mix(in srgb, var(--warning-soft) 55%, var(--surface));
+  color: var(--warning);
+}
+
+.testquest-import-modal .import-support-actions {
+  margin-top: 0;
+}
+
+@media (max-width: 560px) {
+  .test-quest-import-card {
+    width: calc(100vw - 16px);
+  }
+
+  .testquest-import-source-copy p {
+    font-size: 0.84rem;
+  }
+
+  .testquest-file-field input[type="file"] {
+    min-width: 0;
+  }
+
+  .testquest-file-field input[type="file"]::file-selector-button {
+    display: block;
+    margin: 0 0 8px;
+  }
+}
