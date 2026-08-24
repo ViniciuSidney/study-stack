@@ -38,6 +38,29 @@
   color: var(--text-soft);
 }
 
+/* Mantém o espaço de estado sempre informativo, inclusive fora da etapa atual. */
+.guided-flow-badges:empty::before {
+  content: "Disponível";
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.guided-flow-detail-copy:has(.guided-flow-blocked-reason)
+  .guided-flow-badges:empty::before {
+  content: "Ainda não desbloqueada";
+  border-color: color-mix(in srgb, var(--warning) 30%, var(--line));
+  background: color-mix(in srgb, var(--warning-soft) 60%, var(--surface));
+  color: var(--warning);
+}
+
 /* Quando a etapa está bloqueada, a dependência já explica o próximo passo. */
 .guided-flow-detail-copy:has(.guided-flow-blocked-reason) .guided-flow-stage-note {
   display: none;

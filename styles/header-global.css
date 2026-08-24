@@ -21,6 +21,12 @@
   border-left: 1px solid var(--line);
 }
 
+@media (min-width: 901px) {
+  .subject-context > .button-return {
+    align-self: flex-end;
+  }
+}
+
 .utilities-menu-label {
   padding: 7px 10px 3px;
   color: var(--text-subtle);
