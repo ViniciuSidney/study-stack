@@ -24,11 +24,36 @@ test("etapa e progresso aparecem em um único controle compacto", async () => {
   const css = await read("../../styles/header-global.css");
 
   assert.match(html, /class="progress-compact subject-progress-summary"/);
-  assert.match(html, /class="subject-progress-stage" id="subjectStatus">Base inicial<\/span>/);
-  assert.match(html, /<strong>0\/10<\/strong>/);
+  assert.match(
+    html,
+    /class="subject-progress-stage"\s+id="subjectStatus"\s*>\s*Base inicial\s*<\/span>/,
+  );
+  assert.match(html, /<strong>\s*0\/10\s*<\/strong>/);
   assert.doesNotMatch(html, /0% concluído/);
   assert.doesNotMatch(shell, /progress\.percentage/);
   assert.match(css, /\.subject-progress-summary/);
+});
+
+test("progresso e retorno ao Concept Compass compartilham o mesmo grupo visual", async () => {
+  const html = await read("../../index.html");
+  const css = await read("../../styles/header-global.css");
+
+  assert.match(
+    html,
+    /class="subject-status-group"[\s\S]*id="progressButton"[\s\S]*id="returnButton"/,
+  );
+  assert.match(
+    css,
+    /@media \(max-width:\s*900px\)[\s\S]*\.subject-context \.subject-status-group\s*\{[\s\S]*display:\s*flex/,
+  );
+  assert.match(
+    css,
+    /\.subject-status-group \.subject-progress-summary\s*\{[\s\S]*display:\s*none/,
+  );
+  assert.match(
+    css,
+    /\.subject-status-group \.button-return\s*\{[\s\S]*width:\s*100%/,
+  );
 });
 
 test("breadcrumb e retorno ao Concept Compass ficam enxutos", async () => {

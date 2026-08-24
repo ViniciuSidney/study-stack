@@ -25,16 +25,3 @@ test("estados atuais e concluídos continuam sendo pills reais do roteiro", asyn
   assert.match(source, /className:\s*"complete",\s*text:\s*"Concluída"/);
   assert.match(components, /\.guided-flow-badges \.complete/);
 });
-
-test("retorno ao Concept Compass alinha com o progresso apenas no desktop", async () => {
-  const css = await read("../../styles/header-global.css");
-
-  assert.match(
-    css,
-    /@media \(min-width:\s*901px\)[\s\S]*\.subject-context > \.button-return\s*\{[\s\S]*align-self:\s*flex-end/,
-  );
-  assert.doesNotMatch(
-    css,
-    /@media \(max-width:[^)]+\)[\s\S]*\.subject-context > \.button-return\s*\{[\s\S]*align-self:\s*flex-end/,
-  );
-});
