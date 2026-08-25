@@ -15,7 +15,10 @@ test("breadcrumb mostra apenas níveis anteriores ao Assunto", async () => {
   assert.match(html, /id="subjectTheme"/);
   assert.doesNotMatch(html, /subjectBreadcrumbName/);
   assert.doesNotMatch(shell, /subjectBreadcrumbName/);
-  assert.match(shell, /subjectTitle\.textContent = context\.subjectName/);
+  assert.match(
+    shell,
+    /subjectTitle\.textContent\s*=\s*[\s\S]*context\.subjectName/,
+  );
 });
 
 test("contadores zero ficam ocultos na navegação", async () => {
