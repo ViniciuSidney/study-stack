@@ -127,7 +127,7 @@ export function openRestoreModal({
     {
       value: "merge",
       title: "Adicionar ao que já existe",
-      description: "Inclui dados novos do backup e mantém os dados atuais. Conflitos são preservados para evitar sobrescritas.",
+      description: "Adiciona o que ainda não existe e mantém seus dados atuais sem substituições.",
       badge: "Recomendado",
     },
     {
@@ -346,36 +346,23 @@ export function openRestoreModal({
       );
     }
 
-    if (result.warnings.length) {
-      const warnings = createElement(document, "ul", { className: "restore-issue-list warning" });
-      const warningMessages = result.warnings.map((warning) =>
-        result.mode === "merge" && result.conflicts.length > 0 && /conflito/iu.test(warning)
-          ? "Conflitos serão preservados no estado atual, sem sobrescrita."
-          : warning,
+    const warningMessages = result.warnings.filter(
+      (warning) =>
+        !(result.mode === "merge" && result.conflicts.length > 0 && /conflito/iu.test(warning)),
+    );
+    if (result.mode === "merge" && result.conflicts.length > 0) {
+      warningMessages.push(
+        "Algumas diferenças foram encontradas. Seus dados atuais serão mantidos.",
       );
+    }
+    if (warningMessages.length) {
+      const warnings = createElement(document, "ul", {
+        className: "restore-issue-list warning",
+      });
       [...new Set(warningMessages)].forEach((warning) => {
         warnings.append(createElement(document, "li", { text: warning }));
       });
       previewContent.append(warnings);
-    }
-
-    if (result.conflicts.length) {
-      const details = createElement(document, "details", { className: "restore-conflicts" });
-      details.append(
-        createElement(document, "summary", {
-          text: "Ver detalhes dos conflitos",
-        }),
-      );
-      const list = createElement(document, "ul");
-      result.conflicts.slice(0, 20).forEach((conflict) => {
-        list.append(
-          createElement(document, "li", {
-            text: `${conflict.collectionName} · ${conflict.id}`,
-          }),
-        );
-      });
-      details.append(list);
-      previewContent.append(details);
     }
 
     updateRestoreAvailability();

@@ -22,3 +22,17 @@ test("preview de restauração mostra somente categorias reconhecíveis pelo usu
   assert.doesNotMatch(source, /restore-merge-chip-identical/);
   assert.doesNotMatch(source, /idênticos/);
 });
+
+test("diferenças na mesclagem são explicadas sem detalhes técnicos", async () => {
+  const source = await read("../../scripts/ui/modals/restore-modal.js");
+
+  assert.match(
+    source,
+    /Algumas diferenças foram encontradas\. Seus dados atuais serão mantidos\./,
+  );
+  assert.doesNotMatch(source, /Ver detalhes dos conflitos/);
+  assert.doesNotMatch(source, /restore-conflicts/);
+  assert.doesNotMatch(source, /conflict\.collectionName/);
+  assert.doesNotMatch(source, /conflict\.id/);
+  assert.doesNotMatch(source, /Conflitos serão preservados/);
+});
