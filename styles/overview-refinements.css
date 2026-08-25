@@ -38,6 +38,12 @@
   color: var(--text-soft);
 }
 
+.guided-flow-panel.completed
+  .guided-flow-badges
+  > span:not(.complete) {
+  display: none;
+}
+
 /* Mantém o espaço de estado sempre informativo, inclusive fora da etapa atual. */
 .guided-flow-badges:empty::before {
   content: "Disponível";
