@@ -118,10 +118,13 @@ export class AppShell {
     this.elements.subjectArea.textContent =
       context.matterName || context.subjectArea;
     this.elements.subjectTheme.textContent = context.themeName;
-    this.elements.subjectTitle.textContent =
-      context.studyState === "consolidated"
-        ? `${context.subjectName} ✅`
-        : context.subjectName;
+    const consolidationStatus = context.consolidation?.status ?? null;
+    const consolidated = consolidationStatus
+      ? consolidationStatus === "confirmed"
+      : context.studyState === "consolidated";
+    this.elements.subjectTitle.textContent = consolidated
+      ? `${context.subjectName} ✅`
+      : context.subjectName;
     const statusLabels = {
       initial_base: "Base inicial",
       in_practice: "Em prática",
@@ -129,8 +132,9 @@ export class AppShell {
       consolidated: "Consolidado",
       custom: "Personalizado",
     };
+    const displayStudyState = consolidated ? "consolidated" : context.studyState;
     this.elements.subjectStatus.textContent =
-      statusLabels[context.studyState] || "Base inicial";
+      statusLabels[displayStudyState] || "Base inicial";
     this.elements.subjectStatus.className = "subject-progress-stage";
   }
 
