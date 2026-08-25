@@ -15,6 +15,16 @@ function createMetric(document, label, value) {
   return metric;
 }
 
+function getVisibleRecordCounts(envelope) {
+  const records = Object.values(envelope?.data?.collections?.records ?? {});
+  return Object.freeze({
+    summaries: records.filter((record) => record.type === "summary").length,
+    notes: records.filter((record) => record.type === "note").length,
+    sessions: records.filter((record) => record.type === "imported_session").length,
+    errors: records.filter((record) => record.type === "error_record").length,
+  });
+}
+
 export function openRestoreModal({
   document,
   onParse,
@@ -304,42 +314,23 @@ export function openRestoreModal({
       }),
     );
 
+    const visibleCounts = getVisibleRecordCounts(envelope);
     const metrics = createElement(document, "div", { className: "restore-metrics" });
     metrics.append(
-      createMetric(document, "assuntos", result.summary?.subjectCount),
-      createMetric(document, "registros", result.summary?.recordCount),
-      createMetric(document, "arquivados", result.summary?.archivedRecordCount),
-      createMetric(document, "rascunhos", result.summary?.draftCount),
+      createMetric(document, "Resumos", visibleCounts.summaries),
+      createMetric(document, "Anotações", visibleCounts.notes),
+      createMetric(document, "Listas", visibleCounts.sessions),
+      createMetric(document, "Erros", visibleCounts.errors),
     );
     previewContent.append(metrics);
 
     if (result.mode === "merge") {
-      const added = Object.values(result.additions).reduce((sum, value) => sum + value, 0);
-      const unchanged = Object.values(result.identical).reduce((sum, value) => sum + value, 0);
       const summary = createElement(document, "div", {
         className: "restore-merge-summary",
       });
-      const summaryStats = createElement(document, "div", {
-        className: "restore-merge-summary-stats",
-      });
-      summaryStats.append(
-        createElement(document, "span", {
-          className: "restore-merge-chip restore-merge-chip-added",
-          text: `${added} ${added === 1 ? "novo" : "novos"}`,
-        }),
-        createElement(document, "span", {
-          className: "restore-merge-chip restore-merge-chip-identical",
-          text: `${unchanged} ${unchanged === 1 ? "idêntico" : "idênticos"}`,
-        }),
-        createElement(document, "span", {
-          className: "restore-merge-chip restore-merge-chip-conflict",
-          text: `${result.conflicts.length} ${result.conflicts.length === 1 ? "conflito" : "conflitos"}`,
-        }),
-      );
       summary.append(
-        summaryStats,
         createElement(document, "p", {
-          text: "Novos itens serão adicionados, itens idênticos permanecerão como estão e conflitos serão preservados sem sobrescrever seus dados atuais.",
+          text: "O que ainda não existe será adicionado. O que já existe será mantido, sem substituir seus dados atuais.",
         }),
       );
       previewContent.append(summary);
