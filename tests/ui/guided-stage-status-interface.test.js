@@ -25,3 +25,17 @@ test("estados atuais e concluídos continuam sendo pills reais do roteiro", asyn
   assert.match(source, /className:\s*"complete",\s*text:\s*"Concluída"/);
   assert.match(components, /\.guided-flow-badges \.complete/);
 });
+
+test("roteiro preserva a leitura em largura intermediária com sidebar aberta", async () => {
+  const css = await read("../../styles/overview-refinements.css");
+
+  assert.match(css, /@media \(min-width: 900px\) and \(max-width: 1280px\)/);
+  assert.match(
+    css,
+    /\.app-shell:not\(\.sidebar-collapsed\) \.guided-flow-detail\s*\{[\s\S]*grid-template-columns:\s*1fr/,
+  );
+  assert.match(
+    css,
+    /\.app-shell:not\(\.sidebar-collapsed\) \.guided-flow-actions\s*\{[\s\S]*max-width:\s*none[\s\S]*justify-content:\s*flex-end/,
+  );
+});
