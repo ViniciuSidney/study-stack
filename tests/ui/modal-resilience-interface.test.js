@@ -21,7 +21,7 @@ test("resiliência dos modais é carregada globalmente e usa corpo flexível", a
   );
   assert.match(
     resilience,
-    /\.modal-body\s*\{[\s\S]*min-height:\s*0[\s\S]*flex:\s*1\s+1\s+auto[\s\S]*overflow-y:\s*auto[\s\S]*scrollbar-gutter:\s*stable/,
+    /\.modal-body\s*\{[\s\S]*min-width:\s*0[\s\S]*min-height:\s*0[\s\S]*flex:\s*1\s+1\s+auto[\s\S]*grid-auto-rows:\s*max-content[\s\S]*align-content:\s*start[\s\S]*overflow-y:\s*auto[\s\S]*scrollbar-gutter:\s*stable/,
   );
   assert.match(
     resilience,
