@@ -310,6 +310,25 @@
   gap: 12px;
 }
 
+/* Em larguras intermediárias, a sidebar aberta reduz a área útil do roteiro.
+   Empilha as ações para preservar espaço de leitura sem afetar o desktop largo. */
+@media (min-width: 900px) and (max-width: 1280px) {
+  .app-shell:not(.sidebar-collapsed) .guided-flow-detail {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .guided-flow-actions {
+    width: 100%;
+    max-width: none;
+    justify-content: flex-end;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .guided-flow-secondary-action {
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 720px) {
   .overview-reflection-header,
   .overview-reflection-empty {
