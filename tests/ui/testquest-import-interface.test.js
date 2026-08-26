@@ -39,7 +39,11 @@ test("stylesheet do importador está carregado e cobre o fluxo responsivo", asyn
   const css = await read("../../styles/testquest-import.css");
 
   assert.match(html, /styles\/testquest-import\.css/);
+  assert.match(css, /\.testquest-import-modal\s*\{[\s\S]*width:\s*min\(760px,\s*calc\(100vw\s*-\s*32px\)\)/);
+  assert.match(css, /\.test-quest-import-card\s*\{[\s\S]*width:\s*100%[\s\S]*max-width:\s*100%/);
+  assert.match(css, /\.test-quest-import-body\s*\{[\s\S]*grid-auto-rows:\s*max-content[\s\S]*align-content:\s*start/);
   assert.match(css, /\.testquest-manual-entry\s*\{/);
   assert.match(css, /\.testquest-file-field input\[type="file"\]/);
   assert.match(css, /@media \(max-width: 560px\)/);
+  assert.doesNotMatch(css, /@import\s+url\("\.\/modal-resilience\.css"\)/);
 });
