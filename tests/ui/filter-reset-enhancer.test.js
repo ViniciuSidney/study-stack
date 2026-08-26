@@ -32,6 +32,15 @@ test("limpeza restaura buscas e selects para o estado padrão", async () => {
   assert.match(enhancer, /searchInputs\[0\]\?\.focus\(\)/);
 });
 
+test("estados vazios filtrados centralizam toda a mensagem", async () => {
+  const enhancer = await read("../../scripts/ui/filter-reset-enhancer.js");
+
+  assert.match(enhancer, /function centerEnhancedEmpty\(empty\)/);
+  assert.match(enhancer, /empty\.style\.textAlign = "center"/);
+  assert.match(enhancer, /paragraph\.style\.textAlign = "center"/);
+  assert.match(enhancer, /centerEnhancedEmpty\(empty\)/);
+});
+
 test("enhancer é instalado globalmente após iniciar a aplicação", async () => {
   const main = await read("../../scripts/main.js");
 
