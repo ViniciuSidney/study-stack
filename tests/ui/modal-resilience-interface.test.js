@@ -7,18 +7,21 @@ async function read(relative) {
   return readFile(fileURLToPath(new URL(relative, import.meta.url)), "utf8");
 }
 
-test("todos os modais preservam header e footer e deixam o corpo rolável", async () => {
+test("resiliência dos modais é carregada globalmente e usa corpo flexível", async () => {
+  const html = await read("../../index.html");
   const resilience = await read("../../styles/modal-resilience.css");
-  const testQuestCss = await read("../../styles/testquest-import.css");
 
-  assert.match(testQuestCss, /@import url\("\.\/modal-resilience\.css"\)/);
   assert.match(
-    resilience,
-    /\.modal-card\s*\{[\s\S]*min-height:\s*0[\s\S]*overflow:\s*hidden/,
+    html,
+    /<link\s+rel="stylesheet"\s+href="styles\/modal-resilience\.css"\s*\/>/,
   );
   assert.match(
     resilience,
-    /\.modal-body\s*\{[\s\S]*min-height:\s*0[\s\S]*scrollbar-gutter:\s*stable/,
+    /\.modal-card\s*\{[\s\S]*display:\s*flex[\s\S]*min-height:\s*0[\s\S]*flex-direction:\s*column[\s\S]*overflow:\s*hidden/,
+  );
+  assert.match(
+    resilience,
+    /\.modal-body\s*\{[\s\S]*min-height:\s*0[\s\S]*flex:\s*1\s+1\s+auto[\s\S]*overflow-y:\s*auto[\s\S]*scrollbar-gutter:\s*stable/,
   );
   assert.match(
     resilience,
