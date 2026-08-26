@@ -1,11 +1,16 @@
-@import url("./modal-resilience.css");
+.testquest-import-modal {
+  width: min(760px, calc(100vw - 32px));
+}
 
 .test-quest-import-card {
-  width: min(760px, calc(100vw - 32px));
+  width: 100%;
+  max-width: 100%;
 }
 
 .test-quest-import-body {
   display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 18px;
 }
 
@@ -65,6 +70,7 @@
 }
 
 .testquest-manual-entry {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface-soft);
@@ -86,11 +92,19 @@
 
 .testquest-manual-content {
   display: grid;
+  min-width: 0;
+  grid-auto-rows: max-content;
   gap: 12px;
   padding: 14px;
 }
 
+.testquest-manual-content .field {
+  min-width: 0;
+}
+
 .testquest-manual-content .json-import-textarea {
+  min-width: 0;
+  max-width: 100%;
   min-height: 190px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.82rem;
@@ -123,10 +137,6 @@
 }
 
 @media (max-width: 560px) {
-  .test-quest-import-card {
-    width: calc(100vw - 16px);
-  }
-
   .testquest-import-source-copy p {
     font-size: 0.84rem;
   }
