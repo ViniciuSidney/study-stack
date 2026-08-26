@@ -6,6 +6,7 @@ import { ActiveSubjectStateWatcher } from "./integrations/active-subject-state-w
 import { ConceptCompassDeletionConsumer } from "./integrations/concept-compass-deletion-consumer.js";
 import { ConceptCompassSubjectWatcher } from "./integrations/concept-compass-subject-watcher.js";
 import { ConceptCompassSummaryPublisher } from "./integrations/concept-compass-summary-publisher.js";
+import { installFilterResetEnhancer } from "./ui/filter-reset-enhancer.js";
 
 const app = new StudyStackApp({
   document,
@@ -21,6 +22,7 @@ const conceptCompassSummaryPublisher = new ConceptCompassSummaryPublisher({
 try {
   bootstrapDeletionConsumer.consume();
   app.start();
+  installFilterResetEnhancer({ document });
   if (!app.subject) {
     app.shell?.setMissingContextMode(true);
     app.shell?.setNewRecordEnabled(false);
