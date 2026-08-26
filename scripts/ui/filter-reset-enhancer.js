@@ -38,6 +38,13 @@ function createResetButton(document, label, onClick) {
   return button;
 }
 
+function centerEnhancedEmpty(empty) {
+  empty.style.textAlign = "center";
+  empty.querySelectorAll("p").forEach((paragraph) => {
+    paragraph.style.textAlign = "center";
+  });
+}
+
 function enhanceFilteredEmpty(empty, document) {
   if (empty.dataset.filterResetEnhanced === "true") return;
   const scope = empty.closest(".content-inner");
@@ -57,6 +64,7 @@ function enhanceFilteredEmpty(empty, document) {
       resetControls(scope),
     ),
   );
+  centerEnhancedEmpty(empty);
 }
 
 function enhanceNoteLinkEmpty(empty, document) {
@@ -93,6 +101,7 @@ function enhanceHistoryEmpty(empty, document) {
       resetControls(scope, { focusSearch: false }),
     ),
   );
+  centerEnhancedEmpty(empty);
 }
 
 function enhanceArchivedEmpty(empty, document) {
@@ -121,6 +130,7 @@ function enhanceArchivedEmpty(empty, document) {
       resetControls(scope, { focusSearch: false }),
     ),
   );
+  centerEnhancedEmpty(empty);
 }
 
 function enhance(document) {
