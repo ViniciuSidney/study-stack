@@ -1,0 +1,33 @@
+.modal-card {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-body {
+  min-height: 0;
+  scrollbar-gutter: stable;
+}
+
+.modal-header,
+.modal-footer {
+  flex: 0 0 auto;
+}
+
+@media (max-height: 720px) {
+  .modal {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .modal-card {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .testquest-manual-content .json-import-textarea {
+    min-height: clamp(110px, 24dvh, 190px);
+    max-height: 30dvh;
+  }
+
+  .rich-editor-surface {
+    min-height: clamp(180px, 38dvh, 300px);
+  }
+}
