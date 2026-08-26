@@ -4,24 +4,6 @@ import {
   validateSubject,
 } from "../domain/subject.js";
 
-function createHistoryEvent(subject, now, appVersion) {
-  return {
-    id: `history-subject-${subject.id}-${now}`,
-    subjectId: subject.id,
-    entityType: "subject",
-    entityId: subject.id,
-    eventType: "created",
-    occurredAt: now,
-    summary: "Assunto conectado ao Study Stack.",
-    metadata: {
-      sourceContractVersion: subject.sourceContractVersion,
-    },
-    origin: "concept_compass",
-    appVersion,
-    entityVersion: 1,
-  };
-}
-
 function getDeletionTombstone(repository, subjectId) {
   const integration = repository.getEntity("integrationState", "global");
   return integration?.conceptCompass?.deletedSubjects?.[subjectId] ?? null;
@@ -79,15 +61,6 @@ export class SubjectService {
     this.repository.transaction((draft) => {
       if (result.changed) {
         draft.collections.subjects[result.subject.id] = result.subject;
-      }
-
-      if (!existing) {
-        const event = createHistoryEvent(
-          result.subject,
-          now,
-          this.appVersion,
-        );
-        draft.collections.historyEvents[event.id] = event;
       }
 
       const integration = draft.collections.integrationState.global;

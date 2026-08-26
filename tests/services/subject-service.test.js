@@ -33,7 +33,7 @@ function setup() {
   return { repository, service };
 }
 
-test("primeira sincronização cria Subject e evento de histórico", () => {
+test("primeira sincronização cria Subject sem gerar evento de atividade", () => {
   const { repository, service } = setup();
   const subject = service.synchronize(
     normalizeSubjectContext(VALID_SUBJECT_CONTEXT),
@@ -43,11 +43,11 @@ test("primeira sincronização cria Subject e evento de histórico", () => {
   assert.equal(Object.keys(repository.getCollection("subjects")).length, 1);
   assert.equal(
     Object.keys(repository.getCollection("historyEvents")).length,
-    1,
+    0,
   );
 });
 
-test("nova abertura do mesmo assunto não duplica histórico", () => {
+test("nova abertura do mesmo assunto continua sem criar histórico técnico", () => {
   const { repository, service } = setup();
   const context = normalizeSubjectContext(VALID_SUBJECT_CONTEXT);
   service.synchronize(context);
@@ -56,7 +56,7 @@ test("nova abertura do mesmo assunto não duplica histórico", () => {
   assert.equal(Object.keys(repository.getCollection("subjects")).length, 1);
   assert.equal(
     Object.keys(repository.getCollection("historyEvents")).length,
-    1,
+    0,
   );
 });
 
