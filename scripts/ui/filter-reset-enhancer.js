@@ -39,8 +39,15 @@ function createResetButton(document, label, onClick) {
 }
 
 function centerEnhancedEmpty(empty) {
+  empty.style.display = "flex";
+  empty.style.flexDirection = "column";
+  empty.style.alignItems = "center";
   empty.style.textAlign = "center";
+
   empty.querySelectorAll("p").forEach((paragraph) => {
+    paragraph.style.width = "fit-content";
+    paragraph.style.maxWidth = "min(100%, 42rem)";
+    paragraph.style.marginInline = "auto";
     paragraph.style.textAlign = "center";
   });
 }
