@@ -74,6 +74,7 @@ export function openTestQuestImportModal({
     attributes: {
       type: "file",
       accept: ".json,application/json",
+      "aria-label": "Selecionar arquivo JSON da sessão do Test Quest",
       "aria-describedby": "testQuestImportStatus",
     },
   });
