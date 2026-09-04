@@ -4,6 +4,7 @@ import { DataResetController } from "./data-reset-controller.js";
 import { StudyStackApp } from "./app.js";
 import { ActiveSubjectStateWatcher } from "./integrations/active-subject-state-watcher.js";
 import { ConceptCompassDeletionConsumer } from "./integrations/concept-compass-deletion-consumer.js";
+import { createConceptCompassReturnHandler } from "./integrations/concept-compass-return.js";
 import { ConceptCompassSubjectWatcher } from "./integrations/concept-compass-subject-watcher.js";
 import { ConceptCompassSummaryPublisher } from "./integrations/concept-compass-summary-publisher.js";
 import { installFilterResetEnhancer } from "./ui/filter-reset-enhancer.js";
@@ -22,6 +23,14 @@ const conceptCompassSummaryPublisher = new ConceptCompassSummaryPublisher({
 try {
   bootstrapDeletionConsumer.consume();
   app.start();
+  app.shell.onReturn(
+    createConceptCompassReturnHandler({
+      window,
+      shell: app.shell,
+      getContext: () => app.context,
+      config: APP_CONFIG,
+    }),
+  );
   installFilterResetEnhancer({ document });
   if (!app.subject) {
     app.shell?.setMissingContextMode(true);
