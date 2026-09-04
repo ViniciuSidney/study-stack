@@ -23,6 +23,7 @@ const conceptCompassSummaryPublisher = new ConceptCompassSummaryPublisher({
 try {
   bootstrapDeletionConsumer.consume();
   app.start();
+  installFilterResetEnhancer({ document });
   app.shell.onReturn(
     createConceptCompassReturnHandler({
       window,
@@ -31,7 +32,6 @@ try {
       config: APP_CONFIG,
     }),
   );
-  installFilterResetEnhancer({ document });
   if (!app.subject) {
     app.shell?.setMissingContextMode(true);
     app.shell?.setNewRecordEnabled(false);
