@@ -121,6 +121,16 @@
   margin-top: 0;
 }
 
+.exercise-empty-state h3 + p,
+.error-empty-state h3 + p {
+  margin-top: 8px;
+}
+
+.exercise-empty-state p + .button,
+.error-empty-state p + .button {
+  margin-top: 14px;
+}
+
 .error-editor-tab-panel[data-error-tab-panel="analysis"] textarea {
   min-height: 88px;
   height: 88px;
