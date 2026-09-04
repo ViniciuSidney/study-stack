@@ -32,12 +32,16 @@ test("limpeza restaura buscas e selects para o estado padrão", async () => {
   assert.match(enhancer, /searchInputs\[0\]\?\.focus\(\)/);
 });
 
-test("estados vazios filtrados centralizam toda a mensagem", async () => {
+test("estados vazios filtrados formam uma coluna central compacta", async () => {
   const enhancer = await read("../../scripts/ui/filter-reset-enhancer.js");
 
   assert.match(enhancer, /function centerEnhancedEmpty\(empty\)/);
-  assert.match(enhancer, /empty\.style\.textAlign = "center"/);
-  assert.match(enhancer, /paragraph\.style\.textAlign = "center"/);
+  assert.match(enhancer, /empty\.style\.display = "flex"/);
+  assert.match(enhancer, /empty\.style\.flexDirection = "column"/);
+  assert.match(enhancer, /empty\.style\.alignItems = "center"/);
+  assert.match(enhancer, /paragraph\.style\.width = "fit-content"/);
+  assert.match(enhancer, /paragraph\.style\.maxWidth = "min\(100%, 42rem\)"/);
+  assert.match(enhancer, /paragraph\.style\.marginInline = "auto"/);
   assert.match(enhancer, /centerEnhancedEmpty\(empty\)/);
 });
 
